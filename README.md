@@ -39,5 +39,12 @@ Otherwise, from the build directory:
 
 ## Documentation
 
+The `install-doc` target builds and installs the documentation.  It requires
+AsciiDoc as a prerequisite.
+
+    $ make install-doc
+
+Once installed,
+
     $ man lpass
 
