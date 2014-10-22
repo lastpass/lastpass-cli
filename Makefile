@@ -19,7 +19,7 @@ CFLAGS += $(shell pkg-config --cflags libxml-2.0 2>/dev/null || echo -I/usr/incl
 LDLIBS = -lcurl $(shell pkg-config --libs libxml-2.0 2>/dev/null || echo -lxml2) -lssl -lcrypto
 endif
 
-all: lpass doc-man
+all: lpass
 doc-man: lpass.1
 doc-html: lpass.1.html
 doc: doc-man doc-html
@@ -34,8 +34,10 @@ http.c: certificate.h
 certificate.h: thawte.pem
 	awk 'BEGIN {printf "#define CERTIFICATE_THAWTE \""} {printf "%s\\n", $$0} END {printf "\"\n"}' thawte.pem > certificate.h || rm -f certificate.h
 
-install: all doc-man
+install-doc: doc-man
 	@install -v -d "$(DESTDIR)$(MANDIR)/man1" && install -m 0644 -v lpass.1 "$(DESTDIR)$(MANDIR)/man1/lpass.1"
+
+install: all
 	@install -v -d "$(DESTDIR)$(BINDIR)" && install -s -m 0755 -v lpass "$(DESTDIR)$(BINDIR)/lpass"
 
 uninstall:
