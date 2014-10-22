@@ -26,7 +26,7 @@ doc: doc-man doc-html
 
 lpass: $(patsubst %.c,%.o,$(wildcard *.c))
 %.1: %.1.txt
-	a2x -f manpage $<
+	a2x --no-xmllint -f manpage $<
 %.1.html: %.1.txt
 	asciidoc -b html5 -a data-uri -a icons -a toc2 $<
 
