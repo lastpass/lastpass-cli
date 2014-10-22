@@ -1,0 +1,147 @@
+:man source:   lpass
+:man manual:   lpass
+
+LPASS(1)
+========
+
+
+NAME
+----
+lpass - command line interface for LastPass
+
+SYNOPSIS
+--------
+[verse]
+*lpass* [ --version, -v | --help, -h ]
+*lpass* <subcommand> [<args>]
+
+DESCRIPTION
+-----------
+'lpass' is a simple command line interface to LastPass. It is comprised of
+several subcommands:
+
+[verse]
+ lpass *login* [--trust] [--plaintext-key [--force, -f]] USERNAME
+ lpass *logout* [--force, -f]
+ lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] {UNIQUENAME|UNIQUEID}
+ lpass *ls* [--sync=auto|now|no] [GROUP]
+ lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}
+ lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] {NAME|UNIQUEID} LENGTH
+ lpass *duplicate* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
+ lpass *rm* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
+ lpass *sync* [--background, -b]
+
+Synchronization
+~~~~~~~~~~~~~~~
+The '--sync' options control when the current operation involves a
+synchronization with the server. If 'now' is set, and the command makes a
+change, the change is synchronized before the command exits. If 'now' is set,
+and the command displays a value, the local cache is synchronized before the
+value is shown. If 'now' is set, and the command is otherwise successful, but
+synchronization fails, the command will return an error. If 'auto' is set,
+and the command makes a change, the change is synchronized to the server in
+the background. If 'auto' is set, and the command displays a value, the local
+cache is synchronized before the value is shown only if the local cache is
+more than 5 seconds (or 'LPASS_AUTO_SYNC_TIME' seconds, if set) old. If 'no'
+is set, the command will not interact with the server, unless there is a
+current upload queue being processed. Any local changes that are not
+synchronized with the server will exist in a queue of timestamped requests
+which will be synchronized on the next occurring synchronization.
+
+The 'sync' command forces a synchronization of the local cache with the
+LastPass servers, and does not exit until the local cache is synchronized or
+until an error occurs. Alternatively, if '--background' is specified, the
+synchronization occurs in a daemonized process.
+
+Agent
+~~~~~
+An agent process will be spawned in the background on a first successful
+command, and all subsequent commands will use the agent for decryption,
+instead of asking a user for a password. The agent will quit after one hour,
+unless the 'LPASS_AGENT_TIMEOUT' environment variable is set to an alternative
+number of seconds in which to quit, or 0 to never quit. If the environment
+variable 'LPASS_AGENT_DISABLE' is set to 1, the agent will not be used.
+
+Password Entry
+~~~~~~~~~~~~~~
+If available, the *pinentry* program, part of *gpg2*(1), may be used for inputting
+passwords if it is installed. If unavailable, or if the 'LPASS_DISABLE_PINENTRY'
+environment variable is set to 1, passwords will be read from standard input and a
+prompt will be displayed on standard error.
+
+Entry Specification
+~~~~~~~~~~~~~~~~~~~
+Commands that take a 'UNIQUENAME' will fail if the provided name is used
+multiple times, and return an error. Commands may alternatively take a
+'UNIQUEID', which will be the integer 'ID' provided by LastPass for identifying
+entries uniquely. Commands that take either a 'NAME' or a 'UNIQUEID' will create a
+new entry if a 'NAME' is specified and otherwise overwrite an existing entry if
+'UNIQUEID' is specified.
+
+Logging In
+~~~~~~~~~~
+The 'login' subcommand will initialize a cache and configuration folder inside
+the current user's home directory – '~/.lpass' – or in the directory specified
+by the environment variable 'LPASS_HOME'. It will then attempt to
+authenticate itself with the LastPass servers, using the provided command line
+credentials or by interactively prompting (in the case of multifactor or an
+unprovided password). The '--trust' option will cause subsequent logins to not
+require multifactor authentication. If the '--plaintext-key' option is
+specified, the decryption key will be saved to the hard disk in plaintext.
+Please note that use of this option is discourages except in limited
+situations, as it greatly decreases the security of data.
+
+The 'logout' subcommand will remove the local cache and stored encryption
+keys. It will prompt the user to confirm, unless '--force' is specified.
+
+Viewing
+~~~~~~~
+The 'show' subcommand will display a password or selected field.
+
+The 'ls' subcommand will list names in groups in a tree structure.
+
+Modifying
+~~~~~~~~~
+The 'edit' subcommand will edit the selected field. If '--non-interactive' is not
+set, the selected field will be edited using 'EDITOR'; otherwise the command will
+accept data until EOF or, unless the notes field is being edited, the first new line.
+
+The 'generate' subcommand will create a randomly generated password for the
+chosen key name, and optionally add a url and username while inserting the
+generated password.
+
+The 'rm' command will remove the specified entry, and the 'duplicate' command
+will create a duplicate entry of the one specified, but with a different 'ID'.
+
+Clipboard
+~~~~~~~~~
+Commands that take a '-c' or '--clip' option will copy the output to the
+clipboard, using *xclip*(1) or *xsel*(1) on X11-based systems or *pbclip*(1)
+on OSX.
+
+Configuration
+~~~~~~~~~~~~~
+All configuration may be specified via environment variables. Alternatively, a
+set of environment variable overrides may be specified in '~/.lpass/env' in
+the form of:
+
+[verse]
+VARIABLE1=VALUE1
+VARIABLE2=VALUE2
+...
+
+ENVIRONMENT VARIABLES
+---------------------
+The following environment variables may be used for configuration as described
+in the section above:
+
+* 'LPASS_HOME'
+* 'LPASS_AUTO_SYNC_TIME'
+* 'LPASS_AGENT_TIMEOUT'
+* 'LPASS_AGENT_DISABLE'
+* 'LPASS_DISABLE_PINENTRY'
+
+AUTHOR
+-------
+*lpass* was written by Jason A. Donenfeld <jasond@lastpass.com>.
+
