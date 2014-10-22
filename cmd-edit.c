@@ -17,7 +17,7 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__CYGWIN__)
 static char *shared_memory_dir(void)
 {
 	return xstrdup("/dev/shm");

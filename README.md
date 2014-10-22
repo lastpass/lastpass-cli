@@ -6,7 +6,7 @@ C99 command line interface to [LastPass.com](https://lastpass.com/).
 
 ## Operating System Support
 
-`lpass` is designed to run on GNU/Linux and Mac OS X.
+`lpass` is designed to run on GNU/Linux, Cygwin and Mac OS X.
 
 ## Dependencies 
 

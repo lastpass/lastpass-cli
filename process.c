@@ -35,7 +35,7 @@ void process_set_name(const char *name)
 	strcpy(ARGV[0], name);
 }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__CYGWIN__)
 bool process_is_same_executable(pid_t pid)
 {
 	_cleanup_free_ char *proc = NULL;
@@ -52,7 +52,9 @@ bool process_is_same_executable(pid_t pid)
 
 void process_disable_ptrace(void)
 {
+#if defined(__linux__)
 	prctl(PR_SET_DUMPABLE, 0);
+#endif
 	struct rlimit limit = { 0, 0 };
 	setrlimit(RLIMIT_CORE, &limit);
 }

@@ -43,7 +43,7 @@ uninstall:
 	@rmdir "$(DESTDIR)$(MANDIR)/man1" "$(DESTDIR)$(BINDIR)" 2>/dev/null || true
 
 clean:
-	rm -f lpass *.o *.d lpass.1 lpass.1.html certificate.h
+	rm -f lpass *.o *.d lpass.1 lpass.1.html certificate.h lpass.exe
 
 analyze: clean
 	CFLAGS=-g scan-build -enable-checker alpha.core -enable-checker alpha.deadcode -enable-checker alpha.security -enable-checker alpha.unix -enable-checker security -enable-checker core -enable-checker deadcode -enable-checker unix -disable-checker alpha.core.PointerSub --view --keep-going $(MAKE) lpass

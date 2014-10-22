@@ -20,7 +20,7 @@
 #include <errno.h>
 #include <signal.h>
 
-#if !defined(__linux__)
+#if !defined(__linux__) && !defined(__CYGWIN__)
 #define SOCKET_SEND_PID 1
 struct ucred {
 	pid_t pid;
@@ -79,7 +79,7 @@ _noreturn_ static void agent_cleanup(int signal)
 	_exit(EXIT_SUCCESS);
 }
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__CYGWIN__)
 static int agent_socket_get_cred(int fd, struct ucred *cred)
 {
 	socklen_t credlen = sizeof(struct ucred);
