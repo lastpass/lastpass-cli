@@ -17,6 +17,39 @@ C99 command line interface to [LastPass.com](https://lastpass.com/).
 * [AsciiDoc](http://www.methods.co.nz/asciidoc/) (build-time documentation generation only)
 * [xclip](http://sourceforge.net/projects/xclip/), [xsel](http://www.vergenet.net/~conrad/software/xsel/), or [pbcopy](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/pbcopy.1.html) for clipboard support (optional)
 
+### Installing on Linux
+#### Redhat/Centos
+* Install the needed dependencies
+
+```
+sudo yum install openssl libcurl libxml2 pinentry xclip
+```
+
+
+##### Debian/Ubuntu
+* Install the needed dependencies
+
+```
+sudo apt-get install openssl libcurl3 libxml2 pinentry-curses xclip
+```
+
+##### Other Linux Distros
+Install the packages listed in the Dependencies section of this document.
+
+### Installing on OS X
+You'll need to have Xcode installed and working. You can use different packages mangers for OS X like Homebrew/MacPorts/Fink. These instructions use Homebrew. In the future this package MAY become a home brew package.
+
+* Install homebrew folowing the instructions at http://brew.sh/
+* Brew install the needed dependencies (type the command below in your terminal)
+* The below does not include packages needed for clipboard support.
+
+```
+brew install openssl curl libxml2 pinentry-mac asciidoc
+```
+
+* Note: If you get an error about needed "sudo" for the make command, that means you haven't launched xcode and accepted Apple's license agreement.
+
+
 ## Building
 
     $ make
