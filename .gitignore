@@ -1,7 +1,5 @@
 *.o
 *.d
-
 lpass
 lpass.1
-
 certificate.h
