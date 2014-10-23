@@ -30,6 +30,7 @@ several subcommands:
  lpass *duplicate* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
  lpass *rm* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
  lpass *sync* [--background, -b]
+ lpass *export* [--sync=auto|now|no]
 
 Synchronization
 ~~~~~~~~~~~~~~~
@@ -99,6 +100,9 @@ Viewing
 The 'show' subcommand will display a password or selected field.
 
 The 'ls' subcommand will list names in groups in a tree structure.
+
+The 'export' subcommand will dump all account information including
+passwords to stdout (unencrypted).
 
 Modifying
 ~~~~~~~~~

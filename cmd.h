@@ -38,4 +38,7 @@ int cmd_rm(int argc, char **argv);
 int cmd_sync(int argc, char **argv);
 #define cmd_sync_usage "sync [--background, -b]"
 
+int cmd_export(int argc, char **argv);
+#define cmd_export_usage "export [--sync=auto|now|no]"
+
 #endif

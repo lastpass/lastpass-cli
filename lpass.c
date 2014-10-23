@@ -28,7 +28,8 @@ static struct {
 	CMD(generate),
 	CMD(duplicate),
 	CMD(rm),
-	CMD(sync)
+	CMD(sync),
+	CMD(export)
 };
 #undef CMD
 
