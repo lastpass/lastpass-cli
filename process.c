@@ -39,7 +39,7 @@ void process_set_name(const char *name)
 #if defined(__linux__) || defined(__CYGWIN__)
 #define DEVPROC_NAME "exe"
 #define DEVPROC_SELF "self"
-#elif defined(__FreeBSD__) || defined(__DragonFlyBSD__)
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
 #define DEVPROC_NAME "file"
 #define DEVPROC_SELF "curproc"
 #elif defined(__NetBSD__)
