@@ -146,7 +146,7 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 	char *ret;
 	va_list params;
 
-	password_fallback = getenv("LPASS_DISABLE_PINENTRY");
+	password_fallback = getenv("LASTPASS_DISABLE_PINENTRY");
 	if (password_fallback && !strcmp(password_fallback, "1")) {
 		va_start(params, descfmt);
 		password_fallback = password_prompt_fallback(prompt, error, descfmt, params);

@@ -630,7 +630,7 @@ static struct blob *blob_get_latest(struct session *session, const unsigned char
 static time_t auto_sync_time(void)
 {
 	time_t time;
-	char *env = getenv("LPASS_AUTO_SYNC_TIME");
+	char *env = getenv("LASTPASS_AUTO_SYNC_TIME");
 
 	if (!env)
 		return 5;
