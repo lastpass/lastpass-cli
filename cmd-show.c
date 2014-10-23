@@ -17,18 +17,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-static char *pretty_field_value(struct field *field)
-{
-	char *value;
-	if (!strcmp(field->type, "checkbox"))
-		value = xstrdup(field->checked ? "Checked" : "Unchecked");
-	else if (!strcmp(field->type, "radio"))
-		xasprintf(&value, "%s, %s", field->value, field->checked ? "Checked" : "Unchecked");
-	else
-		value = xstrdup(field->value);
-	return value;
-}
-
 int cmd_show(int argc, char **argv)
 {
 	unsigned char key[KDF_HASH_LEN];
@@ -53,7 +41,7 @@ int cmd_show(int argc, char **argv)
 	enum { ALL, USERNAME, PASSWORD, URL, FIELD, ID, NAME, NOTES } choice = ALL;
 	_cleanup_free_ char *field = NULL;
 	struct account *notes_expansion = NULL;
-	char *name, *pretty_field;
+	char *name;
 	struct account *found = NULL;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
@@ -147,25 +135,7 @@ int cmd_show(int argc, char **argv)
 		clipboard_open();
 
 	if (choice == ALL) {
-		if (found->share)
-			terminal_printf(TERMINAL_FG_CYAN "%s/" TERMINAL_RESET, found->share->name);
-		if (strlen(found->group))
-			terminal_printf(TERMINAL_FG_BLUE "%s/" TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->group, found->name, found->id);
-		else
-			terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->name, found->id);
-		if (strlen(found->username))
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Username", found->username);
-		if (strlen(found->password))
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Password", found->password);
-		if (strlen(found->url) && strcmp(found->url, "http://"))
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "URL", found->url);
-		for (struct field *found_field = found->field_head; found_field; found_field = found_field->next) {
-			pretty_field = pretty_field_value(found_field);
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", found_field->name, pretty_field);
-			free(pretty_field);
-		}
-		if (strlen(found->note))
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ":\n%s\n", "Notes", found->note);
+		account_print_all(found);
 	} else {
 		if (!value)
 			die("Programming error.");

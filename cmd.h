@@ -8,6 +8,9 @@
 void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct session **session, struct blob **blob);
 enum blobsync parse_sync_string(const char *str);
 struct account *find_unique_account(struct blob *blob, const char *name);
+char *pretty_field_value(struct field *field);
+void account_print_all(struct account *account);
+struct account *find_account_by_url(struct blob *blob, const char *url);
 
 int cmd_login(int argc, char **argv);
 #define cmd_login_usage "login [--trust] [--plaintext-key [--force, -f]] USERNAME"
@@ -20,6 +23,9 @@ int cmd_show(int argc, char **argv);
 
 int cmd_ls(int argc, char **argv);
 #define cmd_ls_usage "ls [--sync=auto|now|no] [GROUP]"
+
+int cmd_find(int argc, char **argv);
+#define cmd_find_usage "find [--sync=auto|now|no] URL"
 
 int cmd_edit(int argc, char **argv);
 #define cmd_edit_usage "edit [--sync=auto|now|no] [--non-interactive] {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}"
