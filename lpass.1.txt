@@ -116,7 +116,7 @@ will create a duplicate entry of the one specified, but with a different 'ID'.
 Clipboard
 ~~~~~~~~~
 Commands that take a '-c' or '--clip' option will copy the output to the
-clipboard, using *xclip*(1) or *xsel*(1) on X11-based systems or *pbclip*(1)
+clipboard, using *xclip*(1) or *xsel*(1) on X11-based systems or *pbcopy*(1)
 on OSX.
 
 Configuration
