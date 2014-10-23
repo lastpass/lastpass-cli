@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="generator" content="AsciiDoc 8.6.9">
+<meta name="generator" content="AsciiDoc 8.6.7">
 <title>LPASS(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -86,15 +86,9 @@ ul, ol, li > p {
 ul > li     { color: #aaa; }
 ul > li > * { color: black; }
 
-.monospaced, code, pre {
-  font-family: "Courier New", Courier, monospace;
-  font-size: inherit;
-  color: navy;
+pre {
   padding: 0;
   margin: 0;
-}
-pre {
-  white-space: pre-wrap;
 }
 
 #author {
@@ -224,7 +218,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; vertical-align: text-bottom; }
+span.image img { border-style: none; }
 a.image:visited { color: white; }
 
 dl {
@@ -420,6 +414,12 @@ div.unbreakable { page-break-inside: avoid; }
  *
  * */
 
+tt {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+}
+
 div.tableblock {
   margin-top: 1.0em;
   margin-bottom: 1.5em;
@@ -452,6 +452,12 @@ div.tableblock > table[frame="vsides"] {
  * html5 specific
  *
  * */
+
+.monospaced {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+}
 
 table.tableblock {
   margin-top: 1.0em;
@@ -532,8 +538,6 @@ body.manpage div.sectionbody {
 @media print {
   body.manpage div#toc { display: none; }
 }
-
-
 @media screen {
   body {
     max-width: 50em; /* approximately 80 characters wide */
@@ -886,7 +890,7 @@ will create a duplicate entry of the one specified, but with a different <em>ID<
 <div class="sect2">
 <h3 id="_clipboard">Clipboard</h3>
 <div class="paragraph"><p>Commands that take a <em>-c</em> or <em>--clip</em> option will copy the output to the
-clipboard, using <strong>xclip</strong>(1) or <strong>xsel</strong>(1) on X11-based systems or <strong>pbclip</strong>(1)
+clipboard, using <strong>xclip</strong>(1) or <strong>xsel</strong>(1) on X11-based systems or <strong>pbcopy</strong>(1)
 on OSX.</p></div>
 </div>
 <div class="sect2">
@@ -947,7 +951,7 @@ in the section above:</p></div>
 <div id="footnotes"><hr></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2014-10-22 15:46:19 EDT
+Last updated 2014-10-22 20:04:04 EDT
 </div>
 </div>
 </body>
