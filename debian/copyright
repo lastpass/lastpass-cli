@@ -2,7 +2,7 @@ Format: http://dep.debian.net/deps/dep5
 Upstream-Name: lastpass-cli
 
 Files: *
-Copyright: 2014 Jason A. Donenfeld <jasond@lastpass.com>
+Copyright: 2014 LastPass <info@lastpass.com>
 License: GPL-3.0+
 
 Files: debian/*
