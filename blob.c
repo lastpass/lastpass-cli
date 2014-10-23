@@ -23,7 +23,14 @@
 #define htobe32(x) OSSwapHostToBigInt32(x)
 #define be32toh(x) OSSwapBigToHostInt32(x)
 #else
-#include <endian.h>
+# if (defined(__unix__) || defined(unix)) && !defined(USG)
+#  include <sys/param.h>
+# endif
+# if defined(BSD)
+#  include <sys/endian.h>
+# else
+#  include <endian.h>
+# endif
 #endif
 
 void share_free(struct share *share)

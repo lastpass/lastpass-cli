@@ -10,6 +10,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <sys/resource.h>
+#include <limits.h>
 
 #if defined(__linux__)
 #include <sys/prctl.h>
@@ -36,13 +37,24 @@ void process_set_name(const char *name)
 }
 
 #if defined(__linux__) || defined(__CYGWIN__)
+#define DEVPROC_NAME "exe"
+#define DEVPROC_SELF "self"
+#elif defined(__FreeBSD__) || defined(__DragonFlyBSD__)
+#define DEVPROC_NAME "file"
+#define DEVPROC_SELF "curproc"
+#elif defined(__NetBSD__)
+#define DEVPROC_NAME "exe"
+#define DEVPROC_SELF "curproc"
+#endif
+
+#if defined(DEVPROC_NAME)
 bool process_is_same_executable(pid_t pid)
 {
 	_cleanup_free_ char *proc = NULL;
 	char resolved_them[PATH_MAX + 1] = { 0 }, resolved_me[PATH_MAX + 1] = { 0 };
 
-	xasprintf(&proc, "/proc/%lu/exe", (unsigned long)pid);
-	if (readlink(proc, resolved_them, PATH_MAX) < 0 || readlink("/proc/self/exe", resolved_me, PATH_MAX) < 0)
+	xasprintf(&proc, "/proc/%lu/" DEVPROC_NAME, (unsigned long)pid);
+	if (readlink(proc, resolved_them, PATH_MAX) < 0 || readlink("/proc/" DEVPROC_SELF "/" DEVPROC_NAME, resolved_me, PATH_MAX) < 0)
 		return false;
 	if (strcmp(resolved_them, resolved_me))
 		return false;

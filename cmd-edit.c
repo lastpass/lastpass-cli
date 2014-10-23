@@ -72,6 +72,12 @@ static char *shared_memory_dir(void)
 
 	return dir;
 }
+#else
+# warning Falling back to /tmp as secure temporary directory. Encrypted swap/tmpfs recommended.
+static char *shared_memory_dir(void)
+{
+	return xstrdup("/tmp");
+}
 #endif
 _noreturn_ static inline void die_unlink_errno(const char *str, const char *file, const char *dir)
 {
