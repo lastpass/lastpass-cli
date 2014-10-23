@@ -140,8 +140,3 @@ in the section above:
 * 'LPASS_AGENT_TIMEOUT'
 * 'LPASS_AGENT_DISABLE'
 * 'LPASS_DISABLE_PINENTRY'
-
-AUTHOR
--------
-*lpass* was written by Jason A. Donenfeld <jasond@lastpass.com>.
-
