@@ -42,7 +42,7 @@ Otherwise, from the build directory:
 The `install-doc` target builds and installs the documentation.  It requires
 AsciiDoc as a prerequisite.
 
-    $ make install-doc
+    $ sudo make install-doc
 
 Once installed,
 
