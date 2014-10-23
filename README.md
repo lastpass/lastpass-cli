@@ -47,6 +47,3 @@ AsciiDoc as a prerequisite.
 Once installed,
 
     $ man lpass
-
-##### Credits
-Author: Jason A. Donenfeld <jasond@lastpass.com>
