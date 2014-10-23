@@ -1,5 +1,5 @@
 # LastPass CLI
-#### by Jason A. Donenfeld <jasond@lastpass.com>
+#### (c) 2014 LastPass.  All Rights Reserved.
 
 C99 command line interface to [LastPass.com](https://lastpass.com/).
 
@@ -48,3 +48,5 @@ Once installed,
 
     $ man lpass
 
+##### Credits
+Author: Jason A. Donenfeld <jasond@lastpass.com>
