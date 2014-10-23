@@ -27,11 +27,18 @@ sudo yum install openssl libcurl libxml2 pinentry xclip
 
 
 ##### Debian/Ubuntu
-* Install the needed dependencies
+* Debian: Install the needed dependencies
 
 ```
-sudo apt-get install openssl libcurl3 libxml2 pinentry-curses xclip
+sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-openssl-dev pinentry-curses xclip
 ```
+
+* Ubuntu: Install the needed dependencies
+
+```
+sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev pinentry-curses xclip
+```
+
 
 ##### Other Linux Distros
 Install the packages listed in the Dependencies section of this document.
