@@ -6,7 +6,7 @@ C99 command line interface to [LastPass.com](https://lastpass.com/).
 
 ## Operating System Support
 
-`lpass` is designed to run on GNU/Linux, Cygwin and Mac OS X.
+`lastpass` is designed to run on GNU/Linux, Cygwin and Mac OS X.
 
 ## Dependencies 
 
@@ -31,11 +31,11 @@ These environment variables can be passed to make to do the right thing: `PREFIX
 
 If you've installed it:
 
-    $ lpass
+    $ lastpass
 
 Otherwise, from the build directory:
 
-    $ ./lpass
+    $ ./lastpass
 
 ## Documentation
 
@@ -46,5 +46,5 @@ AsciiDoc as a prerequisite.
 
 Once installed,
 
-    $ man lpass
+    $ man lastpass
 
