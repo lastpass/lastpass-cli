@@ -40,6 +40,13 @@ sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev pinentry-cu
 ```
 
 
+#### Gentoo
+* Install the package
+```
+sudo emerge lastpass-cli
+```
+
+
 ##### Other Linux Distros
 Install the packages listed in the Dependencies section of this document.
 
