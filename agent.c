@@ -19,6 +19,9 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include <signal.h>
+#if (defined(__unix__) || defined(unix)) && !defined(USG)
+#include <sys/param.h>
+#endif
 
 #if !defined(__linux__) && !defined(__CYGWIN__)
 #define SOCKET_SEND_PID 1
@@ -85,7 +88,7 @@ static int agent_socket_get_cred(int fd, struct ucred *cred)
 	socklen_t credlen = sizeof(struct ucred);
 	return getsockopt(fd, SOL_SOCKET, SO_PEERCRED, cred, &credlen);
 }
-#elif defined(__APPLE__) && defined(__MACH__)
+#elif defined(__APPLE__) && defined(__MACH__) || defined(BSD)
 static int agent_socket_get_cred(int fd, struct ucred *cred)
 {
 	if (getpeereid(fd, &cred->uid, &cred->gid) < 0)

@@ -72,6 +72,23 @@ static char *shared_memory_dir(void)
 
 	return dir;
 }
+#else
+static char *shared_memory_dir(void)
+{
+	char *tmpdir = getenv("SECURE_TMPDIR");
+	if (!tmpdir) {
+		if (!(tmpdir = getenv("TMPDIR")))
+			tmpdir = "/tmp";
+
+		fprintf(stderr,
+			"Warning: Using %s as secure temporary directory.\n"
+			"Recommend using tmpfs and encrypted swap.\n"
+			"Set SECURE_TMPDIR environment variable to override.\n",
+			tmpdir);
+		sleep(5);
+	}
+	return xstrdup(tmpdir);
+}
 #endif
 _noreturn_ static inline void die_unlink_errno(const char *str, const char *file, const char *dir)
 {
