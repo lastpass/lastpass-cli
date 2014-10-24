@@ -36,7 +36,7 @@ sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-op
 * Ubuntu: Install the needed dependencies
 
 ```
-sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev pinentry-curses xclip
+sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip
 ```
 
 
