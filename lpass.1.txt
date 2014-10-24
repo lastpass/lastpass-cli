@@ -105,6 +105,9 @@ Modifying
 The 'edit' subcommand will edit the selected field. If '--non-interactive' is not
 set, the selected field will be edited using 'EDITOR'; otherwise the command will
 accept data until EOF or, unless the notes field is being edited, the first new line.
+Please note that when editing interactively, the contents of the field may be
+saved on disk in tmp files or in editor swap files, depending on your system
+configuration.
 
 The 'generate' subcommand will create a randomly generated password for the
 chosen key name, and optionally add a url and username while inserting the
