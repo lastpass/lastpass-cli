@@ -2,4 +2,5 @@
 *.d
 lpass
 lpass.1
+lpass.exe
 certificate.h
