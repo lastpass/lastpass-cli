@@ -27,7 +27,7 @@ char *config_path(const char *name)
 	struct stat sbuf;
 	int ret;
 
-	home = getenv("LASTPASS_HOME");
+	home = getenv("LPASS_HOME");
 	if (home)
 		config = xstrdup(home);
 	else {

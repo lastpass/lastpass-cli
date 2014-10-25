@@ -11,7 +11,6 @@
 #include "terminal.h"
 #include "process.h"
 #include <unistd.h>
-#include <sys/types.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -20,10 +19,12 @@
 #include <sys/mman.h>
 #include <errno.h>
 #include <signal.h>
+#if (defined(__unix__) || defined(unix)) && !defined(USG)
+#include <sys/param.h>
+#endif
 
-
-#if defined(__linux__) || defined(__CYGWIN__)
-#define SOCKET_SEND_PID
+#if !defined(__linux__) && !defined(__CYGWIN__)
+#define SOCKET_SEND_PID 1
 struct ucred {
 	pid_t pid;
 	uid_t uid;
@@ -56,9 +57,7 @@ bool agent_load_key(unsigned char key[KDF_HASH_LEN])
 
 	for (;;) {
 		free(password);
-		password = password_prompt("Master Password", 
-                password ?  "Incorrect master password; please try again." : NULL,
-                "Please enter the LastPass master password for <%s>.", username);
+		password = password_prompt("Master Password", password ? "Incorrect master password; please try again." : NULL, "Please enter the LastPass master password for <%s>.", username);
 		if (!password)
 			return false;
 		kdf_decryption_key(username, password, iterations, key);
@@ -89,7 +88,7 @@ static int agent_socket_get_cred(int fd, struct ucred *cred)
 	socklen_t credlen = sizeof(struct ucred);
 	return getsockopt(fd, SOL_SOCKET, SO_PEERCRED, cred, &credlen);
 }
-#elif defined(__APPLE__) && defined(__MACH__)
+#elif defined(__APPLE__) && defined(__MACH__) || defined(BSD)
 static int agent_socket_get_cred(int fd, struct ucred *cred)
 {
 	if (getpeereid(fd, &cred->uid, &cred->gid) < 0)
@@ -117,7 +116,7 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 	signal(SIGQUIT, agent_cleanup);
 	signal(SIGTERM, agent_cleanup);
 	signal(SIGALRM, agent_cleanup);
-	agent_timeout_str = getenv("LASTPASS_AGENT_TIMEOUT");
+	agent_timeout_str = getenv("LPASS_AGENT_TIMEOUT");
 	agent_timeout = 60 * 60; /* One hour by default. */
 	if (agent_timeout_str && strlen(agent_timeout_str))
 		agent_timeout = strtoul(agent_timeout_str, NULL, 10);
@@ -154,7 +153,7 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 			continue;
 		}
 
-#ifdef SOCKET_SEND_PID
+#if SOCKET_SEND_PID == 1
 		pid_t pid = getpid();
 		IGNORE_RESULT(write(listenfd, &pid, sizeof(pid)));
 #endif
@@ -189,7 +188,7 @@ void agent_kill(void)
 	if (connect(fd, (struct sockaddr *)&sa, SUN_LEN(&sa)) < 0)
 		goto out;
 
-#ifdef SOCKET_SEND_PID
+#if SOCKET_SEND_PID == 1
 	pid_t pid = getpid();
 	if (write(fd, &pid, sizeof(pid)) != sizeof(pid))
 		goto out;
@@ -225,9 +224,12 @@ static bool agent_ask(unsigned char key[KDF_HASH_LEN])
 	if (!ret)
 		goto out;
 
-#ifdef SOCKET_SEND_PID
+#if SOCKET_SEND_PID == 1
 	pid_t pid = getpid();
 	ret = write(fd, &pid, sizeof(pid)) == sizeof(pid);
+	if (!ret)
+		goto out;
+	ret = read(fd, &pid, sizeof(pid)) == sizeof(pid);
 	if (!ret)
 		goto out;
 #endif
@@ -255,19 +257,15 @@ static void agent_start(unsigned const char key[KDF_HASH_LEN])
 
 	if (child == 0) {
 		int null = open("/dev/null", 0);
-
 		if (null < 0)
 			_exit(EXIT_FAILURE);
-
 		dup2(null, 0);
 		dup2(null, 1);
 		dup2(null, 2);
-
 		close(null);
 		setsid();
 		if (chdir("/") < 0)
 			_exit(EXIT_FAILURE);
-
 		process_disable_ptrace();
 		process_set_name("lpass [agent]");
 
@@ -296,7 +294,7 @@ bool agent_get_decryption_key(unsigned char key[KDF_HASH_LEN])
 	if (!agent_ask(key)) {
 		if (!agent_load_key(key))
 			return false;
-		disable_str = getenv("LASTPASS_AGENT_DISABLE");
+		disable_str = getenv("LPASS_AGENT_DISABLE");
 		if (!disable_str || strcmp(disable_str, "1")) {
 			agent_start(key);
 		}

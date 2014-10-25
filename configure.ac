@@ -2,11 +2,11 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([lastpass], [0.3.1], [https://github.com/lastpass/lastpass-cli/issues])
+AC_INIT([lpass], [0.3.1], [https://github.com/lastpass/lastpass-cli/issues])
 AC_CONFIG_SRCDIR([src/agent.h])
 AC_CONFIG_HEADERS([notconfig.h])
 #AC_CONFIG_MACRO_DIR([m4])
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 # Checks for programs.
 AC_PROG_AWK

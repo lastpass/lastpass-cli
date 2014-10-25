@@ -3,10 +3,10 @@
 #
 ACLOCAL_AMFLAGS=-Im4
 AUTOMAKE_OPTIONS=foreign
-bin_PROGRAMS=lastpass
-lastpass_CFLAGS=$(LIBXML2_CFLAGS) $(LIBXML2_LIBS)
-lasspass_CPPFLAGS=-Wall -Wextra -Wformat -Wformat-security -pedantic -fomit-frame-pointer
-lastpass_SOURCES= \
+bin_PROGRAMS=lpass
+lpass_CFLAGS=$(LIBXML2_CFLAGS) $(LIBXML2_LIBS)
+lpass_CPPFLAGS=-Wall -Wextra -Wformat -Wformat-security -pedantic -fomit-frame-pointer
+lpass_SOURCES= \
 src/certificate.h \
 src/version.h \
 src/agent.c \
@@ -53,5 +53,5 @@ src/util.h \
 src/xml.c \
 src/xml.h
 
-#man1_MANS=lastpass.1.txt
-EXTRA_DIST=lastpass.1.txt m4
+#man1_MANS=lpass.1.txt
+EXTRA_DIST=lpass.1.txt m4
