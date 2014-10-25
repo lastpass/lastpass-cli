@@ -3,7 +3,6 @@
 
 C99 command line interface to [LastPass.com](https://lastpass.com/).
 
-
 ## Operating System Support
 
 `lpass` is designed to run on GNU/Linux, Cygwin and Mac OS X.
@@ -39,21 +38,22 @@ sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-op
 sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip
 ```
 
-
 #### Gentoo
 * Install the package
 ```
 sudo emerge lastpass-cli
 ```
 
-
 ##### Other Linux Distros
 Install the packages listed in the Dependencies section of this document.
 
 ### Installing on OS X
-You'll need to have Xcode installed and working. You can use different packages mangers for OS X like Homebrew/MacPorts/Fink. These instructions use Homebrew. In the future this package MAY become a home brew package.
+You'll need to have Xcode installed and working.
+You can use different packages mangers for OS X like Homebrew/MacPorts/Fink.
+These instructions use Homebrew.
+In the future this package MAY become a homebrew package.
 
-* Install homebrew folowing the instructions at http://brew.sh/
+* Install homebrew following the instructions at http://brew.sh/
 * Brew install the needed dependencies (type the command below in your terminal)
 * The below does not include packages needed for clipboard support.
 
@@ -62,7 +62,6 @@ brew install openssl curl libxml2 pinentry-mac asciidoc
 ```
 
 * Note: If you get an error about needed "sudo" for the make command, that means you haven't launched xcode and accepted Apple's license agreement.
-
 
 ## Building
 
@@ -86,8 +85,8 @@ Otherwise, from the build directory:
 
 ## Documentation
 
-The `install-doc` target builds and installs the documentation.  It requires
-AsciiDoc as a prerequisite.
+The `install-doc` target builds and installs the documentation.
+It requires AsciiDoc as a prerequisite.
 
     $ sudo make install-doc
 
