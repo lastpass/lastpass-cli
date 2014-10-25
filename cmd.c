@@ -71,7 +71,7 @@ struct account *find_unique_account(struct blob *blob, const char *name)
 		}
 		if (!found) {
 			for (struct account *account = blob->account_head; account; account = account->next) {
-				if (!strcmp(account->name, name)) {
+				if (strstr(account->name, name)) {
 					if (found)
 						die("Multiple matches found for '%s'. You must specify an ID instead of a name.", name);
 					found = account;
