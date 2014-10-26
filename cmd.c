@@ -12,6 +12,7 @@
 #include "process.h"
 #include <strings.h>
 #include <string.h>
+#include <regex.h>
 
 enum blobsync parse_sync_string(const char *syncstr)
 {
@@ -39,6 +40,20 @@ void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct sessio
 		if (!*blob)
 			die("Unable to fetch blob. Either your session is invalid and you need to login with `%s login`, you need to synchronize, your blob is empty, or there is something wrong with your internet connection.", ARGV[0]);
 	}
+}
+
+char *extract_regex_string(const char *s)
+{
+	int s_length = strlen(s);
+	if(s && s_length > 2 && s[0] == '/' && s[s_length-1] == '/') {
+		char *regex_string = (char*) malloc((s_length - 1) * sizeof(char));
+		strncpy(regex_string, (const char *) &s[1], s_length - 1);
+		regex_string[s_length-2] = '\0';
+
+		return regex_string;
+	}
+
+	return NULL;
 }
 
 struct account *find_unique_account(struct blob *blob, const char *name)
@@ -77,6 +92,22 @@ struct account *find_unique_account(struct blob *blob, const char *name)
 					found = account;
 				}
 			}
+		}
+
+		char *regex_string;
+		if (!found && (regex_string = extract_regex_string(name))) {
+			regex_t regex;
+			if(regcomp(&regex, regex_string, REG_ICASE))
+				die("No account that matches '%s' and not a valid regex '%s'", name, regex_string);
+
+			for (struct account *account = blob->account_head; account; account = account->next) {
+				if (!regexec(&regex, account->name, 0, NULL, 0)) {
+					if (found)
+						die("Multiple matches found for regex %s: '%s' (ID: %s) / '%s' ID: %s'.", name, found->name, found->id, account->name, account->id);
+					found = account;
+				}
+			}
+			free(regex_string);
 		}
 	}
 	return found;
