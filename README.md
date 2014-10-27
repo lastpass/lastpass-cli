@@ -1,5 +1,5 @@
 # LastPass CLI
-#### (c) 2014 LastPass.  All Rights Reserved.
+#### (c) 2014 LastPass.
 
 C99 command line interface to [LastPass.com](https://lastpass.com/).
 
