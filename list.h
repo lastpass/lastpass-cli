@@ -369,7 +369,7 @@ static inline void list_del(struct list_head *entry)
  * @member:	the name of the member within the struct.
  *
  */
-#define container_of(ptr, type, member) ({			\
+#define container_of(ptr, type, member) __extension__({			\
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
 	(type *)( (char *)__mptr - offsetof(type,member) );})
 

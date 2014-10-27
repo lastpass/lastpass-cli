@@ -8,6 +8,8 @@
 void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct session **session, struct blob **blob);
 enum blobsync parse_sync_string(const char *str);
 struct account *find_unique_account(struct blob *blob, const char *name);
+void find_matching_accounts(struct blob *blob, const char *name,
+			    struct list_head *ret_list);
 
 int cmd_login(int argc, char **argv);
 #define cmd_login_usage "login [--trust] [--plaintext-key [--force, -f]] USERNAME"

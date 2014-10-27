@@ -29,6 +29,16 @@ static char *pretty_field_value(struct field *field)
 	return value;
 }
 
+static void print_header(struct account *found)
+{
+	if (found->share)
+		terminal_printf(TERMINAL_FG_CYAN "%s/" TERMINAL_RESET, found->share->name);
+	if (strlen(found->group))
+		terminal_printf(TERMINAL_FG_BLUE "%s/" TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->group, found->name, found->id);
+	else
+		terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->name, found->id);
+}
+
 int cmd_show(int argc, char **argv)
 {
 	unsigned char key[KDF_HASH_LEN];
@@ -54,9 +64,10 @@ int cmd_show(int argc, char **argv)
 	_cleanup_free_ char *field = NULL;
 	struct account *notes_expansion = NULL;
 	char *name, *pretty_field;
-	struct account *found = NULL;
+	struct account *found, *last_found;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
+	struct list_head matches;
 
 	while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -103,9 +114,20 @@ int cmd_show(int argc, char **argv)
 
 	init_all(sync, key, &session, &blob);
 
-	found = find_unique_account(blob, name);
-	if (!found)
+	INIT_LIST_HEAD(&matches);
+	find_matching_accounts(blob, name, &matches);
+	if (list_empty(&matches))
 		die("Could not find specified account '%s'.", name);
+
+	found = list_first_entry(&matches, struct account, match_list);
+	last_found = list_last_entry(&matches, struct account, match_list);
+	if (found != last_found) {
+		/* Multiple matches; dump the ids and exit */
+		terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Multiple matches found.\n");
+		list_for_each_entry(found, &matches, match_list)
+			print_header(found);
+		exit(EXIT_SUCCESS);
+	}
 
 	if (found->pwprotect) {
 		unsigned char pwprotect_key[KDF_HASH_LEN];
@@ -147,12 +169,8 @@ int cmd_show(int argc, char **argv)
 		clipboard_open();
 
 	if (choice == ALL) {
-		if (found->share)
-			terminal_printf(TERMINAL_FG_CYAN "%s/" TERMINAL_RESET, found->share->name);
-		if (strlen(found->group))
-			terminal_printf(TERMINAL_FG_BLUE "%s/" TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->group, found->name, found->id);
-		else
-			terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->name, found->id);
+		print_header(found);
+
 		if (strlen(found->username))
 			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Username", found->username);
 		if (strlen(found->password))
