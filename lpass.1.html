@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="generator" content="AsciiDoc 8.6.7">
+<meta name="generator" content="AsciiDoc 8.6.9">
 <title>LPASS(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -86,9 +86,15 @@ ul, ol, li > p {
 ul > li     { color: #aaa; }
 ul > li > * { color: black; }
 
-pre {
+.monospaced, code, pre {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
   padding: 0;
   margin: 0;
+}
+pre {
+  white-space: pre-wrap;
 }
 
 #author {
@@ -218,7 +224,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; }
+span.image img { border-style: none; vertical-align: text-bottom; }
 a.image:visited { color: white; }
 
 dl {
@@ -414,12 +420,6 @@ div.unbreakable { page-break-inside: avoid; }
  *
  * */
 
-tt {
-  font-family: "Courier New", Courier, monospace;
-  font-size: inherit;
-  color: navy;
-}
-
 div.tableblock {
   margin-top: 1.0em;
   margin-bottom: 1.5em;
@@ -452,12 +452,6 @@ div.tableblock > table[frame="vsides"] {
  * html5 specific
  *
  * */
-
-.monospaced {
-  font-family: "Courier New", Courier, monospace;
-  font-size: inherit;
-  color: navy;
-}
 
 table.tableblock {
   margin-top: 1.0em;
@@ -538,6 +532,8 @@ body.manpage div.sectionbody {
 @media print {
   body.manpage div#toc { display: none; }
 }
+
+
 @media screen {
   body {
     max-width: 50em; /* approximately 80 characters wide */
@@ -807,7 +803,8 @@ lpass <strong>edit</strong> [--sync=auto|now|no] [--non-interactive] {--name|--u
 lpass <strong>generate</strong> [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] {NAME|UNIQUEID} LENGTH
 lpass <strong>duplicate</strong> [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
 lpass <strong>rm</strong> [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
-lpass <strong>sync</strong> [--background, -b]</pre>
+lpass <strong>sync</strong> [--background, -b]
+lpass <strong>export</strong> [--sync=auto|now|no]</pre>
 <div class="attribution">
 </div></div>
 <div class="sect2">
@@ -875,12 +872,17 @@ keys. It will prompt the user to confirm, unless <em>--force</em> is specified.<
 <h3 id="_viewing">Viewing</h3>
 <div class="paragraph"><p>The <em>show</em> subcommand will display a password or selected field.</p></div>
 <div class="paragraph"><p>The <em>ls</em> subcommand will list names in groups in a tree structure.</p></div>
+<div class="paragraph"><p>The <em>export</em> subcommand will dump all account information including
+passwords to stdout (unencrypted).</p></div>
 </div>
 <div class="sect2">
 <h3 id="_modifying">Modifying</h3>
 <div class="paragraph"><p>The <em>edit</em> subcommand will edit the selected field. If <em>--non-interactive</em> is not
 set, the selected field will be edited using <em>EDITOR</em>; otherwise the command will
-accept data until EOF or, unless the notes field is being edited, the first new line.</p></div>
+accept data until EOF or, unless the notes field is being edited, the first new line.
+Please note that when editing interactively, the contents of the field may be
+saved on disk in tmp files or in editor swap files, depending on your system
+configuration.</p></div>
 <div class="paragraph"><p>The <em>generate</em> subcommand will create a randomly generated password for the
 chosen key name, and optionally add a url and username while inserting the
 generated password.</p></div>
@@ -941,17 +943,11 @@ in the section above:</p></div>
 </ul></div>
 </div>
 </div>
-<div class="sect1">
-<h2 id="_author">AUTHOR</h2>
-<div class="sectionbody">
-<div class="paragraph"><p><strong>lpass</strong> was written by Jason A. Donenfeld &lt;<a href="mailto:jasond@lastpass.com">jasond@lastpass.com</a>&gt;.</p></div>
-</div>
-</div>
 </div>
 <div id="footnotes"><hr></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2014-10-22 20:04:04 EDT
+Last updated 2014-10-27 12:06:59 EDT
 </div>
 </div>
 </body>
