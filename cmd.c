@@ -41,43 +41,66 @@ void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct sessio
 	}
 }
 
+
+/*
+ * Search blob for any and all accounts matching a given name.
+ * Matching accounts are appended to ret_list which should be initialized
+ * by the caller.
+ *
+ * In the case of an id match, we return only the matching id entry.
+ */
+void find_matching_accounts(struct blob *blob, const char *name,
+			    struct list_head *ret_list)
+{
+	int ret;
+	char *fullname;
+
+	for (struct account *account = blob->account_head; account; account = account->next) {
+		/* id match */
+		if (strcmp(name, "0") && !strcasecmp(account->id, name)) {
+			list_add_tail(&account->match_list, ret_list);
+			/* if id match, stop processing */
+			break;
+		}
+
+		/* full name match */
+		if (account->share)
+			xasprintf(&fullname, "%s/%s", account->share->name, account->fullname);
+		else
+			fullname = xstrdup(account->fullname);
+
+		ret = strcmp(fullname, name);
+		free(fullname);
+		if (!ret) {
+			list_add_tail(&account->match_list, ret_list);
+			continue;
+		}
+
+		/* name match */
+		if (!strcmp(account->name, name)) {
+			list_add_tail(&account->match_list, ret_list);
+			continue;
+		}
+	}
+}
+
 struct account *find_unique_account(struct blob *blob, const char *name)
 {
-	struct account *found = NULL;
-	char *fullname;
-	int ret;
+	struct list_head matches;
+	struct account *account, *last_account;
 
-	if (strcmp(name, "0")) {
-		for (struct account *account = blob->account_head; account; account = account->next) {
-			if (!strcasecmp(account->id, name)) {
-				found = account;
-				break;
-			}
-		}
-	}
-	if (!found) {
-		for (struct account *account = blob->account_head; account; account = account->next) {
-			if (account->share)
-				xasprintf(&fullname, "%s/%s", account->share->name, account->fullname);
-			else
-				fullname = xstrdup(account->fullname);
-			ret = strcmp(fullname, name);
-			free(fullname);
-			if (!ret) {
-				if (found)
-					die("Multiple matches found for '%s'. You must specify an ID instead of a name.", name);
-				found = account;
-			}
-		}
-		if (!found) {
-			for (struct account *account = blob->account_head; account; account = account->next) {
-				if (!strcmp(account->name, name)) {
-					if (found)
-						die("Multiple matches found for '%s'. You must specify an ID instead of a name.", name);
-					found = account;
-				}
-			}
-		}
-	}
-	return found;
+	INIT_LIST_HEAD(&matches);
+
+	find_matching_accounts(blob, name, &matches);
+
+	if (list_empty(&matches))
+		return NULL;
+
+	account = list_first_entry(&matches, struct account, match_list);
+	last_account = list_last_entry(&matches, struct account, match_list);
+
+	if (account != last_account)
+		die("Multiple matches found for '%s'. You must specify an ID instead of a name.", name);
+
+	return account;
 }
