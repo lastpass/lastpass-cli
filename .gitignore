@@ -1,5 +1,7 @@
 *.o
 *.d
+*.swp
 lpass
 lpass.1
 certificate.h
+tags
