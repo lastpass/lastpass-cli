@@ -21,7 +21,7 @@ int cmd_logout(int argc, char **argv)
 		{"force", no_argument, NULL, 'f'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	bool force = false;
 	struct session *session = NULL;

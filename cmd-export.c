@@ -56,7 +56,7 @@ int cmd_export(int argc, char **argv)
 		{"csv", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	enum { CSV } choice = CSV;

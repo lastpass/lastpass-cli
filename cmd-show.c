@@ -58,7 +58,7 @@ int cmd_show(int argc, char **argv)
 		{"clip", no_argument, NULL, 'c'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	enum { ALL, USERNAME, PASSWORD, URL, FIELD, ID, NAME, NOTES } choice = ALL;
 	_cleanup_free_ char *field = NULL;

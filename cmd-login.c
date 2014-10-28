@@ -24,7 +24,7 @@ int cmd_login(int argc, char **argv)
 		{"force", no_argument, NULL, 'f'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	bool trust = false;
 	bool plaintext_key = false;

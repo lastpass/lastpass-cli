@@ -24,7 +24,7 @@ int cmd_duplicate(int argc, char **argv)
 		{"sync", required_argument, NULL, 'S'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	char *name;
 	enum blobsync sync = BLOB_SYNC_AUTO;

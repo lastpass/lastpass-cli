@@ -96,7 +96,7 @@ int cmd_ls(int argc, char **argv)
 		{"sync", required_argument, NULL, 'S'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	char *group = NULL;
 	int group_len;

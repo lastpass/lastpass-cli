@@ -53,7 +53,7 @@ static int global_options(int argc, char *argv[])
 		{"help", no_argument, NULL, 'h'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 
 	while ((option = getopt_long(argc, argv, "vh", long_options, &option_index)) != -1) {

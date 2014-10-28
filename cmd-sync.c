@@ -24,7 +24,7 @@ int cmd_sync(int argc, char **argv)
 		{"background", no_argument, NULL, 'b'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	bool background = false;
 

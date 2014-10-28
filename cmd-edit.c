@@ -117,7 +117,7 @@ int cmd_edit(int argc, char **argv)
 		{"non-interactive", no_argument, NULL, 'X'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	enum { NONE, USERNAME, PASSWORD, URL, FIELD, NAME, NOTES } choice = NONE;
 	_cleanup_free_ char *field = NULL;
