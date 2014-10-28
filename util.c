@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  * reallocarray is:
  *     Copyright (c) 2008 Otto Moerbeek <otto@drijf.net>.

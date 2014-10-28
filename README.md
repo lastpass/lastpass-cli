@@ -1,5 +1,5 @@
 # LastPass CLI
-#### (c) 2014 LastPass.  All Rights Reserved.
+#### (c) 2014 LastPass.
 
 C99 command line interface to [LastPass.com](https://lastpass.com/).
 
@@ -7,7 +7,7 @@ C99 command line interface to [LastPass.com](https://lastpass.com/).
 
 `lpass` is designed to run on GNU/Linux, Cygwin and Mac OS X.
 
-## Dependencies 
+## Dependencies
 
 * [LibreSSL](http://www.libressl.org/) or [OpenSSL](https://www.openssl.org/)
 * [libcurl](http://curl.haxx.se/)
@@ -48,20 +48,14 @@ sudo emerge lastpass-cli
 Install the packages listed in the Dependencies section of this document.
 
 ### Installing on OS X
-You'll need to have Xcode installed and working.
-You can use different packages mangers for OS X like Homebrew/MacPorts/Fink.
-These instructions use Homebrew.
-In the future this package MAY become a homebrew package.
-
 * Install homebrew following the instructions at http://brew.sh/
-* Brew install the needed dependencies (type the command below in your terminal)
-* The below does not include packages needed for clipboard support.
+* Install lastpass-cli using homebrew:
 
 ```
-brew install openssl curl libxml2 pinentry-mac asciidoc
+brew install lastpass-cli --with-pinentry
 ```
 
-* Note: If you get an error about needed "sudo" for the make command, that means you haven't launched xcode and accepted Apple's license agreement.
+Optionally you can add `--with-doc` to install the documentation.
 
 ## Building
 

@@ -3,7 +3,7 @@
 #
 # Changes unix passwords by sshing in and calling passwd.
 #
-# Copyright (c) 2014 LastPass. All Rights Reserved.
+# Copyright (c) 2014 LastPass.
 #
 
 if [[ $# != 1 ]]; then
