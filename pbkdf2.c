@@ -23,7 +23,7 @@
 #include <string.h>
 #include <openssl/hmac.h>
 
-#if OPENSSL_VERSION_NUMBER < 0x10000000L &&  !(defined(__APPLE__) && defined(__MACH__))
+#if OPENSSL_VERSION_NUMBER < 0x10000000L && !(defined(__APPLE__) && defined(__MACH__))
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
