@@ -36,56 +36,55 @@
 #endif
 
 int PKCS5_PBKDF2_HMAC(const unsigned char *pass, size_t pass_len,
-    const unsigned char *salt, size_t salt_len, unsigned int iterations,
-    const EVP_MD *digest, size_t key_len, unsigned char *output)
+	const unsigned char *salt, size_t salt_len, unsigned int iterations,
+	const EVP_MD *digest, size_t key_len, unsigned char *output)
 {
-    HMAC_CTX ctx;
-    unsigned char *out = output;
-    unsigned int iter = 1, count = 1;
-    unsigned int cp_len, i, ret = 0;
-    unsigned int key_left = key_len;
-    unsigned int md_len = EVP_MD_size(digest);
+	HMAC_CTX ctx;
+	unsigned char *out = output;
+	unsigned int iter = 1, count = 1;
+	unsigned int cp_len, i, ret = 0;
+	unsigned int key_left = key_len;
+	unsigned int md_len = EVP_MD_size(digest);
 
-    if (md_len == 0)
-        return 0;
+	if (md_len == 0)
+		return 0;
 
-    unsigned char tmp_md[md_len];
+	unsigned char tmp_md[md_len];
 
-    HMAC_CTX_init(&ctx);
+	HMAC_CTX_init(&ctx);
 
-    while (key_left) {
-        cp_len = min(key_left, md_len);
+	while (key_left) {
+		cp_len = min(key_left, md_len);
 
-        unsigned char c[4];
-        c[0] = (count >> 24) & 0xff;
-        c[1] = (count >> 16) & 0xff;
-        c[2] = (count >> 8) & 0xff;
-        c[3] = (count) & 0xff;
+		unsigned char c[4];
+		c[0] = (count >> 24) & 0xff;
+		c[1] = (count >> 16) & 0xff;
+		c[2] = (count >> 8) & 0xff;
+		c[3] = (count) & 0xff;
 
-        ERR_IFZERO(HMAC_Init_ex(&ctx, pass, pass_len, digest, NULL));
-        ERR_IFZERO(HMAC_Update(&ctx, salt, salt_len));
-        ERR_IFZERO(HMAC_Update(&ctx, c, 4));
-        ERR_IFZERO(HMAC_Final(&ctx, tmp_md, NULL));
-        memcpy(out, tmp_md, cp_len);
+		ERR_IFZERO(HMAC_Init_ex(&ctx, pass, pass_len, digest, NULL));
+		ERR_IFZERO(HMAC_Update(&ctx, salt, salt_len));
+		ERR_IFZERO(HMAC_Update(&ctx, c, 4));
+		ERR_IFZERO(HMAC_Final(&ctx, tmp_md, NULL));
+		memcpy(out, tmp_md, cp_len);
 
-        for (iter=1; iter < iterations; iter++)
-        {
-            if (HMAC(digest, pass, pass_len, tmp_md, md_len, tmp_md, NULL) == NULL)
-                goto err;
-            for (i = 0; i < cp_len; i++)
-            {
-                out[i] ^= tmp_md[i];
-            }
-        }
+		for (iter=1; iter < iterations; iter++) {
+			if (HMAC(digest, pass, pass_len, tmp_md, md_len, tmp_md, NULL) == NULL)
+				goto err;
 
-        key_left -= cp_len;
-        out += cp_len;
-        count++;
-    }
-    ret = 1;
+			for (i = 0; i < cp_len; i++) {
+				out[i] ^= tmp_md[i];
+			}
+		}
+
+		key_left -= cp_len;
+		out += cp_len;
+		count++;
+	}
+	ret = 1;
 
 err:
-    HMAC_CTX_cleanup(&ctx);
-    return ret;
+	HMAC_CTX_cleanup(&ctx);
+	return ret;
 }
 #endif
