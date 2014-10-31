@@ -21,7 +21,7 @@ C99 command line interface to [LastPass.com](https://lastpass.com/).
 * Install the needed dependencies
 
 ```
-sudo yum install openssl libcurl libxml2 pinentry xclip libxml2-devel libcurl-devel
+sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-devel libcurl-devel
 ```
 
 
