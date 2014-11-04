@@ -57,6 +57,18 @@ brew install lastpass-cli --with-pinentry
 
 Optionally you can add `--with-doc` to install the documentation.
 
+### Installing on FreeBSD
+* Install the binary package
+
+```
+sudo pkg install security/lastpass-cli
+```
+
+* Or build the port yourself
+```
+sudo make -C /usr/ports/security/lastpass-cli all install clean
+```
+
 ## Building
 
     $ make
