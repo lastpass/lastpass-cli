@@ -43,6 +43,13 @@
 #define TERMINAL_CLEAR_LINE	"\x1b[2K"
 #define TERMINAL_CLEAR_ALL	"\x1b[2J"
 
+enum color_mode {
+	COLOR_MODE_AUTO,
+	COLOR_MODE_NEVER,
+	COLOR_MODE_ALWAYS
+};
+
+void terminal_set_color_mode(enum color_mode color_mode);
 void terminal_printf(const char *fmt, ...) _printf_(1, 2);
 void terminal_fprintf(FILE *file, const char *fmt, ...) _printf_(2, 3);
 

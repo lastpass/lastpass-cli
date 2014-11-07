@@ -12,12 +12,15 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+static enum color_mode color_mode = COLOR_MODE_AUTO;
+
 static void filter_ansi(FILE *file, const char *fmt, va_list args)
 {
 	_cleanup_free_ char *str = NULL;
 	size_t len, i, j;
 
-	if (isatty(fileno(file))) {
+	if (color_mode == COLOR_MODE_ALWAYS ||
+	    (color_mode == COLOR_MODE_AUTO && isatty(fileno(file)))) {
 		vfprintf(file, fmt, args);
 		return;
 	}
@@ -42,6 +45,11 @@ static void filter_ansi(FILE *file, const char *fmt, va_list args)
 				break;
 		}
 	}
+}
+
+void terminal_set_color_mode(enum color_mode mode)
+{
+	color_mode = mode;
 }
 
 void terminal_printf(const char *fmt, ...)

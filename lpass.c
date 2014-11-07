@@ -35,12 +35,12 @@ static struct {
 
 static void version(void)
 {
-	terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "LastPass CLI v" LASTPASS_CLI_VERSION TERMINAL_RESET "\n");
+	terminal_printf("LastPass CLI v" LASTPASS_CLI_VERSION "\n");
 }
 
 static void help(void)
 {
-	terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Usage" TERMINAL_RESET ":\n");
+	terminal_printf("Usage:\n");
 	printf("  %s {--help|--version}\n", ARGV[0]);
 	for (size_t i = 0; i < ARRAY_SIZE(commands); ++i)
 		printf("  %s %s\n", ARGV[0], commands[i].usage);

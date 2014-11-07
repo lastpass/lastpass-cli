@@ -115,6 +115,7 @@ int cmd_edit(int argc, char **argv)
 		{"name", no_argument, NULL, 'N'},
 		{"notes", no_argument, NULL, 'O'},
 		{"non-interactive", no_argument, NULL, 'X'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -169,6 +170,10 @@ int cmd_edit(int argc, char **argv)
 				break;
 			case 'X':
 				non_interactive = true;
+				break;
+			case 'C':
+				terminal_set_color_mode(
+					parse_color_mode_string(optarg));
 				break;
 			case '?':
 			default:

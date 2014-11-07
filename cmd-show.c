@@ -56,6 +56,7 @@ int cmd_show(int argc, char **argv)
 		{"name", no_argument, NULL, 'N'},
 		{"notes", no_argument, NULL, 'O'},
 		{"clip", no_argument, NULL, 'c'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -101,6 +102,10 @@ int cmd_show(int argc, char **argv)
 				break;
 			case 'c':
 				clip = true;
+				break;
+			case 'C':
+				terminal_set_color_mode(
+					parse_color_mode_string(optarg));
 				break;
 			case '?':
 			default:

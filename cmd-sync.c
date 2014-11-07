@@ -22,6 +22,7 @@ int cmd_sync(int argc, char **argv)
 	struct blob *blob = NULL;
 	static struct option long_options[] = {
 		{"background", no_argument, NULL, 'b'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -32,6 +33,10 @@ int cmd_sync(int argc, char **argv)
 		switch (option) {
 			case 'b':
 				background = true;
+				break;
+			case 'C':
+				terminal_set_color_mode(
+					parse_color_mode_string(optarg));
 				break;
 			case '?':
 			default:
