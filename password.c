@@ -168,7 +168,6 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 		close(read_fds[1]);
 		close(write_fds[0]);
 		close(write_fds[1]);
-		close(STDERR_FILENO);
 		execlp("pinentry", "pinentry", NULL);
 		_exit(76);
 	}
