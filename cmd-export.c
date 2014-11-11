@@ -53,29 +53,26 @@ int cmd_export(int argc, char **argv)
 {
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
-		{"csv", required_argument, NULL, 'C'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
 	int option;
 	int option_index;
 	enum blobsync sync = BLOB_SYNC_AUTO;
-	enum { CSV } choice = CSV;
 	while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
 				break;
 			case 'C':
-				choice = CSV;
+				terminal_set_color_mode(
+					parse_color_mode_string(optarg));
 				break;
 			case '?':
 			default:
 				die_usage(cmd_export_usage);
 		}
 	}
-
-	if (choice != CSV)
-		die_usage(cmd_export_usage);
 
 	unsigned char key[KDF_HASH_LEN];
 	struct session *session = NULL;

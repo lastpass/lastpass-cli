@@ -22,6 +22,7 @@ int cmd_login(int argc, char **argv)
 		{"trust", no_argument, NULL, 't'},
 		{"plaintext-key", no_argument, NULL, 'p'},
 		{"force", no_argument, NULL, 'f'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -47,6 +48,10 @@ int cmd_login(int argc, char **argv)
 			break;
 		case 'f':
 			force = true;
+			break;
+		case 'C':
+			terminal_set_color_mode(
+				parse_color_mode_string(optarg));
 			break;
 		case '?':
 		default:

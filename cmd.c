@@ -25,6 +25,18 @@ enum blobsync parse_sync_string(const char *syncstr)
 		die_usage("... --sync=auto|now|no");
 }
 
+enum color_mode parse_color_mode_string(const char *colormode)
+{
+	if (!colormode || strcmp(colormode, "auto") == 0)
+		return COLOR_MODE_AUTO;
+	else if (strcmp(colormode, "never") == 0)
+		return COLOR_MODE_NEVER;
+	else if (strcmp(colormode, "always") == 0)
+		return COLOR_MODE_ALWAYS;
+	else
+		die_usage("... --color=auto|never|always");
+}
+
 void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct session **session, struct blob **blob)
 {
 	if (!agent_get_decryption_key(key))

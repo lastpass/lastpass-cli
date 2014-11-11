@@ -85,7 +85,7 @@ _noreturn_ void die_errno(const char *err, ...)
 
 void die_usage(const char *usage)
 {
-	terminal_fprintf(stderr, TERMINAL_FG_YELLOW TERMINAL_BOLD "Usage" TERMINAL_RESET ": %s %s\n", ARGV[0], usage);
+	terminal_fprintf(stderr, "Usage: %s %s\n", ARGV[0], usage);
 	exit(1);
 }
 

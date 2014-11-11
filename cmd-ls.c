@@ -94,6 +94,7 @@ int cmd_ls(int argc, char **argv)
 	struct blob *blob = NULL;
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -104,12 +105,16 @@ int cmd_ls(int argc, char **argv)
 	struct node *root;
 	char *fullname;
 	enum blobsync sync = BLOB_SYNC_AUTO;
-	bool print_tree = isatty(fileno(stdout));
+	enum color_mode cmode = COLOR_MODE_AUTO;
+	bool print_tree;
 
 	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
+				break;
+			case 'C':
+				cmode = parse_color_mode_string(optarg);
 				break;
 			case '?':
 			default:
@@ -126,6 +131,10 @@ int cmd_ls(int argc, char **argv)
 		default:
 			die_usage(cmd_ls_usage);
 	}
+
+	terminal_set_color_mode(cmode);
+	print_tree = cmode == COLOR_MODE_ALWAYS ||
+		     (cmode == COLOR_MODE_AUTO && isatty(fileno(stdout)));
 
 
 	init_all(sync, key, &session, &blob);
