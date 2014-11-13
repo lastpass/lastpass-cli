@@ -108,8 +108,8 @@ int cmd_edit(int argc, char **argv)
 	struct blob *blob = NULL;
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
-		{"username", no_argument, NULL, 'U'},
-		{"password", no_argument, NULL, 'P'},
+		{"username", no_argument, NULL, 'u'},
+		{"password", no_argument, NULL, 'p'},
 		{"url", no_argument, NULL, 'L'},
 		{"field", required_argument, NULL, 'F'},
 		{"name", no_argument, NULL, 'N'},
@@ -138,16 +138,16 @@ int cmd_edit(int argc, char **argv)
 	bool should_log_read = false;
 
 	#define ensure_choice() if (choice != NONE) goto choice_die;
-	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "up", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
 				break;
-			case 'U':
+			case 'u':
 				ensure_choice();
 				choice = USERNAME;
 				break;
-			case 'P':
+			case 'p':
 				ensure_choice();
 				choice = PASSWORD;
 				break;

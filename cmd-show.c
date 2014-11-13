@@ -48,8 +48,8 @@ int cmd_show(int argc, char **argv)
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
 		{"all", no_argument, NULL, 'A'},
-		{"username", no_argument, NULL, 'U'},
-		{"password", no_argument, NULL, 'P'},
+		{"username", no_argument, NULL, 'u'},
+		{"password", no_argument, NULL, 'p'},
 		{"url", no_argument, NULL, 'L'},
 		{"field", required_argument, NULL, 'F'},
 		{"id", no_argument, NULL, 'I'},
@@ -70,7 +70,7 @@ int cmd_show(int argc, char **argv)
 	bool clip = false;
 	struct list_head matches;
 
-	while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "cup", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -78,10 +78,10 @@ int cmd_show(int argc, char **argv)
 			case 'A':
 				choice = ALL;
 				break;
-			case 'U':
+			case 'u':
 				choice = USERNAME;
 				break;
-			case 'P':
+			case 'p':
 				choice = PASSWORD;
 				break;
 			case 'L':

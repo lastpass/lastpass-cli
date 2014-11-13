@@ -23,9 +23,9 @@ several subcommands:
 [verse]
  lpass *login* [--trust] [--plaintext-key [--force, -f]] USERNAME
  lpass *logout* [--force, -f]
- lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] {UNIQUENAME|UNIQUEID}
+ lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username, -u|--password, -p|--url|--notes|--field=FIELD|--id|--name] {UNIQUENAME|UNIQUEID}
  lpass *ls* [--sync=auto|now|no] [GROUP]
- lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}
+ lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} {NAME|UNIQUEID}
  lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] {NAME|UNIQUEID} LENGTH
  lpass *duplicate* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
  lpass *rm* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
