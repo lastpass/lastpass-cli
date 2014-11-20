@@ -409,14 +409,14 @@ _unroll_ void bytes_to_hex(const char *bytes, char **hex, size_t len)
 	(*hex)[len * 2] = '\0';
 }
 
-void hex_to_bytes(const char *hex, char **bytes)
+int hex_to_bytes(const char *hex, char **bytes)
 {
 	size_t len = strlen(hex);
 	if (len % 2 != 0) {
 		if (!*bytes)
 			*bytes = xcalloc(1, 1);
 		**bytes = '\0';
-		return;
+		return -EINVAL;
 	}
 	if (!*bytes)
 		*bytes = xmalloc(len / 2 + 1);
@@ -424,10 +424,11 @@ void hex_to_bytes(const char *hex, char **bytes)
 		if (sscanf(&hex[i * 2], "%2hhx", (unsigned char *)(*bytes + i)) != 1) {
 			fprintf(stderr, "%s\n", hex);
 			**bytes = '\0';
-			return;
+			return -EINVAL;
 		}
 	}
 	(*bytes)[len / 2] = '\0';
+	return 0;
 }
 
 /* [min, max) */

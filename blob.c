@@ -170,6 +170,7 @@ static bool read_item(struct chunk *chunk, struct item *item)
 static char *read_hex_string(struct chunk *chunk)
 {
 	struct item item;
+	int result;
 	char *str = NULL;
 
 	if (!read_item(chunk, &item))
@@ -177,8 +178,8 @@ static char *read_hex_string(struct chunk *chunk)
 	if (item.len == 0)
 		return xstrdup("");
 
-	hex_to_bytes(item.data, &str);
-	if (!*str) {
+	result = hex_to_bytes(item.data, &str);
+	if (result) {
 		free(str);
 		return NULL;
 	}
