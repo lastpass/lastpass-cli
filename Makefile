@@ -16,7 +16,7 @@ CFLAGS += -Wno-deprecated-declarations -isysroot $(SDKROOT) -I$(SDKROOT)/usr/inc
 LDLIBS = -lcurl -lxml2 -lssl -lcrypto
 else
 CFLAGS += $(shell pkg-config --cflags libxml-2.0 2>/dev/null || echo -I/usr/include/libxml2) -I/usr/local/include
-LDLIBS = -lcurl $(shell pkg-config --libs libxml-2.0 2>/dev/null || echo -lxml2) -lssl -lcrypto
+LDLIBS = -lcurl $(shell pkg-config --libs libxml-2.0 2>/dev/null || echo -lxml2) -lssl -lcrypto -lpcre
 endif
 
 all: lpass

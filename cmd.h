@@ -11,6 +11,8 @@ enum blobsync parse_sync_string(const char *str);
 struct account *find_unique_account(struct blob *blob, const char *name);
 void find_matching_accounts(struct blob *blob, const char *name,
 			    struct list_head *ret_list);
+void find_matching_accounts_regex(struct blob *blob, const char *name,
+			    struct list_head *ret_list);
 enum color_mode parse_color_mode_string(const char *colormode);
 
 int cmd_login(int argc, char **argv);
@@ -20,7 +22,7 @@ int cmd_logout(int argc, char **argv);
 #define cmd_logout_usage "logout [--force, -f]"
 
 int cmd_show(int argc, char **argv);
-#define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] {UNIQUENAME|UNIQUEID}"
+#define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--regex] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] {UNIQUENAME|UNIQUEID}"
 
 int cmd_ls(int argc, char **argv);
 #define cmd_ls_usage "ls [--sync=auto|now|no] [GROUP]"

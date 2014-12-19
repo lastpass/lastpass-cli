@@ -12,6 +12,7 @@
 #include "process.h"
 #include <strings.h>
 #include <string.h>
+#include <pcre.h>
 
 enum blobsync parse_sync_string(const char *syncstr)
 {
@@ -95,6 +96,95 @@ void find_matching_accounts(struct blob *blob, const char *name,
 		}
 	}
 }
+
+
+/*
+ * Same as find_matching_accounts but with regular expression search and without "id" matching
+ */
+void find_matching_accounts_regex(struct blob *blob, const char *name,
+			    struct list_head *ret_list)
+{
+	int ret;
+	char *fullname;
+
+	//---------------------
+	pcre *re;
+        pcre_extra *reExtra;
+	const char *error;
+	int erroffset;
+
+	// Compile regex
+	re = pcre_compile(
+	  name,		        /* the pattern */
+	  PCRE_CASELESS,        /* default options */
+	  &error,               /* for error message */
+	  &erroffset,           /* for error offset */
+	  NULL);                /* use default character tables */
+
+	// Catch compile error
+	if (re == NULL)
+	{
+	  printf("PCRE compilation failed at offset %d: %s\n", erroffset, error);
+	  return;
+	}
+
+	/* optimize regex */
+	reExtra = pcre_study(re, 0, &error);
+
+
+	for (struct account *account = blob->account_head; account; account = account->next) {
+
+		/* full name match */
+		if (account->share)
+			xasprintf(&fullname, "%s/%s", account->share->name, account->fullname);
+		else
+			fullname = xstrdup(account->fullname);
+
+		/* regex match fullname */
+		ret = pcre_exec(
+		      re,                 /* the compiled pattern */
+		      reExtra,            /* extra */
+		      fullname,           /* subject */
+		      strlen(fullname),   /* length */
+		      0,       	          /* start offset */
+		      0,                  /* options */
+		      NULL,
+		      0
+		     );
+
+		if (ret>-1) {
+			list_add_tail(&account->match_list, ret_list);
+			free(fullname);
+			continue;
+		}
+
+		if (account->name != NULL && fullname != account->name) {
+
+                    /* regex match name */
+                    ret = pcre_exec(
+                          re,                 /* the compiled pattern */
+                          reExtra,            /* extra */
+                          account->name,      /* subject */
+                          strlen(account->name),   /* length */
+                          0,       	          /* start offset */
+                          0,                  /* options */
+                          NULL,
+                          0
+                         );
+
+                    /* name match */
+                    if (ret>-1) {
+                            list_add_tail(&account->match_list, ret_list);
+                    }
+		}
+	        free(fullname);
+
+
+	}
+
+	pcre_free(re);
+}
+
 
 struct account *find_unique_account(struct blob *blob, const char *name)
 {
