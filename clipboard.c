@@ -11,7 +11,7 @@
 #include <sys/types.h>
 
 static pid_t clipboard_process = 0;
-static int saved_stdout = -1; 
+static int saved_stdout = -1;
 static bool registered_closer = false;
 
 void clipboard_close(void)

@@ -57,6 +57,7 @@ int cmd_show(int argc, char **argv)
 		{"notes", no_argument, NULL, 'O'},
 		{"clip", no_argument, NULL, 'c'},
 		{"color", required_argument, NULL, 'C'},
+		{"regex", no_argument, NULL, 'r'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -67,7 +68,8 @@ int cmd_show(int argc, char **argv)
 	char *name, *pretty_field;
 	struct account *found, *last_found;
 	enum blobsync sync = BLOB_SYNC_AUTO;
-	bool clip = false;
+	bool clip  = false;
+	bool regex = false;
 	struct list_head matches;
 
 	while ((option = getopt_long(argc, argv, "cup", long_options, &option_index)) != -1) {
@@ -103,6 +105,9 @@ int cmd_show(int argc, char **argv)
 			case 'c':
 				clip = true;
 				break;
+			case 'r':
+				regex = true;
+				break;
 			case 'C':
 				terminal_set_color_mode(
 					parse_color_mode_string(optarg));
@@ -120,7 +125,12 @@ int cmd_show(int argc, char **argv)
 	init_all(sync, key, &session, &blob);
 
 	INIT_LIST_HEAD(&matches);
-	find_matching_accounts(blob, name, &matches);
+	if (!regex) {
+	        find_matching_accounts(blob, name, &matches);
+	} else {
+	        find_matching_accounts_regex(blob, name, &matches);
+	}
+
 	if (list_empty(&matches))
 		die("Could not find specified account '%s'.", name);
 
