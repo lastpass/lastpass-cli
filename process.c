@@ -17,6 +17,11 @@
 #elif defined(__APPLE__) && defined(__MACH__)
 #include <libproc.h>
 #include <sys/ptrace.h>
+#elif defined(__OpenBSD__)
+#include <sys/param.h>
+#include <sys/proc.h>
+#include <sys/sysctl.h>
+#include <kvm.h>
 #endif
 
 void process_set_name(const char *name)
@@ -85,6 +90,49 @@ bool process_is_same_executable(pid_t pid)
 void process_disable_ptrace(void)
 {
 	ptrace(PT_DENY_ATTACH, 0, 0, 0);
+	struct rlimit limit = { 0, 0 };
+	setrlimit(RLIMIT_CORE, &limit);
+}
+#elif defined(__OpenBSD__)
+int pid_to_cmd(pid_t pid, char *cmd, size_t cmd_size)
+{
+	int cnt, ret;
+	kvm_t *kd;
+	struct kinfo_proc *kp;
+
+	ret = -1;
+
+	if ((kd = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, NULL)) == NULL)
+		return ret;
+	if ((kp = kvm_getprocs(kd, KERN_PROC_PID, (int)pid, sizeof(*kp), &cnt)) == NULL)
+		goto out;
+	if ((kp->p_flag & P_SYSTEM) != 0)
+		goto out;
+	if (cnt != 1)
+		goto out;
+	if (strlcpy(cmd, kp[0].p_comm, cmd_size) >= cmd_size)
+		goto out;
+
+	ret = 0;
+
+out:
+	kvm_close(kd);
+	return ret;
+}
+
+bool process_is_same_executable(pid_t pid)
+{
+	char resolved_them[PATH_MAX], resolved_me[PATH_MAX];
+
+	if (pid_to_cmd(pid, resolved_them, sizeof(resolved_them)) || pid_to_cmd(getpid(), resolved_me, sizeof(resolved_me)))
+		return false;
+	if (strcmp(resolved_them, resolved_me))
+		return false;
+	return true;
+}
+
+void process_disable_ptrace(void)
+{
 	struct rlimit limit = { 0, 0 };
 	setrlimit(RLIMIT_CORE, &limit);
 }

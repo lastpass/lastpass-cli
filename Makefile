@@ -17,6 +17,9 @@ LDLIBS = -lcurl -lxml2 -lssl -lcrypto
 else
 CFLAGS += $(shell pkg-config --cflags libxml-2.0 2>/dev/null || echo -I/usr/include/libxml2) -I/usr/local/include
 LDLIBS = -lcurl $(shell pkg-config --libs libxml-2.0 2>/dev/null || echo -lxml2) -lssl -lcrypto
+ifeq ($(UNAME_S),OpenBSD)
+LDLIBS += -lkvm
+endif
 endif
 
 all: lpass
