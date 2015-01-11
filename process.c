@@ -94,7 +94,7 @@ void process_disable_ptrace(void)
 	setrlimit(RLIMIT_CORE, &limit);
 }
 #elif defined(__OpenBSD__)
-int pid_to_cmd(pid_t pid, char *cmd)
+int pid_to_cmd(pid_t pid, char *cmd, size_t cmd_size)
 {
 	int cnt, ret;
 	kvm_t *kd;
@@ -110,7 +110,7 @@ int pid_to_cmd(pid_t pid, char *cmd)
 		goto out;
 	if (cnt != 1)
 		goto out;
-	if (strlcpy(cmd, kp[0].p_comm, sizeof(cmd)) >= sizeof(cmd))
+	if (strlcpy(cmd, kp[0].p_comm, cmd_size) >= cmd_size)
 		goto out;
 
 	ret = 0;
@@ -124,7 +124,7 @@ bool process_is_same_executable(pid_t pid)
 {
 	char resolved_them[PATH_MAX], resolved_me[PATH_MAX];
 
-	if (pid_to_cmd(pid, resolved_them) || pid_to_cmd(getpid(), resolved_me))
+	if (pid_to_cmd(pid, resolved_them, sizeof(resolved_them)) || pid_to_cmd(getpid(), resolved_me, sizeof(resolved_me)))
 		return false;
 	if (strcmp(resolved_them, resolved_me))
 		return false;
