@@ -69,6 +69,14 @@ sudo pkg install security/lastpass-cli
 sudo make -C /usr/ports/security/lastpass-cli all install clean
 ```
 
+### Installing on Cygwin
+* Install [apt-cyg](https://github.com/transcode-open/apt-cyg)
+* Using apt-cyg, install the needed dependencies
+
+```
+apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel cygutils-extra
+```
+
 ## Building
 
     $ make
