@@ -145,6 +145,7 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 	char *password_fallback;
 	char *ret;
 	va_list params;
+	int devnull;
 
 	password_fallback = getenv("LPASS_DISABLE_PINENTRY");
 	if (password_fallback && !strcmp(password_fallback, "1")) {
@@ -164,6 +165,10 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 	if (child == 0) {
 		dup2(read_fds[1], STDOUT_FILENO);
 		dup2(write_fds[0], STDIN_FILENO);
+
+		devnull = open("/dev/null", O_WRONLY);
+		dup2(devnull, STDERR_FILENO);
+
 		close(read_fds[0]);
 		close(read_fds[1]);
 		close(write_fds[0]);
