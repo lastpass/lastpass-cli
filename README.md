@@ -1,7 +1,7 @@
 # LastPass CLI
 #### (c) 2014 LastPass.
 
-C99 command line interface to [LastPass.com](https://lastpass.com/).
+Command line interface to [LastPass.com](https://lastpass.com/).
 
 ## Operating System Support
 
@@ -17,22 +17,30 @@ C99 command line interface to [LastPass.com](https://lastpass.com/).
 * [xclip](http://sourceforge.net/projects/xclip/), [xsel](http://www.vergenet.net/~conrad/software/xsel/), [pbcopy](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/pbcopy.1.html), or [putclip from cygutils-extra](https://cygwin.com/cgi-bin2/package-grep.cgi?grep=cygutils-extra) for clipboard support (optional)
 
 ### Installing on Linux
+#### Arch
+* Binary packages are available in the Arch User Repository [AUR](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli).
+
+
 #### Redhat/Centos
-* Install the needed dependencies
+* Install the needed build dependencies, and then follow instructions in
+  the 'Building' section.
 
 ```
 sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-devel libcurl-devel
 ```
 
 
-##### Debian/Ubuntu
-* Debian: Install the needed dependencies
+#### Debian/Ubuntu
+* Install the needed build dependencies, and then follow instructions in
+  the 'Building' section.
+
+* For Debian:
 
 ```
 sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-openssl-dev pinentry-curses xclip
 ```
 
-* Ubuntu: Install the needed dependencies
+* For Ubuntu:
 
 ```
 sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip
@@ -40,11 +48,12 @@ sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev
 
 #### Gentoo
 * Install the package
+
 ```
 sudo emerge lastpass-cli
 ```
 
-##### Other Linux Distros
+#### Other Linux Distros
 Install the packages listed in the Dependencies section of this document.
 
 ### Installing on OS X
