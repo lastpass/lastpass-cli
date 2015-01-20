@@ -6,6 +6,24 @@
 #include "terminal.h"
 #include "kdf.h"
 
+enum search_type
+{
+	SEARCH_EXACT_MATCH,
+	SEARCH_BASIC_REGEX,
+	SEARCH_FIXED_SUBSTRING,
+};
+
+#define BIT(x) (1ull << (x))
+
+enum account_field
+{
+	ACCOUNT_ID = BIT(0),
+	ACCOUNT_NAME = BIT(1),
+	ACCOUNT_FULLNAME = BIT(2),
+	ACCOUNT_URL = BIT(3),
+	ACCOUNT_USERNAME = BIT(4),
+};
+
 void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct session **session, struct blob **blob);
 enum blobsync parse_sync_string(const char *str);
 struct account *find_unique_account(struct blob *blob, const char *name);
