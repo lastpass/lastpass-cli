@@ -43,4 +43,7 @@ int cmd_sync(int argc, char **argv);
 int cmd_export(int argc, char **argv);
 #define cmd_export_usage "export [--sync=auto|now|no]"
 
+int cmd_grep(int argc, char **argv);
+#define cmd_grep_usage "grep [--sync=auto|now|no] pattern"
+
 #endif

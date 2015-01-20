@@ -53,7 +53,6 @@ void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct sessio
 	}
 }
 
-
 /*
  * Search blob for any and all accounts matching a given name.
  * Matching accounts are appended to ret_list which should be initialized
