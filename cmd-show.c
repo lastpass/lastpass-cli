@@ -51,14 +51,17 @@ int cmd_show(int argc, char **argv)
 		{"username", no_argument, NULL, 'u'},
 		{"password", no_argument, NULL, 'p'},
 		{"url", no_argument, NULL, 'L'},
-		{"field", required_argument, NULL, 'F'},
+		{"field", required_argument, NULL, 'f'},
 		{"id", no_argument, NULL, 'I'},
 		{"name", no_argument, NULL, 'N'},
 		{"notes", no_argument, NULL, 'O'},
 		{"clip", no_argument, NULL, 'c'},
 		{"color", required_argument, NULL, 'C'},
+		{"basic-regexp", no_argument, NULL, 'G'},
+		{"fixed-strings", no_argument, NULL, 'F'},
 		{0, 0, 0, 0}
 	};
+
 	int option;
 	int option_index;
 	enum { ALL, USERNAME, PASSWORD, URL, FIELD, ID, NAME, NOTES } choice = ALL;
@@ -69,8 +72,10 @@ int cmd_show(int argc, char **argv)
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
 	struct list_head matches;
+	enum search_type search = SEARCH_EXACT_MATCH;
+	int fields = ACCOUNT_NAME;
 
-	while ((option = getopt_long(argc, argv, "cup", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "cupFG", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -87,9 +92,15 @@ int cmd_show(int argc, char **argv)
 			case 'L':
 				choice = URL;
 				break;
-			case 'F':
+			case 'f':
 				choice = FIELD;
 				field = xstrdup(optarg);
+				break;
+			case 'G':
+				search = SEARCH_BASIC_REGEX;
+				break;
+			case 'F':
+				search = SEARCH_FIXED_SUBSTRING;
 				break;
 			case 'I':
 				choice = ID;
@@ -120,7 +131,18 @@ int cmd_show(int argc, char **argv)
 	init_all(sync, key, &session, &blob);
 
 	INIT_LIST_HEAD(&matches);
-	find_matching_accounts(blob, name, &matches);
+	switch (search) {
+	case SEARCH_EXACT_MATCH:
+		find_matching_accounts(blob, name, &matches);
+		break;
+	case SEARCH_BASIC_REGEX:
+		find_matching_regex(blob, name, fields, &matches);
+		break;
+	case SEARCH_FIXED_SUBSTRING:
+		find_matching_substr(blob, name, fields, &matches);
+		break;
+	}
+
 	if (list_empty(&matches))
 		die("Could not find specified account '%s'.", name);
 
