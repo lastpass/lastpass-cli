@@ -89,7 +89,7 @@ credentials or by interactively prompting (in the case of multifactor or an
 unprovided password). The '--trust' option will cause subsequent logins to not
 require multifactor authentication. If the '--plaintext-key' option is
 specified, the decryption key will be saved to the hard disk in plaintext.
-Please note that use of this option is discourages except in limited
+Please note that use of this option is discouraged except in limited
 situations, as it greatly decreases the security of data.
 
 The 'logout' subcommand will remove the local cache and stored encryption
