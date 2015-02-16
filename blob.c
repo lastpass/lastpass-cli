@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -23,7 +23,14 @@
 #define htobe32(x) OSSwapHostToBigInt32(x)
 #define be32toh(x) OSSwapBigToHostInt32(x)
 #else
-#include <endian.h>
+# if (defined(__unix__) || defined(unix)) && !defined(USG)
+#  include <sys/param.h>
+# endif
+# if defined(BSD)
+#  include <sys/endian.h>
+# else
+#  include <endian.h>
+# endif
 #endif
 
 void share_free(struct share *share)
@@ -163,6 +170,7 @@ static bool read_item(struct chunk *chunk, struct item *item)
 static char *read_hex_string(struct chunk *chunk)
 {
 	struct item item;
+	int result;
 	char *str = NULL;
 
 	if (!read_item(chunk, &item))
@@ -170,8 +178,8 @@ static char *read_hex_string(struct chunk *chunk)
 	if (item.len == 0)
 		return xstrdup("");
 
-	hex_to_bytes(item.data, &str);
-	if (!*str) {
+	result = hex_to_bytes(item.data, &str);
+	if (result) {
 		free(str);
 		return NULL;
 	}

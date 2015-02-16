@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -49,7 +49,8 @@ void clipboard_open(void)
 		execlp("xclip", "xclip", "-selection", "clipboard", "-in", NULL);
 		execlp("xsel", "xsel", "--clipboard", "--input", NULL);
 		execlp("pbcopy", "pbcopy", NULL);
-		die("Unable to copy contents to clipboard. Please make sure you have `xclip`, `xsel`, or `pbcopy` installed.");
+		execlp("putclip", "putclip", "--dos", NULL);
+		die("Unable to copy contents to clipboard. Please make sure you have `xclip`, `xsel`, `pbcopy`, or `putclip` installed.");
 	}
 	close(pipefd[0]);
 	dup2(pipefd[1], STDOUT_FILENO);

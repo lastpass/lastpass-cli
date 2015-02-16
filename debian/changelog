@@ -1,0 +1,5 @@
+lastpass-cli (0.3.0) unstable; urgency=low
+
+  * Initial Debian Package release.
+
+ -- Igor Partola <igor@igorpartola.com>  Thu, 23 Oct 2014 11:57:23 -0400

@@ -3,6 +3,7 @@
 
 #include "kdf.h"
 #include "session.h"
+#include "list.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -41,6 +42,8 @@ struct account {
 	struct share *share;
 
 	struct account *next;
+
+	struct list_head match_list;
 };
 
 struct blob {

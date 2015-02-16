@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -152,8 +152,8 @@ void lastpass_log_access(enum blobsync sync, const struct session *session, unsi
 	if (!strcmp(account->id, "0"))
 		return;
 	if (!account->share)
-		upload_queue_enqueue(sync, key, session, "loglogin.php", "aid", account->id, "method", "cl", NULL);
+		upload_queue_enqueue(sync, key, session, "loglogin.php", "id", account->id, "method", "cl", NULL);
 	else
-		upload_queue_enqueue(sync, key, session, "loglogin.php", "aid", account->id, "method", "cl", "sharedfolderid", account->share->id, NULL);
+		upload_queue_enqueue(sync, key, session, "loglogin.php", "id", account->id, "method", "cl", "sharedfolderid", account->share->id, NULL);
 }
 

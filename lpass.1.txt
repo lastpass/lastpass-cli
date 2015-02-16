@@ -23,13 +23,14 @@ several subcommands:
 [verse]
  lpass *login* [--trust] [--plaintext-key [--force, -f]] USERNAME
  lpass *logout* [--force, -f]
- lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] {UNIQUENAME|UNIQUEID}
+ lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] {UNIQUENAME|UNIQUEID}"
  lpass *ls* [--sync=auto|now|no] [GROUP]
- lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}
+ lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} {NAME|UNIQUEID}
  lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] {NAME|UNIQUEID} LENGTH
  lpass *duplicate* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
  lpass *rm* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
  lpass *sync* [--background, -b]
+ lpass *export* [--sync=auto|now|no]
 
 Synchronization
 ~~~~~~~~~~~~~~~
@@ -88,7 +89,7 @@ credentials or by interactively prompting (in the case of multifactor or an
 unprovided password). The '--trust' option will cause subsequent logins to not
 require multifactor authentication. If the '--plaintext-key' option is
 specified, the decryption key will be saved to the hard disk in plaintext.
-Please note that use of this option is discourages except in limited
+Please note that use of this option is discouraged except in limited
 situations, as it greatly decreases the security of data.
 
 The 'logout' subcommand will remove the local cache and stored encryption
@@ -100,11 +101,17 @@ The 'show' subcommand will display a password or selected field.
 
 The 'ls' subcommand will list names in groups in a tree structure.
 
+The 'export' subcommand will dump all account information including
+passwords to stdout (unencrypted).
+
 Modifying
 ~~~~~~~~~
 The 'edit' subcommand will edit the selected field. If '--non-interactive' is not
 set, the selected field will be edited using 'EDITOR'; otherwise the command will
 accept data until EOF or, unless the notes field is being edited, the first new line.
+Please note that when editing interactively, the contents of the field may be
+saved on disk in tmp files or in editor swap files, depending on your system
+configuration.
 
 The 'generate' subcommand will create a randomly generated password for the
 chosen key name, and optionally add a url and username while inserting the
@@ -116,8 +123,8 @@ will create a duplicate entry of the one specified, but with a different 'ID'.
 Clipboard
 ~~~~~~~~~
 Commands that take a '-c' or '--clip' option will copy the output to the
-clipboard, using *xclip*(1) or *xsel*(1) on X11-based systems or *pbcopy*(1)
-on OSX.
+clipboard, using *xclip*(1) or *xsel*(1) on X11-based systems, *pbcopy*(1)
+on OSX, or *putclip* on Cygwin.
 
 Configuration
 ~~~~~~~~~~~~~
@@ -140,8 +147,3 @@ in the section above:
 * 'LPASS_AGENT_TIMEOUT'
 * 'LPASS_AGENT_DISABLE'
 * 'LPASS_DISABLE_PINENTRY'
-
-AUTHOR
--------
-*lpass* was written by Jason A. Donenfeld <jasond@lastpass.com>.
-

@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Run sudo using lpass-sudo-askpass
 #
-# Copyright (c) 2014 LastPass. All Rights Reserved.
+# Copyright (c) 2014 LastPass.
 #
 PREFIX=/usr/bin
-export SUDO_ASKPASS=$PREFIX/lpass-sudo-askpass.sh
+SUDO_ASKPASS=$PREFIX/lpass-sudo-askpass.sh
+export SUDO_ASKPASS
 exec $PREFIX/sudo -A "$@"

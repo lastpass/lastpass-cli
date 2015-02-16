@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -20,11 +20,12 @@ int cmd_login(int argc, char **argv)
 {
 	static struct option long_options[] = {
 		{"trust", no_argument, NULL, 't'},
-		{"plaintext-key", no_argument, NULL, 'p'},
+		{"plaintext-key", no_argument, NULL, 'P'},
 		{"force", no_argument, NULL, 'f'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	bool trust = false;
 	bool plaintext_key = false;
@@ -42,11 +43,15 @@ int cmd_login(int argc, char **argv)
 		case 't':
 			trust = true;
 			break;
-		case 'p':
+		case 'P':
 			plaintext_key = true;
 			break;
 		case 'f':
 			force = true;
+			break;
+		case 'C':
+			terminal_set_color_mode(
+				parse_color_mode_string(optarg));
 			break;
 		case '?':
 		default:

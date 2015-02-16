@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -29,18 +29,19 @@ static struct {
 	CMD(generate),
 	CMD(duplicate),
 	CMD(rm),
-	CMD(sync)
+	CMD(sync),
+	CMD(export)
 };
 #undef CMD
 
 static void version(void)
 {
-	terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "LastPass CLI v" LASTPASS_CLI_VERSION TERMINAL_RESET "\n");
+	terminal_printf("LastPass CLI v" LASTPASS_CLI_VERSION "\n");
 }
 
 static void help(void)
 {
-	terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Usage" TERMINAL_RESET ":\n");
+	terminal_printf("Usage:\n");
 	printf("  %s {--help|--version}\n", ARGV[0]);
 	for (size_t i = 0; i < ARRAY_SIZE(commands); ++i)
 		printf("  %s %s\n", ARGV[0], commands[i].usage);
@@ -53,7 +54,7 @@ static int global_options(int argc, char *argv[])
 		{"help", no_argument, NULL, 'h'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 
 	while ((option = getopt_long(argc, argv, "vh", long_options, &option_index)) != -1) {

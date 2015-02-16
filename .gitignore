@@ -1,4 +1,8 @@
 *.o
 *.d
-certificate.h
+*.swp
 lpass
+lpass.1
+lpass.exe
+certificate.h
+tags

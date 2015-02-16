@@ -3,7 +3,7 @@
 #
 # Changes MySQL passwords.
 #
-# Copyright (c) 2014 LastPass. All Rights Reserved.
+# Copyright (c) 2014 LastPass.
 #
 
 if [[ $# != 1 ]]; then

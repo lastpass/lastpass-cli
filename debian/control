@@ -1,0 +1,14 @@
+Source: lastpass-cli
+Section: misc
+Priority: extra
+Maintainer: Igor Partola <igor@igorpartola.com>
+Build-Depends: debhelper (>= 8.0.0), libssl-dev, libcurl4-openssl-dev, libxml2-dev, asciidoc, libxml2-utils, xsltproc, docbook-xsl
+Standards-Version: 3.9.3
+Homepage: https://github.com/lastpass/lastpass-cli
+
+Package: lastpass-cli
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libssl1.0.0, libcurl3, libxml2
+Recommends: pinentry-curses, xclip, xsel
+Description: Command line interface to LastPass.com
+ lpass is designed to run on GNU/Linux, Cygwin and Mac OS X.

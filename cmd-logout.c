@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -19,9 +19,10 @@ int cmd_logout(int argc, char **argv)
 {
 	static struct option long_options[] = {
 		{"force", no_argument, NULL, 'f'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	bool force = false;
 	struct session *session = NULL;
@@ -31,6 +32,10 @@ int cmd_logout(int argc, char **argv)
 		switch (option) {
 			case 'f':
 				force = true;
+				break;
+			case 'C':
+				terminal_set_color_mode(
+					parse_color_mode_string(optarg));
 				break;
 			case '?':
 			default:

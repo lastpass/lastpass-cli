@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -72,6 +72,23 @@ static char *shared_memory_dir(void)
 
 	return dir;
 }
+#else
+static char *shared_memory_dir(void)
+{
+	char *tmpdir = getenv("SECURE_TMPDIR");
+	if (!tmpdir) {
+		if (!(tmpdir = getenv("TMPDIR")))
+			tmpdir = "/tmp";
+
+		fprintf(stderr,
+			"Warning: Using %s as secure temporary directory.\n"
+			"Recommend using tmpfs and encrypted swap.\n"
+			"Set SECURE_TMPDIR environment variable to override.\n",
+			tmpdir);
+		sleep(5);
+	}
+	return xstrdup(tmpdir);
+}
 #endif
 _noreturn_ static inline void die_unlink_errno(const char *str, const char *file, const char *dir)
 {
@@ -91,16 +108,17 @@ int cmd_edit(int argc, char **argv)
 	struct blob *blob = NULL;
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
-		{"username", no_argument, NULL, 'U'},
-		{"password", no_argument, NULL, 'P'},
+		{"username", no_argument, NULL, 'u'},
+		{"password", no_argument, NULL, 'p'},
 		{"url", no_argument, NULL, 'L'},
 		{"field", required_argument, NULL, 'F'},
 		{"name", no_argument, NULL, 'N'},
 		{"notes", no_argument, NULL, 'O'},
 		{"non-interactive", no_argument, NULL, 'X'},
+		{"color", required_argument, NULL, 'C'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	enum { NONE, USERNAME, PASSWORD, URL, FIELD, NAME, NOTES } choice = NONE;
 	_cleanup_free_ char *field = NULL;
@@ -120,16 +138,16 @@ int cmd_edit(int argc, char **argv)
 	bool should_log_read = false;
 
 	#define ensure_choice() if (choice != NONE) goto choice_die;
-	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "up", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
 				break;
-			case 'U':
+			case 'u':
 				ensure_choice();
 				choice = USERNAME;
 				break;
-			case 'P':
+			case 'p':
 				ensure_choice();
 				choice = PASSWORD;
 				break;
@@ -152,6 +170,10 @@ int cmd_edit(int argc, char **argv)
 				break;
 			case 'X':
 				non_interactive = true;
+				break;
+			case 'C':
+				terminal_set_color_mode(
+					parse_color_mode_string(optarg));
 				break;
 			case '?':
 			default:

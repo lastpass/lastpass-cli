@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -17,6 +17,16 @@
 #include <string.h>
 #include <stdbool.h>
 
+static void print_header(struct account *found)
+{
+	if (found->share)
+		terminal_printf(TERMINAL_FG_CYAN "%s/" TERMINAL_RESET, found->share->name);
+	if (strlen(found->group))
+		terminal_printf(TERMINAL_FG_BLUE "%s/" TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->group, found->name, found->id);
+	else
+		terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->name, found->id);
+}
+
 int cmd_show(int argc, char **argv)
 {
 	unsigned char key[KDF_HASH_LEN];
@@ -26,27 +36,34 @@ int cmd_show(int argc, char **argv)
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
 		{"all", no_argument, NULL, 'A'},
-		{"username", no_argument, NULL, 'U'},
-		{"password", no_argument, NULL, 'P'},
+		{"username", no_argument, NULL, 'u'},
+		{"password", no_argument, NULL, 'p'},
 		{"url", no_argument, NULL, 'L'},
-		{"field", required_argument, NULL, 'F'},
+		{"field", required_argument, NULL, 'f'},
 		{"id", no_argument, NULL, 'I'},
 		{"name", no_argument, NULL, 'N'},
 		{"notes", no_argument, NULL, 'O'},
 		{"clip", no_argument, NULL, 'c'},
+		{"color", required_argument, NULL, 'C'},
+		{"basic-regexp", no_argument, NULL, 'G'},
+		{"fixed-strings", no_argument, NULL, 'F'},
 		{0, 0, 0, 0}
 	};
-	char option;
+
+	int option;
 	int option_index;
 	enum { ALL, USERNAME, PASSWORD, URL, FIELD, ID, NAME, NOTES } choice = ALL;
 	_cleanup_free_ char *field = NULL;
 	struct account *notes_expansion = NULL;
-	char *name;
-	struct account *found = NULL;
+	char *name, *pretty_field;
+	struct account *found, *last_found;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
+	struct list_head matches;
+	enum search_type search = SEARCH_EXACT_MATCH;
+	int fields = ACCOUNT_NAME;
 
-	while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "cupFG", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -54,18 +71,24 @@ int cmd_show(int argc, char **argv)
 			case 'A':
 				choice = ALL;
 				break;
-			case 'U':
+			case 'u':
 				choice = USERNAME;
 				break;
-			case 'P':
+			case 'p':
 				choice = PASSWORD;
 				break;
 			case 'L':
 				choice = URL;
 				break;
-			case 'F':
+			case 'f':
 				choice = FIELD;
 				field = xstrdup(optarg);
+				break;
+			case 'G':
+				search = SEARCH_BASIC_REGEX;
+				break;
+			case 'F':
+				search = SEARCH_FIXED_SUBSTRING;
 				break;
 			case 'I':
 				choice = ID;
@@ -79,6 +102,10 @@ int cmd_show(int argc, char **argv)
 			case 'c':
 				clip = true;
 				break;
+			case 'C':
+				terminal_set_color_mode(
+					parse_color_mode_string(optarg));
+				break;
 			case '?':
 			default:
 				die_usage(cmd_show_usage);
@@ -91,9 +118,31 @@ int cmd_show(int argc, char **argv)
 
 	init_all(sync, key, &session, &blob);
 
-	found = find_unique_account(blob, name);
-	if (!found)
+	INIT_LIST_HEAD(&matches);
+	switch (search) {
+	case SEARCH_EXACT_MATCH:
+		find_matching_accounts(blob, name, &matches);
+		break;
+	case SEARCH_BASIC_REGEX:
+		find_matching_regex(blob, name, fields, &matches);
+		break;
+	case SEARCH_FIXED_SUBSTRING:
+		find_matching_substr(blob, name, fields, &matches);
+		break;
+	}
+
+	if (list_empty(&matches))
 		die("Could not find specified account '%s'.", name);
+
+	found = list_first_entry(&matches, struct account, match_list);
+	last_found = list_last_entry(&matches, struct account, match_list);
+	if (found != last_found) {
+		/* Multiple matches; dump the ids and exit */
+		terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Multiple matches found.\n");
+		list_for_each_entry(found, &matches, match_list)
+			print_header(found);
+		exit(EXIT_SUCCESS);
+	}
 
 	if (found->pwprotect) {
 		unsigned char pwprotect_key[KDF_HASH_LEN];
@@ -136,6 +185,21 @@ int cmd_show(int argc, char **argv)
 
 	if (choice == ALL) {
 		account_print_all(found);
+		print_header(found);
+
+		if (strlen(found->username))
+			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Username", found->username);
+		if (strlen(found->password))
+			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Password", found->password);
+		if (strlen(found->url) && strcmp(found->url, "http://"))
+			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "URL", found->url);
+		for (struct field *found_field = found->field_head; found_field; found_field = found_field->next) {
+			pretty_field = pretty_field_value(found_field);
+			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", found_field->name, pretty_field);
+			free(pretty_field);
+		}
+		if (strlen(found->note))
+			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ":\n%s\n", "Notes", found->note);
 	} else {
 		if (!value)
 			die("Programming error.");

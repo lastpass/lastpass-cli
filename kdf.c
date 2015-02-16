@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -12,7 +12,7 @@
 #include <openssl/sha.h>
 #include <openssl/opensslv.h>
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L || !(defined(__APPLE__) && defined(__MACH__))
 static void pdkdf2_hash(const char *username, size_t username_len, const char *password, size_t password_len, int iterations, unsigned char hash[KDF_HASH_LEN])
 {
 	if (!PKCS5_PBKDF2_HMAC(password, password_len, (const unsigned char *)username, username_len, iterations, EVP_sha256(), KDF_HASH_LEN, hash))
@@ -26,6 +26,8 @@ static void pdkdf2_hash(const char *username, size_t username_len, const char *p
 	if (CCKeyDerivationPBKDF(kCCPBKDF2, password, password_len, (const uint8_t *)username, username_len, kCCPRFHmacAlgSHA256, iterations, hash, KDF_HASH_LEN) == kCCParamError)
 		die("Failed to compute PBKDF2 for %s", username);
 }
+#else
+#error Failed to build a suitable PBKDF2-HMAC
 #endif
 
 static void sha256_hash(const char *username, size_t username_len, const char *password, size_t password_len, unsigned char hash[KDF_HASH_LEN])

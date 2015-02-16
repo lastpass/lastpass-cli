@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass. All Rights Reserved.
+ * Copyright (c) 2014 LastPass.
  *
  *
  */
@@ -30,7 +30,7 @@ static struct multifactor_type multifactor_types[] = {
 		.post_var = "otp"
 	},
 	{
-		.name = "Yubikey OTP",
+		.name = "YubiKey OTP",
 		.error_str = "otprequired",
 		.error_failure_str = "otpfailed",
 		.post_var = "otp"
