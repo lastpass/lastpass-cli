@@ -14,7 +14,10 @@
 #include "config.h"
 #include "agent.h"
 #include "terminal.h"
+#include <unistd.h>
+#include <sys/stat.h>
 #include <getopt.h>
+#include <fcntl.h>
 
 int cmd_login(int argc, char **argv)
 {
@@ -37,6 +40,20 @@ int cmd_login(int argc, char **argv)
 	struct session *session;
 	unsigned char key[KDF_HASH_LEN];
 	char hex[KDF_HEX_LEN];
+    const char* lock_filename = "/tmp/lastpass.lock";
+
+    if (access(lock_filename, F_OK) != -1) {
+        // file exists
+        printf("Lock file exists\n");
+        exit(0);
+    } else {
+        // file doesn't exist
+        printf("Creating lock file\n");
+        int fd2 = open(lock_filename, O_RDWR|O_CREAT, 777);
+        if (fd2 != -1) {
+            //
+        }
+    }
 
 	while ((option = getopt_long(argc, argv, "f", long_options, &option_index)) != -1) {
 	switch (option) {
@@ -93,6 +110,7 @@ int cmd_login(int argc, char **argv)
 	session_free(session);
 	session = NULL;
 
+    remove(lock_filename);
 	terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "Success" TERMINAL_RESET ": Logged in as " TERMINAL_UNDERLINE "%s" TERMINAL_RESET ".\n", username);
 
 	return 0;
