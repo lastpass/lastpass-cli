@@ -99,7 +99,7 @@ void find_matching_regex(struct blob *blob, const char *pattern,
 {
 	regex_t regex;
 
-	if (regcomp(&regex, pattern, 0))
+	if (regcomp(&regex, pattern, REG_ICASE))
 		die("Invalid regex '%s'", pattern);
 	search_accounts(blob, &regex, cmp_regex, fields, ret_list);
 	regfree(&regex);
