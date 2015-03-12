@@ -740,7 +740,6 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
 	account->fullname = fullname;
 }
 
-#ifdef PROCESS_NOTES
 struct account *notes_expand(struct account *acc)
 {
 	struct account *expand;
@@ -852,13 +851,3 @@ struct account *notes_collapse(struct account *acc)
 
 	return collapse;
 }
-#else
-struct account *notes_expand(__attribute__((unused)) struct account *acc)
-{
-	return NULL;
-}
-struct account *notes_collapse(__attribute__((unused)) struct account *acc)
-{
-	die("Note processing is disabled in this build");
-}
-#endif
