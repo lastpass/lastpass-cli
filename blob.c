@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass.
- *
- *
+ * Copyright (c) 2014-2015 LastPass.
  */
 
 #include "blob.h"
