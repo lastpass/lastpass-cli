@@ -760,6 +760,9 @@ struct account *notes_expand(struct account *acc)
 	expand->fullname = xstrdup(acc->fullname);
 	share_assign(acc->share, &expand->share);
 
+	if (strncmp(acc->note, "NoteType:", 9))
+		return NULL;
+
 	for (start = acc->note; ; ) {
 		lf = strchrnul(start, '\n');
 		if (lf - start < 0)
