@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2014 LastPass.
- *
- *
+ * Copyright (c) 2014-2015 LastPass.
  */
 
 #include "blob.h"
@@ -740,7 +738,6 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
 	account->fullname = fullname;
 }
 
-#ifdef PROCESS_NOTES
 struct account *notes_expand(struct account *acc)
 {
 	struct account *expand;
@@ -760,6 +757,9 @@ struct account *notes_expand(struct account *acc)
 	expand->group = xstrdup(acc->group);
 	expand->fullname = xstrdup(acc->fullname);
 	share_assign(acc->share, &expand->share);
+
+	if (strncmp(acc->note, "NoteType:", 9))
+		return NULL;
 
 	for (start = acc->note; ; ) {
 		lf = strchrnul(start, '\n');
@@ -852,13 +852,3 @@ struct account *notes_collapse(struct account *acc)
 
 	return collapse;
 }
-#else
-struct account *notes_expand(__attribute__((unused)) struct account *acc)
-{
-	return NULL;
-}
-struct account *notes_collapse(__attribute__((unused)) struct account *acc)
-{
-	die("Note processing is disabled in this build");
-}
-#endif
