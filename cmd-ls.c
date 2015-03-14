@@ -141,6 +141,10 @@ int cmd_ls(int argc, char **argv)
 	root = new0(struct node, 1);
 
 	for (struct account *account = blob->account_head; account; account = account->next) {
+        if (!strcmp(account->group,"")) {
+            xasprintf(&account->fullname, "(none)/%s", account->fullname);
+            account->group = xstrdup("(none)");
+        }
 		if (group) {
 			sub = strstr(account->group, group);
 			if (!sub || sub != account->group)
