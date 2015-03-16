@@ -142,6 +142,8 @@ int cmd_ls(int argc, char **argv)
 
 	for (struct account *account = blob->account_head; account; account = account->next) {
 		if (group) {
+			if (strstr(group,"(none)"))
+				group = "";
 			sub = strstr(account->group, group);
 			if (!sub || sub != account->group)
 				continue;
@@ -150,18 +152,20 @@ int cmd_ls(int argc, char **argv)
 			if (group[group_len - 1] != '/' && sub[0] != '\0' && sub[0] != '/')
 				continue;
 		}
+		if (strcmp(account->group, ""))
+			fullname = account->fullname;
+		else
+			xasprintf(&fullname, "(none)/%s", account->fullname);
 		if (print_tree) {
-			if (account->share) {
-				xasprintf(&fullname, "%s/%s", account->share->name, account->fullname);
-				insert_node(root, fullname, account);
-				free(fullname);
-			} else
-				insert_node(root, account->fullname, account);
+			if (account->share)
+				xasprintf(&fullname, "%s/%s", account->share->name, fullname);
+			insert_node(root, fullname, account);
 		} else {
 			if (account->share)
 				printf("%s/", account->share->name);
-			printf("%s [id: %s]\n", account->fullname, account->id);
+			printf("%s [id: %s]\n", fullname, account->id);
 		}
+		free(fullname);
 	}
 	if (print_tree)
 		print_node(root, -1);
