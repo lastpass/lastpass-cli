@@ -142,6 +142,8 @@ int cmd_ls(int argc, char **argv)
 
 	for (struct account *account = blob->account_head; account; account = account->next) {
 		if (group) {
+			if (strstr(group,"(none)"))
+				group = "";
 			sub = strstr(account->group, group);
 			if (!sub || sub != account->group)
 				continue;
