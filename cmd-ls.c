@@ -87,6 +87,21 @@ static void print_node(struct node *head, int level)
 	}
 }
 
+static char *get_display_fullname(struct account *account)
+{
+	char *fullname = NULL;
+	if (strcmp(account->group, ""))
+		fullname = xstrdup(account->fullname);
+	else
+		xasprintf(&fullname, "(none)/%s", account->fullname);
+
+	if (account->share) {
+		free(fullname);
+		xasprintf(&fullname, "%s/%s", account->share->name, account->fullname);
+	}
+	return fullname;
+}
+
 int cmd_ls(int argc, char **argv)
 {
 	unsigned char key[KDF_HASH_LEN];
@@ -140,6 +155,10 @@ int cmd_ls(int argc, char **argv)
 	init_all(sync, key, &session, &blob);
 	root = new0(struct node, 1);
 
+	/* '(none)' group -> search for any without group */
+	if (group && !strcmp(group, "(none)"))
+		group = "";
+
 	for (struct account *account = blob->account_head; account; account = account->next) {
 		if (group) {
 			sub = strstr(account->group, group);
@@ -150,18 +169,15 @@ int cmd_ls(int argc, char **argv)
 			if (group[group_len - 1] != '/' && sub[0] != '\0' && sub[0] != '/')
 				continue;
 		}
-		if (print_tree) {
-			if (account->share) {
-				xasprintf(&fullname, "%s/%s", account->share->name, account->fullname);
-				insert_node(root, fullname, account);
-				free(fullname);
-			} else
-				insert_node(root, account->fullname, account);
-		} else {
-			if (account->share)
-				printf("%s/", account->share->name);
-			printf("%s [id: %s]\n", account->fullname, account->id);
-		}
+
+		fullname = get_display_fullname(account);
+
+		if (print_tree)
+			insert_node(root, fullname, account);
+		else
+			printf("%s [id: %s]\n", fullname, account->id);
+
+		free(fullname);
 	}
 	if (print_tree)
 		print_node(root, -1);
