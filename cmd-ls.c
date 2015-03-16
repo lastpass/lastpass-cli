@@ -157,11 +157,9 @@ int cmd_ls(int argc, char **argv)
 		else
 			xasprintf(&fullname, "(none)/%s", account->fullname);
 		if (print_tree) {
-			if (account->share) {
+			if (account->share)
 				xasprintf(&fullname, "%s/%s", account->share->name, fullname);
-				insert_node(root, fullname, account);
-			} else
-				insert_node(root, fullname, account);
+			insert_node(root, fullname, account);
 		} else {
 			if (account->share)
 				printf("%s/", account->share->name);
