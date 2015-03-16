@@ -150,22 +150,22 @@ int cmd_ls(int argc, char **argv)
 			if (group[group_len - 1] != '/' && sub[0] != '\0' && sub[0] != '/')
 				continue;
 		}
+		if (strcmp(account->group, ""))
+			fullname = account->fullname;
+		else
+			xasprintf(&fullname, "(none)/%s", account->fullname);
 		if (print_tree) {
-			if (strcmp(account->group, ""))
-				fullname = account->fullname;
-			else
-				xasprintf(&fullname, "(none)/%s", account->fullname);
 			if (account->share) {
 				xasprintf(&fullname, "%s/%s", account->share->name, fullname);
 				insert_node(root, fullname, account);
 			} else
 				insert_node(root, fullname, account);
-			free(fullname);
 		} else {
 			if (account->share)
 				printf("%s/", account->share->name);
-			printf("%s [id: %s]\n", account->fullname, account->id);
+			printf("%s [id: %s]\n", fullname, account->id);
 		}
+		free(fullname);
 	}
 	if (print_tree)
 		print_node(root, -1);
