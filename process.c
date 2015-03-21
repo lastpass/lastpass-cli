@@ -1,9 +1,6 @@
 /*
- * Copyright (c) 2014 LastPass.
- *
- * 
+ * Copyright (c) 2014-2015 LastPass.
  */
-
 #include "process.h"
 #include "util.h"
 #include <unistd.h>
@@ -14,9 +11,11 @@
 
 #if defined(__linux__)
 #include <sys/prctl.h>
+#define USE_PRCTL
 #elif defined(__APPLE__) && defined(__MACH__)
 #include <libproc.h>
 #include <sys/ptrace.h>
+#define USE_PTRACE
 #elif defined(__OpenBSD__)
 #include <sys/param.h>
 #include <sys/proc.h>
@@ -24,77 +23,46 @@
 #include <kvm.h>
 #endif
 
-void process_set_name(const char *name)
-{
-#if defined(__linux__)
-	prctl(PR_SET_NAME, name);
+#ifndef USE_PRCTL
+#undef PR_SET_DUMPABLE
+#define PR_SET_DUMPABLE 0
+#define PR_SET_NAME 0
+static void prctl(__attribute__((unused)) int x,
+		  __attribute__((unused)) int y) {}
 #endif
 
-	if (!ARGC || !ARGV)
-		return;
+#ifndef USE_PTRACE
+#undef PT_DENY_ATTACH
+#define PT_DENY_ATTACH 0
+static void ptrace(__attribute__((unused)) int x,
+		   __attribute__((unused)) int y,
+		   __attribute__((unused)) int z,
+		   __attribute__((unused)) int w) {}
+#endif
 
-	for (int i = 0; i < ARGC; ++i) {
-		for (char *p = ARGV[i]; *p; ++p)
-			*p = '\0';
-	}
 
-	strcpy(ARGV[0], name);
-}
-
-#if defined(__linux__) || defined(__CYGWIN__)
+#if defined(__linux__) || defined(__CYGWIN__) || defined(__NetBSD__)
 #define DEVPROC_NAME "exe"
-#define DEVPROC_SELF "self"
 #elif defined(__FreeBSD__) || defined(__DragonFly__)
 #define DEVPROC_NAME "file"
-#define DEVPROC_SELF "curproc"
-#elif defined(__NetBSD__)
-#define DEVPROC_NAME "exe"
-#define DEVPROC_SELF "curproc"
 #endif
 
-#if defined(DEVPROC_NAME)
-bool process_is_same_executable(pid_t pid)
+#ifdef DEVPROC_NAME
+static int pid_to_cmd(pid_t pid, char *cmd, size_t cmd_size)
 {
-	_cleanup_free_ char *proc = NULL;
-	char resolved_them[PATH_MAX + 1] = { 0 }, resolved_me[PATH_MAX + 1] = { 0 };
-
+	_cleanup_free_ char *proc;
 	xasprintf(&proc, "/proc/%lu/" DEVPROC_NAME, (unsigned long)pid);
-	if (readlink(proc, resolved_them, PATH_MAX) < 0 || readlink("/proc/" DEVPROC_SELF "/" DEVPROC_NAME, resolved_me, PATH_MAX) < 0)
-		return false;
-	if (strcmp(resolved_them, resolved_me))
-		return false;
-	return true;
-
-}
-
-void process_disable_ptrace(void)
-{
-#if defined(__linux__)
-	prctl(PR_SET_DUMPABLE, 0);
-#endif
-	struct rlimit limit = { 0, 0 };
-	setrlimit(RLIMIT_CORE, &limit);
+	return readlink(proc, cmd, cmd_size - 1);
 }
 #elif defined(__APPLE__) && defined(__MACH__)
-bool process_is_same_executable(pid_t pid)
+static int pid_to_cmd(pid_t pid, char *cmd, size_t cmd_size)
 {
-	char resolved_them[PROC_PIDPATHINFO_MAXSIZE], resolved_me[PROC_PIDPATHINFO_MAXSIZE];
-
-	if (proc_pidpath(pid, resolved_them, sizeof(resolved_them)) <= 0 || proc_pidpath(getpid(), resolved_me, sizeof(resolved_me)) <= 0)
-		return false;
-	if (strcmp(resolved_them, resolved_me))
-		return false;
-	return true;
-}
-
-void process_disable_ptrace(void)
-{
-	ptrace(PT_DENY_ATTACH, 0, 0, 0);
-	struct rlimit limit = { 0, 0 };
-	setrlimit(RLIMIT_CORE, &limit);
+	int result;
+	result = proc_pidpath(pid, cmd, cmd_size);
+	return (result <= 0) ? -1 : 0;
 }
 #elif defined(__OpenBSD__)
-int pid_to_cmd(pid_t pid, char *cmd, size_t cmd_size)
+static int pid_to_cmd(pid_t pid, char *cmd, size_t cmd_size)
 {
 	int cnt, ret;
 	kvm_t *kd;
@@ -119,21 +87,41 @@ out:
 	kvm_close(kd);
 	return ret;
 }
+#else
+#error "Please provide a pid_to_cmd for your platform"
+#endif
+
+void process_set_name(const char *name)
+{
+	prctl(PR_SET_NAME, name);
+
+	if (!ARGC || !ARGV)
+		return;
+
+	for (int i = 0; i < ARGC; ++i) {
+		for (char *p = ARGV[i]; *p; ++p)
+			*p = '\0';
+	}
+
+	strcpy(ARGV[0], name);
+}
 
 bool process_is_same_executable(pid_t pid)
 {
-	char resolved_them[PATH_MAX], resolved_me[PATH_MAX];
+	char resolved_them[PATH_MAX + 1] = { 0 }, resolved_me[PATH_MAX + 1] = { 0 };
 
-	if (pid_to_cmd(pid, resolved_them, sizeof(resolved_them)) || pid_to_cmd(getpid(), resolved_me, sizeof(resolved_me)))
+	if (pid_to_cmd(pid, resolved_them, sizeof(resolved_them)) < 0 ||
+	    pid_to_cmd(getpid(), resolved_me, sizeof(resolved_me)) < 0)
 		return false;
-	if (strcmp(resolved_them, resolved_me))
-		return false;
-	return true;
+
+	return strcmp(resolved_them, resolved_me) == 0;
 }
 
 void process_disable_ptrace(void)
 {
+	prctl(PR_SET_DUMPABLE, 0);
+	ptrace(PT_DENY_ATTACH, 0, 0, 0);
+
 	struct rlimit limit = { 0, 0 };
 	setrlimit(RLIMIT_CORE, &limit);
 }
-#endif
