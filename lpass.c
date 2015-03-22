@@ -24,6 +24,7 @@ static struct {
 	CMD(logout),
 	CMD(show),
 	CMD(ls),
+	CMD(find),
 	CMD(edit),
 	CMD(generate),
 	CMD(duplicate),

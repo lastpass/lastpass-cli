@@ -17,18 +17,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-static char *pretty_field_value(struct field *field)
-{
-	char *value;
-	if (!strcmp(field->type, "checkbox"))
-		value = xstrdup(field->checked ? "Checked" : "Unchecked");
-	else if (!strcmp(field->type, "radio"))
-		xasprintf(&value, "%s, %s", field->value, field->checked ? "Checked" : "Unchecked");
-	else
-		value = xstrdup(field->value);
-	return value;
-}
-
 static void print_header(struct account *found)
 {
 	if (found->share)
@@ -196,6 +184,7 @@ int cmd_show(int argc, char **argv)
 		clipboard_open();
 
 	if (choice == ALL) {
+		account_print_all(found);
 		print_header(found);
 
 		if (strlen(found->username))
