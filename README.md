@@ -18,7 +18,7 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 
 ### Installing on Linux
 #### Arch
-* Binary packages are available in the Arch User Repository [AUR](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli).
+* Binary packages are available in the [Arch User Repository (AUR)](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli). Information about installing packages from the AUR [can be found on the Arch wiki](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages).
 
 
 #### Redhat/Centos
