@@ -47,14 +47,15 @@ sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev
 ```
 
 #### Gentoo
-* Install the package
+* Install the package:
 
 ```
 sudo emerge lastpass-cli
 ```
 
 #### Other Linux Distros
-Install the packages listed in the Dependencies section of this document.
+Install the packages listed in the Dependencies section of this document,
+and then follow instructions in the 'Building' section.
 
 ### Installing on OS X
 * Install homebrew following the instructions at http://brew.sh/
@@ -67,20 +68,22 @@ brew install lastpass-cli --with-pinentry
 Optionally you can add `--with-doc` to install the documentation.
 
 ### Installing on FreeBSD
-* Install the binary package
+* Install the binary package:
 
 ```
 sudo pkg install security/lastpass-cli
 ```
 
-* Or build the port yourself
+* Or build the port yourself:
+
 ```
 sudo make -C /usr/ports/security/lastpass-cli all install clean
 ```
 
 ### Installing on Cygwin
 * Install [apt-cyg](https://github.com/transcode-open/apt-cyg)
-* Using apt-cyg, install the needed dependencies
+* Using apt-cyg, install the needed build dependencies, and then follow
+  instructions in the 'Building' section.
 
 ```
 apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel cygutils-extra
