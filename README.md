@@ -58,14 +58,50 @@ Install the packages listed in the Dependencies section of this document,
 and then follow instructions in the 'Building' section.
 
 ### Installing on OS X
-* Install homebrew following the instructions at http://brew.sh/
-* Install lastpass-cli using homebrew:
+
+#### With [Homebrew](http://brew.sh/) (easiest)
+* Install Homebrew, if necessary.
+* Update Homebrew's local formula cache:
+
+```
+brew update
+```
+
+* Install the lastpass-cli formula:
 
 ```
 brew install lastpass-cli --with-pinentry
 ```
 
-Optionally you can add `--with-doc` to install the documentation.
+Alternatively, if you want to install the documentation as well:
+
+```
+brew install lastpass-cli --with-pinentry --with-doc
+```
+
+#### With [MacPorts](https://www.macports.org/)
+* [Install MacPorts](https://www.macports.org/install.php), if necessary.
+* Update MacPorts' local ports tree:
+
+```
+sudo port selfupdate
+```
+
+* Install the lastpass-cli port:
+
+```
+sudo port install lastpass-cli
+```
+
+* Optionally install the documentation:
+
+```
+sudo port install lastpass-cli-doc
+```
+
+#### Manually
+Install the packages listed in the Dependencies section of this document,
+and then follow instructions in the 'Building' section.
 
 ### Installing on FreeBSD
 * Install the binary package:
