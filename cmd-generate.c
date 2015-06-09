@@ -114,8 +114,7 @@ int cmd_generate(int argc, char **argv)
 		account_set_note(new, xstrdup(""), key);
 		new->url = url ? url : xstrdup("");
 
-		new->next = blob->account_head;
-		blob->account_head = new;
+		list_add(&new->list, &blob->account_head);
 	}
 
 	lastpass_update_account(sync, key, session, found ? found : new, blob);

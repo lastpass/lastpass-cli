@@ -97,10 +97,11 @@ void blob_free(struct blob *blob)
 	if (!blob)
 		return;
 
-	for (struct account *account = blob->account_head, *next_account = NULL; account; account = next_account) {
-		next_account = account->next;
+	struct account *account, *tmp;
+
+	list_for_each_entry_safe(account, tmp, &blob->account_head, list)
 		account_free(account);
-	}
+
 	free(blob);
 }
 
@@ -397,7 +398,7 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 {
 	struct blob_pos blob_pos = { .data = blob, .len = len };
 	struct chunk chunk;
-	struct account *account, **next_account;
+	struct account *account;
 	struct field *field, **next_field = NULL;
 	struct share *last_share = NULL;
 	struct blob *parsed;
@@ -405,7 +406,7 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 
 	parsed = new0(struct blob, 1);
 	parsed->local_version = false;
-	next_account = &parsed->account_head;
+	INIT_LIST_HEAD(&parsed->account_head);
 
 	while (read_chunk(&blob_pos, &chunk)) {
 		if (!strcmp(chunk.name, "LPAV")) {
@@ -417,8 +418,7 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 				goto error;
 			share_assign(last_share, &account->share);
 
-			*next_account = account;
-			next_account = &account->next;
+			list_add(&account->list, &parsed->account_head);
 
 			next_field = &account->field_head;
 		} else if (!strcmp(chunk.name, "ACFL") || !strcmp(chunk.name, "ACOF")) {
@@ -441,7 +441,7 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 
 	if (!versionstr)
 		goto error;
-	if (!parsed->account_head)
+	if (list_empty(&parsed->account_head))
 		goto error;
 	share_free(last_share);
 	return parsed;
@@ -576,6 +576,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 	struct buffer buffer;
 	struct share *last_share = NULL;
 	_cleanup_free_ char *version;
+	struct account *account;
 
 	memset(&buffer, 0, sizeof(buffer));
 
@@ -585,11 +586,11 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 	buffer_append(&buffer, "LOCL", 4);
 	write_plain_string(&buffer, LASTPASS_CLI_VERSION);
 
-	for (struct account *account = blob->account_head; account; account = account->next) {
+	list_for_each_entry(account, &blob->account_head, list) {
 		if (!account->share)
 			write_account_chunk(&buffer, account, key);
 	}
-	for (struct account *account = blob->account_head; account; account = account->next) {
+	list_for_each_entry(account, &blob->account_head, list) {
 		if (!account->share)
 			continue;
 		if (last_share != account->share) {

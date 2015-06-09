@@ -41,8 +41,7 @@ struct account {
 	struct field *field_head;
 	struct share *share;
 
-	struct account *next;
-
+	struct list_head list;
 	struct list_head match_list;
 };
 
@@ -50,7 +49,8 @@ struct blob {
 	unsigned long long version;
 	bool local_version;
 	/* TODO: extract other data eventually... */
-	struct account *account_head;
+
+	struct list_head account_head;
 };
 
 enum blobsync { BLOB_SYNC_AUTO, BLOB_SYNC_YES, BLOB_SYNC_NO };

@@ -57,16 +57,7 @@ int cmd_rm(int argc, char **argv)
 	if (found->share && found->share->readonly)
 		die("%s is a readonly shared entry from %s. It cannot be deleted.", found->fullname, found->share->name);
 
-	if (blob->account_head == found)
-		blob->account_head = found->next;
-	else {
-		for (struct account *account = blob->account_head; account; account = account->next) {
-			if (account->next == found) {
-				account->next = found->next;
-				break;
-			}
-		}
-	}
+	list_del(&found->list);
 
 	lastpass_remove_account(sync, key, session, found, blob);
 	blob_save(blob, key);

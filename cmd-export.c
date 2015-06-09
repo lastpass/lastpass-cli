@@ -59,6 +59,8 @@ int cmd_export(int argc, char **argv)
 	int option;
 	int option_index;
 	enum blobsync sync = BLOB_SYNC_AUTO;
+	struct account *account;
+
 	while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
@@ -80,7 +82,7 @@ int cmd_export(int argc, char **argv)
 	init_all(sync, key, &session, &blob);
 
 	/* reprompt once if any one account is password protected */
-	for (struct account *account = blob->account_head; account; account = account->next) {
+	list_for_each_entry(account, &blob->account_head, list) {
 		if (account->pwprotect) {
 			unsigned char pwprotect_key[KDF_HASH_LEN];
 			if (!agent_load_key(pwprotect_key))
@@ -92,7 +94,7 @@ int cmd_export(int argc, char **argv)
 	}
 
 	printf("url,username,password,hostname,name,grouping\r\n");
-	for (struct account *account = blob->account_head; account; account = account->next) {
+	list_for_each_entry(account, &blob->account_head, list) {
 
 		/* skip shared notes */
 		if (!strcmp(account->url, "http://sn"))

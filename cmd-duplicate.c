@@ -78,8 +78,7 @@ int cmd_duplicate(int argc, char **argv)
 		last_field = &((*last_field)->next);
 	}
 
-	new->next = blob->account_head;
-	blob->account_head = new;
+	list_add(&new->list, &blob->account_head);
 
 	lastpass_update_account(sync, key, session, new, blob);
 	blob_save(blob, key);

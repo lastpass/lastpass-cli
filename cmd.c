@@ -73,8 +73,8 @@ static void search_accounts(struct blob *blob,
 			    int fields,
 			    struct list_head *ret_list)
 {
-	for (struct account *account = blob->account_head; account;
-	     account = account->next) {
+	struct account *account;
+	list_for_each_entry(account, &blob->account_head, list) {
 		if (((fields & ACCOUNT_ID) && cmp(account->id, needle) == 0) ||
 		    ((fields & ACCOUNT_NAME) && cmp(account->name, needle) == 0) ||
 		    ((fields & ACCOUNT_FULLNAME) && cmp(account->fullname, needle) == 0) ||
@@ -126,7 +126,8 @@ void find_matching_accounts(struct blob *blob, const char *name,
 			    struct list_head *ret_list)
 {
 	/* look for exact id match */
-	for (struct account *account = blob->account_head; account; account = account->next) {
+	struct account *account;
+	list_for_each_entry(account, &blob->account_head, list) {
 		if (strcmp(name, "0") && !strcasecmp(account->id, name)) {
 			list_add_tail(&account->match_list, ret_list);
 			/* if id match, stop processing */

@@ -122,6 +122,7 @@ int cmd_ls(int argc, char **argv)
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	enum color_mode cmode = COLOR_MODE_AUTO;
 	bool print_tree;
+	struct account *account;
 
 	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -159,7 +160,7 @@ int cmd_ls(int argc, char **argv)
 	if (group && !strcmp(group, "(none)"))
 		group = "";
 
-	for (struct account *account = blob->account_head; account; account = account->next) {
+	list_for_each_entry(account, &blob->account_head, list) {
 		if (group) {
 			sub = strstr(account->group, group);
 			if (!sub || sub != account->group)
