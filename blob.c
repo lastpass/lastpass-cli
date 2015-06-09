@@ -734,6 +734,15 @@ void field_set_value(struct account *account, struct field *field, char *value, 
 }
 void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN])
 {
+	if (account->share && !strncmp(fullname, "Shared-", 7)) {
+		char *groupname = strchr(fullname, '/');
+		if (groupname) {
+			char *tmp = fullname;
+			fullname = xstrdup(groupname + 1);
+			free(tmp);
+		}
+	}
+
 	char *slash = strrchr(fullname, '/');
 	if (!slash) {
 		account_set_name(account, xstrdup(fullname), key);
@@ -744,6 +753,33 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
 	}
 	free(account->fullname);
 	account->fullname = fullname;
+}
+
+void account_assign_share(struct blob *blob, struct account *account, const char *name)
+{
+	struct account *other;
+	_cleanup_free_ char *shared_name = NULL;
+
+	if (strncmp(name, "Shared-", 7))
+		return;
+
+	/* strip off shared groupname */
+	char *slash = strchr(name, '/');
+	if (!slash)
+		return;
+
+	shared_name = xstrndup(name, slash - name);
+
+	/* find a share matching group */
+	list_for_each_entry(other, &blob->account_head, list) {
+		if (!other->share)
+			continue;
+
+		if (!strcmp(other->share->name, shared_name)) {
+			share_assign(other->share, &account->share);
+			break;
+		}
+	}
 }
 
 struct account *notes_expand(struct account *acc)

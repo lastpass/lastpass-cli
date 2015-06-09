@@ -194,6 +194,8 @@ int cmd_edit(int argc, char **argv)
 		should_log_read = true;
 	} else {
 		editable = new_account();
+		account_assign_share(blob, editable, name);
+
 		editable->id = xstrdup("0");
 		account_set_password(editable, xstrdup(""), key);
 		account_set_fullname(editable, xstrdup(name), key);
