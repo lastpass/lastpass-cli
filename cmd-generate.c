@@ -1,9 +1,6 @@
 /*
- * Copyright (c) 2014 LastPass.
- *
- *
+ * Copyright (c) 2014-2015 LastPass.
  */
-
 #include "cmd.h"
 #include "util.h"
 #include "config.h"
