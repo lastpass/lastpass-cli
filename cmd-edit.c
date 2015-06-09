@@ -196,7 +196,7 @@ int cmd_edit(int argc, char **argv)
 			die("%s is a readonly shared entry from %s. It cannot be edited.", editable->fullname, editable->share->name);
 		should_log_read = true;
 	} else {
-		editable = new0(struct account, 1);
+		editable = new_account();
 		editable->id = xstrdup("0");
 		account_set_password(editable, xstrdup(""), key);
 		account_set_fullname(editable, xstrdup(name), key);
@@ -221,7 +221,7 @@ int cmd_edit(int argc, char **argv)
 	else if (choice == NAME)
 		value = editable->fullname;
 	else if (choice == FIELD) {
-		for (editable_field = editable->field_head; editable_field; editable_field = editable_field->next) {
+		list_for_each_entry(editable_field, &editable->field_head, list) {
 			if (!strcmp(editable_field->name, field))
 				break;
 		}
@@ -231,8 +231,7 @@ int cmd_edit(int argc, char **argv)
 			editable_field->name = xstrdup(field);
 			field_set_value(editable, editable_field, xstrdup(""), key);
 
-			editable_field->next = editable->field_head;
-			editable->field_head = editable_field;
+			list_add(&editable_field->list, &editable->field_head);
 		}
 		value = editable_field->value;
 	} else if (choice == NOTES)
@@ -312,16 +311,7 @@ int cmd_edit(int argc, char **argv)
 		account_set_note(editable, value, key);
 	else if (choice == FIELD) {
 		if (!strlen(value)) {
-			if (editable->field_head == editable_field)
-				editable->field_head = editable_field->next;
-			else {
-				for (struct field *found = editable->field_head; found; found = found->next) {
-					if (found->next == editable_field) {
-						found->next = editable_field->next;
-						break;
-					}
-				}
-			}
+			list_del(&editable_field->list);
 			field_free(editable_field);
 		} else
 			field_set_value(editable, editable_field, value, key);

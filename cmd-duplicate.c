@@ -30,7 +30,7 @@ int cmd_duplicate(int argc, char **argv)
 	char *name;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	struct account *found, *new;
-	struct field **last_field;
+	struct field *field, *copy_field;
 
 	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -57,7 +57,7 @@ int cmd_duplicate(int argc, char **argv)
 	if (!found)
 		die("Could not find specified account '%s'.", name);
 
-	new = new0(struct account, 1);
+	new = new_account();
 	share_assign(found->share, &new->share);
 	new->id = xstrdup("0");
 	account_set_name(new, xstrdup(found->name), key);
@@ -68,14 +68,14 @@ int cmd_duplicate(int argc, char **argv)
 	new->fullname = xstrdup(found->fullname);
 	new->url = xstrdup(found->url);
 	new->pwprotect = found->pwprotect;
-	last_field = &new->field_head;
-	for (struct field *field = found->field_head; field; field = field->next) {
-		*last_field = new0(struct field, 1);
-		(*last_field)->type = xstrdup(field->type);
-		(*last_field)->name = xstrdup(field->name);
-		field_set_value(found, *last_field, xstrdup(field->value), key);
-		(*last_field)->checked = field->checked;
-		last_field = &((*last_field)->next);
+
+	list_for_each_entry(field, &found->field_head, list) {
+		copy_field = new0(struct field, 1);
+		copy_field->type = xstrdup(field->type);
+		copy_field->name = xstrdup(field->name);
+		field_set_value(found, copy_field, xstrdup(field->value), key);
+		copy_field->checked = field->checked;
+		list_add_tail(&copy_field->list, &new->field_head);
 	}
 
 	list_add(&new->list, &blob->account_head);

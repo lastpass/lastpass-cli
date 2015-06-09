@@ -66,8 +66,16 @@ void field_free(struct field *field)
 	free(field);
 }
 
+struct account *new_account()
+{
+	struct account *account = new0(struct account, 1);
+	INIT_LIST_HEAD(&account->field_head);
+	return account;
+}
+
 void account_free(struct account *account)
 {
+	struct field *field, *tmp;
 	if (!account)
 		return;
 
@@ -84,8 +92,8 @@ void account_free(struct account *account)
 	free(account->username_encrypted);
 	free(account->password_encrypted);
 	free(account->note_encrypted);
-	for (struct field *field = account->field_head, *next_field = NULL; field; field = next_field) {
-		next_field = field->next;
+
+	list_for_each_entry_safe(field, tmp, &account->field_head, list) {
 		field_free(field);
 	}
 	share_free(account->share);
@@ -263,7 +271,7 @@ static int read_boolean(struct chunk *chunk)
 
 static struct account *account_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN])
 {
-	struct account *parsed = new0(struct account, 1);
+	struct account *parsed = new_account();
 
 	entry_plain(id);
 	entry_crypt(name);
@@ -398,8 +406,8 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 {
 	struct blob_pos blob_pos = { .data = blob, .len = len };
 	struct chunk chunk;
-	struct account *account;
-	struct field *field, **next_field = NULL;
+	struct account *account = NULL;
+	struct field *field;
 	struct share *last_share = NULL;
 	struct blob *parsed;
 	_cleanup_free_ char *versionstr = NULL;
@@ -420,17 +428,15 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 
 			list_add(&account->list, &parsed->account_head);
 
-			next_field = &account->field_head;
 		} else if (!strcmp(chunk.name, "ACFL") || !strcmp(chunk.name, "ACOF")) {
-			if (!next_field)
+			if (!account)
 				goto error;
 
 			field = field_parse(&chunk, last_share ? last_share->key : key);
 			if (!field)
 				goto error;
 
-			*next_field = field;
-			next_field = &field->next;
+			list_add_tail(&field->list, &account->field_head);
 		} else if (!strcmp(chunk.name, "LOCL"))
 			parsed->local_version = true;
 		else if (!strcmp(chunk.name, "SHAR")) {
@@ -512,6 +518,7 @@ static void write_chunk(struct buffer *dstbuffer, struct buffer *srcbuffer, char
 static void write_account_chunk(struct buffer *buffer, struct account *account, const unsigned char key[KDF_HASH_LEN])
 {
 	struct buffer accbuf, fieldbuf;
+	struct field *field;
 
 	memset(&accbuf, 0, sizeof(accbuf));
 	write_plain_string(&accbuf, account->id);
@@ -552,7 +559,7 @@ static void write_account_chunk(struct buffer *buffer, struct account *account, 
 	write_plain_string(&accbuf, "skipped");
 	write_chunk(buffer, &accbuf, "ACCT");
 	free(accbuf.bytes);
-	for (struct field *field = account->field_head; field; field = field->next) {
+	list_for_each_entry(field, &account->field_head, list) {
 		memset(&fieldbuf, 0, sizeof(fieldbuf));
 		write_plain_string(&fieldbuf, field->name);
 		write_plain_string(&fieldbuf, field->type);
@@ -750,7 +757,7 @@ struct account *notes_expand(struct account *acc)
 	if (strcmp(acc->url, "http://sn"))
 		return NULL;
 
-	expand = new0(struct account, 1);
+	expand = new_account();
 
 	expand->id = xstrdup(acc->id);
 	expand->pwprotect = acc->pwprotect;
@@ -792,8 +799,7 @@ struct account *notes_expand(struct account *acc)
 			field->type = xstrdup("text");
 			field->name = xstrdup(name);
 			field->value = xstrdup(value);
-			field->next = expand->field_head;
-			expand->field_head = field;
+			list_add(&field->list, &expand->field_head);
 		}
 skip:
 		free(line);
@@ -804,7 +810,7 @@ skip:
 		if (!*start)
 			break;
 	}
-	if (!expand->note && !expand->username && !expand->url && !expand->password && !expand->field_head)
+	if (!expand->note && !expand->username && !expand->url && !expand->password && list_empty(&expand->field_head))
 		expand->note = xstrdup(acc->note);
 	else if (!expand->note)
 		expand->note = xstrdup("");
@@ -820,8 +826,9 @@ skip:
 struct account *notes_collapse(struct account *acc)
 {
 	struct account *collapse;
+	struct field *field;
 
-	collapse = new0(struct account, 1);
+	collapse = new_account();
 
 	collapse->id = xstrdup(acc->id);
 	collapse->pwprotect = acc->pwprotect;
@@ -834,7 +841,7 @@ struct account *notes_collapse(struct account *acc)
 	collapse->note = xstrdup("");
 	share_assign(acc->share, &collapse->share);
 
-	for (struct field *field = acc->field_head; field; field = field->next) {
+	list_for_each_entry(field, &acc->field_head, list) {
 		trim(field->value);
 		trim(field->name);
 		if (!strcmp(field->name, "NoteType"))

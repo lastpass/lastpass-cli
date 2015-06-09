@@ -84,11 +84,12 @@ static char *stringify_field(const struct field *field)
 	return str;
 }
 
-static char *stringify_fields(const struct field *field_head)
+static char *stringify_fields(const struct list_head *field_head)
 {
 	char *field_str, *fields = NULL;
+	struct field *field;
 
-	for (const struct field *field = field_head; field; field = field->next) {
+	list_for_each_entry(field, field_head, list) {
 		field_str = stringify_field(field);
 		xstrappend(&fields, field_str);
 		free(field_str);
@@ -111,7 +112,7 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	_cleanup_free_ char *fields = NULL;
 
 	bytes_to_hex(account->url, &url, strlen(account->url));
-	fields = stringify_fields(account->field_head);
+	fields = stringify_fields(&account->field_head);
 
 	++blob->version;
 

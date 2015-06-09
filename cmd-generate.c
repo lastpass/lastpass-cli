@@ -105,7 +105,7 @@ int cmd_generate(int argc, char **argv)
 			account_free(notes_collapsed);
 		}
 	} else {
-		new = new0(struct account, 1);
+		new = new_account();
 		new->id = xstrdup("0");
 
 		account_set_password(new, xstrdup(password), key);

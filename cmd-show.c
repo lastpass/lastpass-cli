@@ -67,6 +67,7 @@ int cmd_show(int argc, char **argv)
 	enum { ALL, USERNAME, PASSWORD, URL, FIELD, ID, NAME, NOTES } choice = ALL;
 	_cleanup_free_ char *field = NULL;
 	struct account *notes_expansion = NULL;
+	struct field *found_field;
 	char *name, *pretty_field;
 	struct account *found, *last_found;
 	enum blobsync sync = BLOB_SYNC_AUTO;
@@ -172,7 +173,7 @@ int cmd_show(int argc, char **argv)
 
 	if (choice == FIELD) {
 		struct field *found_field;
-		for (found_field = found->field_head; found_field; found_field = found_field->next) {
+		list_for_each_entry(found_field, &found->field_head, list) {
 			if (!strcmp(found_field->name, field))
 				break;
 		}
@@ -204,7 +205,8 @@ int cmd_show(int argc, char **argv)
 			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Password", found->password);
 		if (strlen(found->url) && strcmp(found->url, "http://"))
 			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "URL", found->url);
-		for (struct field *found_field = found->field_head; found_field; found_field = found_field->next) {
+
+		list_for_each_entry(found_field, &found->field_head, list) {
 			pretty_field = pretty_field_value(found_field);
 			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", found_field->name, pretty_field);
 			free(pretty_field);

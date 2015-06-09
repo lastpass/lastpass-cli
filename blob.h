@@ -24,7 +24,7 @@ struct field {
 	char *value, *value_encrypted;
 	bool checked;
 
-	struct field *next;
+	struct list_head list;
 };
 
 struct account {
@@ -38,7 +38,7 @@ struct account {
 	char *note, *note_encrypted;
 	bool pwprotect;
 
-	struct field *field_head;
+	struct list_head field_head;
 	struct share *share;
 
 	struct list_head list;
@@ -61,6 +61,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 struct blob *blob_load(enum blobsync sync, struct session *session, const unsigned char key[KDF_HASH_LEN]);
 void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]);
 void field_free(struct field *field);
+struct account *new_account();
 void account_free(struct account *account);
 void account_set_username(struct account *account, char *username, unsigned const char key[KDF_HASH_LEN]);
 void account_set_password(struct account *account, char *password, unsigned const char key[KDF_HASH_LEN]);
