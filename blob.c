@@ -761,6 +761,12 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
 	account->fullname = fullname;
 }
 
+/*
+ * Assign an account to the proper shared folder, if any.
+ *
+ * This function may exit if the name represents a shared folder but
+ * same folder is not available.
+ */
 void account_assign_share(struct blob *blob, struct account *account, const char *name)
 {
 	struct account *other;
@@ -772,7 +778,7 @@ void account_assign_share(struct blob *blob, struct account *account, const char
 	/* strip off shared groupname */
 	char *slash = strchr(name, '/');
 	if (!slash)
-		return;
+		die("Shared folder name has improper format");
 
 	shared_name = xstrndup(name, slash - name);
 
@@ -783,9 +789,10 @@ void account_assign_share(struct blob *blob, struct account *account, const char
 
 		if (!strcmp(other->share->name, shared_name)) {
 			share_assign(other->share, &account->share);
-			break;
+			return;
 		}
 	}
+	die("Unable to find shared folder for %s in blob\n", name);
 }
 
 struct account *notes_expand(struct account *acc)
