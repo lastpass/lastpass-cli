@@ -732,9 +732,15 @@ void field_set_value(struct account *account, struct field *field, char *value, 
 	else
 		set_field(field, value);
 }
+
+static bool is_shared_folder_name(const char *fullname)
+{
+	return !strncmp(fullname, "Shared-", 7);
+}
+
 void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN])
 {
-	if (account->share && !strncmp(fullname, "Shared-", 7)) {
+	if (account->share && is_shared_folder_name(fullname)) {
 		char *groupname = strchr(fullname, '/');
 		if (groupname) {
 			char *tmp = fullname;
@@ -760,7 +766,7 @@ void account_assign_share(struct blob *blob, struct account *account, const char
 	struct account *other;
 	_cleanup_free_ char *shared_name = NULL;
 
-	if (strncmp(name, "Shared-", 7))
+	if (!is_shared_folder_name(name))
 		return;
 
 	/* strip off shared groupname */
