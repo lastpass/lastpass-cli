@@ -76,5 +76,6 @@ void field_set_value(struct account *account, struct field *field, char *value, 
 struct account *notes_expand(struct account *acc);
 struct account *notes_collapse(struct account *acc);
 void share_free(struct share *share);
+struct share *find_unique_share(struct blob *blob, const char *name);
 
 #endif

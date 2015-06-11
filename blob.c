@@ -753,6 +753,18 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
 	account->fullname = fullname;
 }
 
+struct share *find_unique_share(struct blob *blob, const char *name)
+{
+       struct share *share;
+
+       list_for_each_entry(share, &blob->share_head, list) {
+               if (!strcasecmp(share->name, name)) {
+                       return share;
+               }
+       }
+       return NULL;
+}
+
 /*
  * Assign an account to the proper shared folder, if any.
  *
@@ -761,7 +773,7 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
  */
 void account_assign_share(struct blob *blob, struct account *account, const char *name)
 {
-	struct account *other;
+	struct share *share;
 	_cleanup_free_ char *shared_name = NULL;
 
 	if (!is_shared_folder_name(name))
@@ -774,17 +786,12 @@ void account_assign_share(struct blob *blob, struct account *account, const char
 
 	shared_name = xstrndup(name, slash - name);
 
-	/* find a share matching group */
-	list_for_each_entry(other, &blob->account_head, list) {
-		if (!other->share)
-			continue;
+	/* find a share matching group name */
+	share = find_unique_share(blob, shared_name);
+	if (!share)
+		die("Unable to find shared folder for %s in blob\n", name);
 
-		if (!strcmp(other->share->name, shared_name)) {
-			account->share = other->share;
-			return;
-		}
-	}
-	die("Unable to find shared folder for %s in blob\n", name);
+	account->share = share;
 }
 
 struct account *notes_expand(struct account *acc)
