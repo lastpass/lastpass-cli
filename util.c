@@ -447,3 +447,8 @@ unsigned long range_rand(unsigned long min, unsigned long max)
 		return min + base_random / bucket;
 	return range_rand(min, max);
 }
+
+const char *bool_str(bool val)
+{
+	return val ? "1" : "0";
+}

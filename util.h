@@ -104,4 +104,5 @@ void *secure_resize(void *ptr, size_t oldlen, size_t newlen);
 /* [min, max) */
 unsigned long range_rand(unsigned long min, unsigned long max);
 
+const char *bool_str(bool val);
 #endif
