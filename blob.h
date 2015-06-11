@@ -8,7 +8,6 @@
 #include <stddef.h>
 
 struct share {
-	int refcount;
 	char *id;
 	char *name;
 	unsigned char key[KDF_HASH_LEN];
@@ -16,6 +15,8 @@ struct share {
 
 	char *chunk;
 	size_t chunk_len;
+
+	struct list_head list;
 };
 
 struct field {
@@ -51,6 +52,7 @@ struct blob {
 	/* TODO: extract other data eventually... */
 
 	struct list_head account_head;
+	struct list_head share_head;
 };
 
 enum blobsync { BLOB_SYNC_AUTO, BLOB_SYNC_YES, BLOB_SYNC_NO };
@@ -74,6 +76,5 @@ void field_set_value(struct account *account, struct field *field, char *value, 
 struct account *notes_expand(struct account *acc);
 struct account *notes_collapse(struct account *acc);
 void share_free(struct share *share);
-void share_assign(struct share *share, struct share **ptr);
 
 #endif

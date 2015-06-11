@@ -35,23 +35,11 @@ void share_free(struct share *share)
 {
 	if (!share)
 		return;
-	if (--share->refcount > 0)
-		return;
 
 	free(share->name);
 	free(share->id);
 	free(share->chunk);
 	free(share);
-}
-
-void share_assign(struct share *share, struct share **ptr)
-{
-	if (!share) {
-		*ptr = NULL;
-		return;
-	}
-	++share->refcount;
-	*ptr = share;
 }
 
 void field_free(struct field *field)
@@ -96,7 +84,6 @@ void account_free(struct account *account)
 	list_for_each_entry_safe(field, tmp, &account->field_head, list) {
 		field_free(field);
 	}
-	share_free(account->share);
 	free(account);
 }
 
@@ -106,9 +93,13 @@ void blob_free(struct blob *blob)
 		return;
 
 	struct account *account, *tmp;
+	struct share *share, *tmp_share;
 
 	list_for_each_entry_safe(account, tmp, &blob->account_head, list)
 		account_free(account);
+
+	list_for_each_entry_safe(share, tmp_share, &blob->share_head, list)
+		share_free(share);
 
 	free(blob);
 }
@@ -408,13 +399,14 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 	struct chunk chunk;
 	struct account *account = NULL;
 	struct field *field;
-	struct share *last_share = NULL;
+	struct share *share, *last_share = NULL;
 	struct blob *parsed;
 	_cleanup_free_ char *versionstr = NULL;
 
 	parsed = new0(struct blob, 1);
 	parsed->local_version = false;
 	INIT_LIST_HEAD(&parsed->account_head);
+	INIT_LIST_HEAD(&parsed->share_head);
 
 	while (read_chunk(&blob_pos, &chunk)) {
 		if (!strcmp(chunk.name, "LPAV")) {
@@ -424,7 +416,7 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 			account = account_parse(&chunk, last_share ? last_share->key : key);
 			if (!account)
 				goto error;
-			share_assign(last_share, &account->share);
+			account->share = last_share;
 
 			list_add(&account->list, &parsed->account_head);
 
@@ -440,8 +432,10 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 		} else if (!strcmp(chunk.name, "LOCL"))
 			parsed->local_version = true;
 		else if (!strcmp(chunk.name, "SHAR")) {
-			share_free(last_share);
-			share_assign(share_parse(&chunk, private_key), &last_share);
+			share = share_parse(&chunk, private_key);
+			last_share = share;
+			if (share)
+				list_add_tail(&share->list, &parsed->share_head);
 		}
 	}
 
@@ -449,11 +443,9 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 		goto error;
 	if (list_empty(&parsed->account_head))
 		goto error;
-	share_free(last_share);
 	return parsed;
 
 error:
-	share_free(last_share);
 	blob_free(parsed);
 	return NULL;
 }
@@ -788,7 +780,7 @@ void account_assign_share(struct blob *blob, struct account *account, const char
 			continue;
 
 		if (!strcmp(other->share->name, shared_name)) {
-			share_assign(other->share, &account->share);
+			account->share = other->share;
 			return;
 		}
 	}
@@ -813,7 +805,7 @@ struct account *notes_expand(struct account *acc)
 	expand->name = xstrdup(acc->name);
 	expand->group = xstrdup(acc->group);
 	expand->fullname = xstrdup(acc->fullname);
-	share_assign(acc->share, &expand->share);
+	expand->share = acc->share;
 
 	if (strncmp(acc->note, "NoteType:", 9))
 		return NULL;
@@ -888,7 +880,7 @@ struct account *notes_collapse(struct account *acc)
 	collapse->username = xstrdup("");
 	collapse->password = xstrdup("");
 	collapse->note = xstrdup("");
-	share_assign(acc->share, &collapse->share);
+	collapse->share = acc->share;
 
 	list_for_each_entry(field, &acc->field_head, list) {
 		trim(field->value);

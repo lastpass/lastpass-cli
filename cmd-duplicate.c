@@ -55,7 +55,7 @@ int cmd_duplicate(int argc, char **argv)
 		die("Could not find specified account '%s'.", name);
 
 	new = new_account();
-	share_assign(found->share, &new->share);
+	new->share = found->share;
 	new->id = xstrdup("0");
 	account_set_name(new, xstrdup(found->name), key);
 	account_set_group(new, xstrdup(found->group), key);
