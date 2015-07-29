@@ -64,4 +64,6 @@ int cmd_sync(int argc, char **argv);
 int cmd_export(int argc, char **argv);
 #define cmd_export_usage "export [--sync=auto|now|no]"
 
+int cmd_share(int argc, char **argv);
+#define cmd_share_usage "share subcommand sharename..."
 #endif

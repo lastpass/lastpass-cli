@@ -7,6 +7,23 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+struct share_user
+{
+	char *uid;
+	char *username;
+	char *realname;
+	bool read_only;
+	bool is_group;		/* if set uid, username store gid, groupname */
+	bool hide_passwords;
+	bool admin;
+	bool outside_enterprise;
+	bool accepted;
+	char *sharing_key;
+	size_t sharing_key_len;
+
+	struct list_head list;
+};
+
 struct share {
 	char *id;
 	char *name;

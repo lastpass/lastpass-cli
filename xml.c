@@ -6,9 +6,11 @@
 
 #include "xml.h"
 #include "util.h"
+#include "blob.h"
 #include <string.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
+#include <errno.h>
 
 struct session *xml_ok_session(const char *buf, unsigned const char key[KDF_HASH_LEN])
 {
@@ -126,4 +128,156 @@ out:
 		result = xstrdup("unknown");
 
 	return result;
+}
+
+/*
+ * Check if node has the tag "name", and interpret as a string
+ * if so.
+ *
+ * Return true and update the string pointed to by ptr if the node
+ * matches name.
+ */
+static bool
+xml_parse_str(xmlDoc *doc, xmlNode *parent, const char *name, char **ptr)
+{
+	if (xmlStrcmp(parent->name, BAD_CAST name))
+		return false;
+
+	*ptr = (char *) xmlNodeListGetString(doc, parent->xmlChildrenNode, 1);
+	return true;
+}
+
+/*
+ * Check if node has the tag "name", and interpret as an int if so.
+ *
+ * Return true and update the int pointed to by ptr if the node
+ * matches name.
+ */
+static bool
+xml_parse_int(xmlDoc *doc, xmlNode *parent, const char *name, int *ptr)
+{
+	if (xmlStrcmp(parent->name, BAD_CAST name))
+		return false;
+
+	_cleanup_free_ char *str = (char *)
+		xmlNodeListGetString(doc, parent->xmlChildrenNode, 1);
+
+	*ptr = atoi(str);
+	return true;
+}
+
+/*
+ * Check if node is for the boolean "name", and interpret as a boolean
+ * if so.
+ *
+ * Return true and update the boolean pointed to by ptr if the node
+ * matches name.
+ */
+static bool
+xml_parse_bool(xmlDoc *doc, xmlNode *parent, const char *name, bool *ptr)
+{
+	int intval;
+
+	if (!xml_parse_int(doc, parent, name, &intval))
+		return false;
+
+	*ptr = intval;
+	return true;
+}
+
+static void
+xml_parse_share_permissions(xmlDoc *doc, xmlNode *item, struct share_user *user)
+{
+	bool tmp;
+
+	for (xmlNode *child = item->children; child; child = child->next) {
+		if (xml_parse_bool(doc, child, "canadminister", &user->admin))
+			continue;
+		if (xml_parse_bool(doc, child, "readonly", &user->read_only))
+			continue;
+		if (xml_parse_bool(doc, child, "give", &tmp)) {
+			user->hide_passwords = !tmp;
+			continue;
+		}
+	}
+}
+
+static void
+xml_parse_share_user(xmlDoc *doc, xmlNode *item, struct share_user *user)
+{
+	char *tmp;
+
+	/* process a user item */
+	for (xmlNode *child = item->children; child; child = child->next) {
+		if (xml_parse_str(doc, child, "realname", &user->realname))
+			continue;
+		if (xml_parse_str(doc, child, "username", &user->username))
+			continue;
+		if (xml_parse_str(doc, child, "uid", &user->uid))
+			continue;
+		if (xml_parse_bool(doc, child, "group", &user->is_group))
+			continue;
+		if (xml_parse_bool(doc, child, "outsideenterpise", &user->outside_enterprise))
+			continue;
+		if (xml_parse_bool(doc, child, "accepted", &user->accepted))
+			continue;
+		if (xml_parse_str(doc, child, "sharingkey", &tmp)) {
+			int ret = hex_to_bytes(tmp, &user->sharing_key);
+			if (ret == 0)
+				user->sharing_key_len = strlen(tmp) / 2;
+			free(tmp);
+			continue;
+		}
+		if (!xmlStrcmp(child->name, BAD_CAST "permissions"))
+			xml_parse_share_permissions(doc, child, user);
+	}
+}
+
+int xml_parse_share_getinfo(const char *buf, struct list_head *users)
+{
+	int ret;
+	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
+
+	if (!doc)
+		return -EINVAL;
+
+	/*
+	 * XML fields are as follows:
+	 * xmlresponse
+	 *   users
+	 *     item
+	 *       realname
+	 *       uid
+	 *       group
+	 *       username
+	 *       permissions
+	 *         readonly
+	 *         canadminister
+	 *         give
+	 *       outsideenterprise
+	 *       accepted
+	 *     item...
+	 */
+	xmlNode *root = xmlDocGetRootElement(doc);
+	if (!root ||
+	    xmlStrcmp(root->name, BAD_CAST "xmlresponse") ||
+	    !root->children ||
+	    xmlStrcmp(root->children->name, BAD_CAST "users")) {
+		ret = -EINVAL;
+		goto free_doc;
+	}
+
+	xmlNode *usernode = root->children;
+	for (xmlNode *item = usernode->children; item; item = item->next) {
+		if (xmlStrcmp(item->name, BAD_CAST "item"))
+			continue;
+
+		struct share_user *new_user = xcalloc(1, sizeof(*new_user));
+		xml_parse_share_user(doc, item, new_user);
+		list_add_tail(&new_user->list, users);
+	}
+	ret = 0;
+free_doc:
+	xmlFreeDoc(doc);
+	return ret;
 }

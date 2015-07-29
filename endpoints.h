@@ -15,4 +15,5 @@ void lastpass_remove_account(enum blobsync sync, unsigned const char key[KDF_HAS
 void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HASH_LEN], const struct session *session, const struct account *account, struct blob *blob);
 void lastpass_log_access(enum blobsync sync, const struct session *session, unsigned const char key[KDF_HASH_LEN], const struct account *account);
 
+int lastpass_share_getinfo(const struct session *session, const char *shareid, struct list_head *users);
 #endif

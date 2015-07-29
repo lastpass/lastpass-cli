@@ -29,7 +29,8 @@ static struct {
 	CMD(duplicate),
 	CMD(rm),
 	CMD(sync),
-	CMD(export)
+	CMD(export),
+	CMD(share)
 };
 #undef CMD
 
