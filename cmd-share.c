@@ -38,6 +38,7 @@ struct share_args {
 #define share_usermod_usage "usermod [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
 #define share_userdel_usage "userdel SHARE USERNAME"
 #define share_create_usage "create SHARE"
+#define share_rm_usage "rm SHARE"
 
 static char *checkmark(int x) {
 	return (x) ? "x" : "_";
@@ -195,6 +196,17 @@ int share_create(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
+int share_rm(int argc, char **argv, struct share_args *args)
+{
+	if (argc != 0)
+		die_usage(cmd_share_usage);
+
+	UNUSED(argv);
+
+	lastpass_share_delete(args->session, args->share);
+	return 0;
+}
+
 #define SHARE_CMD(name) { #name, "share " share_##name##_usage, share_##name }
 static struct {
 	const char *name;
@@ -206,6 +218,7 @@ static struct {
 	SHARE_CMD(usermod),
 	SHARE_CMD(userdel),
 	SHARE_CMD(create),
+	SHARE_CMD(rm),
 };
 #undef SHARE_CMD
 

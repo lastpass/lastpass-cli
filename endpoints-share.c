@@ -238,3 +238,16 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 
 	return 0;
 }
+
+int lastpass_share_delete(const struct session *session, struct share *share)
+{
+	_cleanup_free_ char *reply = NULL;
+	size_t len;
+
+	reply = http_post_lastpass("share.php", session->sessionid, &len,
+				   "token", session->token,
+				   "id", share->id,
+				   "delete", "1",
+				   "xmlr", "1", NULL);
+	return 0;
+}
