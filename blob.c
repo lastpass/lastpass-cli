@@ -680,6 +680,9 @@ static char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HAS
 	size_t len;
 
 	base64 = trim(xstrdup(str));
+	if (!*base64)
+		return base64;
+
 	len = cipher_aes_encrypt(base64, key, &intermediate);
 	free(base64);
 	base64 = cipher_base64(intermediate, len);
