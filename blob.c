@@ -416,7 +416,14 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 			account = account_parse(&chunk, last_share ? last_share->key : key);
 			if (!account)
 				goto error;
-			account->share = last_share;
+
+			if (last_share) {
+				account->share = last_share;
+				char *tmp = account->fullname;
+				xasprintf(&account->fullname, "%s/%s",
+					  last_share->name, tmp);
+				free(tmp);
+			}
 
 			list_add(&account->list, &parsed->account_head);
 

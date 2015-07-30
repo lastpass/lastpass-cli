@@ -87,15 +87,12 @@ static void print_node(struct node *head, int level)
 static char *get_display_fullname(struct account *account)
 {
 	char *fullname = NULL;
-	if (strcmp(account->group, ""))
+
+	if (account->share || strcmp(account->group, ""))
 		fullname = xstrdup(account->fullname);
 	else
 		xasprintf(&fullname, "(none)/%s", account->fullname);
 
-	if (account->share) {
-		free(fullname);
-		xasprintf(&fullname, "%s/%s", account->share->name, account->fullname);
-	}
 	return fullname;
 }
 
