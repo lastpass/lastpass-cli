@@ -58,6 +58,50 @@ out:
 	return ret;
 }
 
+int cipher_rsa_encrypt(const char *plaintext,
+		       const struct public_key *public_key,
+		       unsigned char *out_crypttext, size_t *out_len)
+{
+	EVP_PKEY *pubkey = NULL;
+	RSA *rsa = NULL;
+	BIO *memory = NULL;
+	int ret;
+
+	if (*out_len < public_key->len) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	memory = BIO_new(BIO_s_mem());
+	ret = BIO_write(memory, public_key->key, public_key->len);
+	if (ret < 0)
+		goto out;
+
+	ret = -EIO;
+	pubkey = d2i_PUBKEY_bio(memory, NULL);
+	if (!pubkey)
+		goto out;
+
+	rsa = EVP_PKEY_get1_RSA(pubkey);
+	if (!rsa)
+		goto out;
+
+	ret = RSA_public_encrypt(strlen(plaintext), (unsigned char *) plaintext,
+			         (unsigned char *) out_crypttext,
+			         rsa, RSA_PKCS1_OAEP_PADDING);
+	if (ret < 0)
+		goto out;
+
+	*out_len = ret;
+	ret = 0;
+
+out:
+	EVP_PKEY_free(pubkey);
+	RSA_free(rsa);
+	BIO_free_all(memory);
+	return ret;
+}
+
 char *cipher_aes_decrypt(const char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
 {
 	EVP_CIPHER_CTX ctx;
