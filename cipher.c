@@ -241,3 +241,20 @@ char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[
 		return cipher_aes_decrypt(data, len, key);
 	}
 }
+
+char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
+{
+	char *intermediate = NULL;
+	char *base64 = NULL;
+	size_t len;
+
+	base64 = trim(xstrdup(str));
+	if (!*base64)
+		return base64;
+
+	len = cipher_aes_encrypt(base64, key, &intermediate);
+	free(base64);
+	base64 = cipher_base64(intermediate, len);
+	free(intermediate);
+	return base64;
+}
