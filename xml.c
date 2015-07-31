@@ -222,9 +222,9 @@ xml_parse_share_user(xmlDoc *doc, xmlNode *item, struct share_user *user)
 		if (xml_parse_bool(doc, child, "accepted", &user->accepted))
 			continue;
 		if (xml_parse_str(doc, child, "sharingkey", &tmp)) {
-			int ret = hex_to_bytes(tmp, &user->sharing_key);
+			int ret = hex_to_bytes(tmp, (char **) &user->sharing_key.key);
 			if (ret == 0)
-				user->sharing_key_len = strlen(tmp) / 2;
+				user->sharing_key.len = strlen(tmp) / 2;
 			free(tmp);
 			continue;
 		}

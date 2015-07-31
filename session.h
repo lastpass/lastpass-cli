@@ -4,6 +4,10 @@
 #include "kdf.h"
 #include <stdbool.h>
 
+struct public_key {
+	unsigned char *key;
+	size_t len;
+};
 struct private_key {
 	unsigned char *key;
 	size_t len;

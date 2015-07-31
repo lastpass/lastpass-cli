@@ -18,9 +18,7 @@ struct share_user
 	bool admin;
 	bool outside_enterprise;
 	bool accepted;
-	char *sharing_key;
-	size_t sharing_key_len;
-
+	struct public_key sharing_key;
 	struct list_head list;
 };
 
