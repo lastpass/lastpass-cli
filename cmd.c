@@ -35,6 +35,11 @@ enum color_mode parse_color_mode_string(const char *colormode)
 		die_usage("... --color=auto|never|always");
 }
 
+bool parse_bool_arg_string(const char *extra)
+{
+	return !extra || strcmp(extra, "true") == 0;
+}
+
 void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct session **session, struct blob **blob)
 {
 	if (!agent_get_decryption_key(key))

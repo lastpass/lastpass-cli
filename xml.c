@@ -281,3 +281,53 @@ free_doc:
 	xmlFreeDoc(doc);
 	return ret;
 }
+
+int xml_parse_share_getpubkey(const char *buf, struct share_user *user)
+{
+	int ret;
+	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
+	char *tmp;
+
+	if (!doc)
+		return -EINVAL;
+
+	/*
+	 * XML fields are as follows:
+	 * xmlresponse
+	 *   success
+	 *   pubkey0
+	 *   uid0
+	 *   username0
+	 */
+	xmlNode *root = xmlDocGetRootElement(doc);
+	if (!root || xmlStrcmp(root->name, BAD_CAST "xmlresponse") ||
+	    !root->children) {
+		ret = -EINVAL;
+		goto free_doc;
+	}
+
+	user->sharing_key.key = NULL;
+	user->sharing_key.len = 0;
+
+	for (xmlNode *item = root->children; item; item = item->next) {
+
+		if (xml_parse_str(doc, item, "pubkey0", &tmp)) {
+			int ret = hex_to_bytes(tmp, (char **) &user->sharing_key.key);
+			if (ret == 0)
+				user->sharing_key.len = strlen(tmp) / 2;
+			free(tmp);
+			continue;
+		}
+		if (xml_parse_str(doc, item, "username0", &user->username))
+			continue;
+		if (xml_parse_str(doc, item, "uid0", &user->uid))
+			continue;
+	}
+	if (!user->sharing_key.len)
+		ret = -ENOENT;
+	else
+		ret = 0;
+free_doc:
+	xmlFreeDoc(doc);
+	return ret;
+}

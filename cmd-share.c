@@ -24,9 +24,14 @@ struct share_args {
 	unsigned char key[KDF_HASH_LEN];
 	const char *sharename;
 	struct share *share;
+
+	bool read_only;
+	bool admin;
+	bool hide_passwords;
 };
 
 #define share_userls_usage "userls SHARE"
+#define share_useradd_usage "useradd [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
 
 static char *checkmark(int x) {
 	return (x) ? "x" : "_";
@@ -100,6 +105,22 @@ int share_userls(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
+int share_useradd(int argc, char **argv, struct share_args *args)
+{
+	struct share_user new_user = {
+		.read_only = args->read_only,
+		.hide_passwords = args->hide_passwords,
+		.admin = args->admin
+	};
+
+	if (argc != 1)
+		die_usage(cmd_share_usage);
+
+	new_user.username = argv[0];
+	lastpass_share_user_add(args->session, args->share, &new_user);
+	return 0;
+}
+
 #define SHARE_CMD(name) { #name, "share " share_##name##_usage, share_##name }
 static struct {
 	const char *name;
@@ -107,9 +128,9 @@ static struct {
 	int (*cmd)(int, char **, struct share_args *share);
 } share_commands[] = {
 	SHARE_CMD(userls),
+	SHARE_CMD(useradd),
 };
 #undef SHARE_CMD
-
 
 int cmd_share(int argc, char **argv)
 {
@@ -118,11 +139,16 @@ int cmd_share(int argc, char **argv)
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
 		{"color", required_argument, NULL, 'C'},
+		{"read-only", required_argument, NULL, 'r'},
+		{"hidden", required_argument, NULL, 'H'},
+		{"admin", required_argument, NULL, 'a'},
 		{0, 0, 0, 0}
 	};
 
 	struct share_args args = {
 		.sync = BLOB_SYNC_AUTO,
+		.read_only = true,
+		.hide_passwords = true,
 	};
 
 	/*
@@ -139,7 +165,7 @@ int cmd_share(int argc, char **argv)
 	 */
 	int option;
 	int option_index;
-	while ((option = getopt_long(argc, argv, "S:C:", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "S:C:r:H:a:", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				args.sync = parse_sync_string(optarg);
@@ -147,6 +173,16 @@ int cmd_share(int argc, char **argv)
 			case 'C':
 				terminal_set_color_mode(
 					parse_color_mode_string(optarg));
+				break;
+			case 'r':
+				args.read_only = parse_bool_arg_string(optarg);
+				break;
+			case 'H':
+				args.hide_passwords =
+					parse_bool_arg_string(optarg);
+				break;
+			case 'a':
+				args.admin = parse_bool_arg_string(optarg);
 				break;
 			case '?':
 			default:

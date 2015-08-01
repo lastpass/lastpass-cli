@@ -33,6 +33,8 @@ void find_matching_regex(struct blob *blob, const char *pattern,
 void find_matching_substr(struct blob *blob, const char *pattern,
 			  int fields, struct list_head *ret_list);
 enum color_mode parse_color_mode_string(const char *colormode);
+bool parse_bool_arg_string(const char *extra);
+
 
 int cmd_login(int argc, char **argv);
 #define cmd_login_usage "login [--trust] [--plaintext-key [--force, -f]] USERNAME"
