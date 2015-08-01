@@ -166,7 +166,7 @@ int cmd_share(int argc, char **argv)
 
 	for (unsigned int i=0; i < ARRAY_SIZE(share_commands); i++) {
 		if (strcmp(subcmd, share_commands[i].name) == 0) {
-			share_commands[i].cmd(optind - argc, &argv[optind],
+			share_commands[i].cmd(argc - optind, &argv[optind],
 					      &args);
 		}
 	}
