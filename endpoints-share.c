@@ -101,6 +101,30 @@ int lastpass_share_user_add(const struct session *session,
 	return 0;
 }
 
+int lastpass_share_user_mod(const struct session *session,
+			    struct share *share,
+			    struct share_user *user)
+{
+	_cleanup_free_ char *reply = NULL;
+	size_t len;
+
+	reply = http_post_lastpass("share.php", session->sessionid, &len,
+				   "token", session->token,
+				   "id", share->id,
+				   "up", "1",
+				   "edituser", "1",
+				   "uid", user->uid,
+				   "readonly", user->read_only ? "on" : "",
+				   "give", !user->hide_passwords ? "on" : "",
+				   "canadminister", user->admin ? "on" : "",
+				   "xmlr", "1", NULL);
+
+	if (!reply)
+		return -EPERM;
+
+	return 0;
+}
+
 int lastpass_share_user_del(const struct session *session, const char *shareid,
 			    struct share_user *user)
 {

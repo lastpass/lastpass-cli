@@ -26,12 +26,16 @@ struct share_args {
 	struct share *share;
 
 	bool read_only;
+	bool set_read_only;
 	bool admin;
+	bool set_admin;
 	bool hide_passwords;
+	bool set_hide_passwords;
 };
 
 #define share_userls_usage "userls SHARE"
 #define share_useradd_usage "useradd [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
+#define share_usermod_usage "usermod [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
 #define share_userdel_usage "userdel SHARE USERNAME"
 
 static char *checkmark(int x) {
@@ -122,20 +126,16 @@ int share_useradd(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
-int share_userdel(int argc, char **argv, struct share_args *args)
+static
+struct share_user *get_user_from_share(struct session *session,
+				       struct share *share,
+				       const char *username)
 {
 	struct share_user *tmp, *found = NULL;
-	char *username;
 	LIST_HEAD(users);
 
-	if (argc != 1)
-		die_usage(cmd_share_usage);
-
-	username = argv[0];
-
-	if (lastpass_share_getinfo(args->session, args->share->id, &users))
-		die("Unable to access user list for share %s\n",
-		    args->sharename);
+	if (lastpass_share_getinfo(session, share->id, &users))
+		die("Unable to access user list for share %s\n", share->name);
 
 	list_for_each_entry(tmp, &users, list) {
 		if (strcmp(tmp->username, username) == 0) {
@@ -147,6 +147,38 @@ int share_userdel(int argc, char **argv, struct share_args *args)
 		die("Unable to find user %s in the user list\n",
 		    username);
 
+	return found;
+}
+
+
+int share_usermod(int argc, char **argv, struct share_args *args)
+{
+	struct share_user *user;
+
+	if (argc != 1)
+		die_usage(cmd_share_usage);
+
+	user = get_user_from_share(args->session, args->share, argv[0]);
+
+	if (args->set_read_only)
+		user->read_only = args->read_only;
+	if (args->set_hide_passwords)
+		user->hide_passwords = args->hide_passwords;
+	if (args->set_admin)
+		user->admin = args->admin;
+
+	lastpass_share_user_mod(args->session, args->share, user);
+	return 0;
+}
+
+int share_userdel(int argc, char **argv, struct share_args *args)
+{
+	struct share_user *found;
+
+	if (argc != 1)
+		die_usage(cmd_share_usage);
+
+	found = get_user_from_share(args->session, args->share, argv[0]);
 	lastpass_share_user_del(args->session, args->share->id, found);
 	return 0;
 }
@@ -159,6 +191,7 @@ static struct {
 } share_commands[] = {
 	SHARE_CMD(userls),
 	SHARE_CMD(useradd),
+	SHARE_CMD(usermod),
 	SHARE_CMD(userdel),
 };
 #undef SHARE_CMD
@@ -207,13 +240,16 @@ int cmd_share(int argc, char **argv)
 				break;
 			case 'r':
 				args.read_only = parse_bool_arg_string(optarg);
+				args.set_read_only = true;
 				break;
 			case 'H':
 				args.hide_passwords =
 					parse_bool_arg_string(optarg);
+				args.set_hide_passwords = true;
 				break;
 			case 'a':
 				args.admin = parse_bool_arg_string(optarg);
+				args.set_admin = true;
 				break;
 			case '?':
 			default:
