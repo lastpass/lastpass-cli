@@ -32,6 +32,7 @@ struct share_args {
 
 #define share_userls_usage "userls SHARE"
 #define share_useradd_usage "useradd [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
+#define share_userdel_usage "userdel SHARE USERNAME"
 
 static char *checkmark(int x) {
 	return (x) ? "x" : "_";
@@ -121,6 +122,35 @@ int share_useradd(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
+int share_userdel(int argc, char **argv, struct share_args *args)
+{
+	struct share_user *tmp, *found = NULL;
+	char *username;
+	LIST_HEAD(users);
+
+	if (argc != 1)
+		die_usage(cmd_share_usage);
+
+	username = argv[0];
+
+	if (lastpass_share_getinfo(args->session, args->share->id, &users))
+		die("Unable to access user list for share %s\n",
+		    args->sharename);
+
+	list_for_each_entry(tmp, &users, list) {
+		if (strcmp(tmp->username, username) == 0) {
+			found = tmp;
+			break;
+		}
+	}
+	if (!found)
+		die("Unable to find user %s in the user list\n",
+		    username);
+
+	lastpass_share_user_del(args->session, args->share->id, found);
+	return 0;
+}
+
 #define SHARE_CMD(name) { #name, "share " share_##name##_usage, share_##name }
 static struct {
 	const char *name;
@@ -129,6 +159,7 @@ static struct {
 } share_commands[] = {
 	SHARE_CMD(userls),
 	SHARE_CMD(useradd),
+	SHARE_CMD(userdel),
 };
 #undef SHARE_CMD
 

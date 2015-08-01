@@ -17,4 +17,5 @@ void lastpass_log_access(enum blobsync sync, const struct session *session, unsi
 
 int lastpass_share_getinfo(const struct session *session, const char *shareid, struct list_head *users);
 int lastpass_share_user_add(const struct session *session, struct share *share, struct share_user *user);
+int lastpass_share_user_del(const struct session *session, const char *shareid, struct share_user *user);
 #endif

@@ -100,3 +100,19 @@ int lastpass_share_user_add(const struct session *session,
 
 	return 0;
 }
+
+int lastpass_share_user_del(const struct session *session, const char *shareid,
+			    struct share_user *user)
+{
+	_cleanup_free_ char *reply = NULL;
+	size_t len;
+
+	reply = http_post_lastpass("share.php", session->sessionid, &len,
+				   "token", session->token,
+				   "id", shareid,
+				   "update", "1",
+				   "delete", "1",
+				   "uid", user->uid,
+				   "xmlr", "1", NULL);
+	return 0;
+}
