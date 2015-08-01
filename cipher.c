@@ -1,9 +1,6 @@
 /*
- * Copyright (c) 2014 LastPass.
- *
- *
+ * Copyright (c) 2014-2015 LastPass.
  */
-
 #include "cipher.h"
 #include "util.h"
 #include <openssl/evp.h>
@@ -16,7 +13,7 @@
 #include <string.h>
 #include <openssl/err.h>
 
-char *cipher_rsa_decrypt(const char *ciphertext, size_t len, const struct private_key *private_key)
+char *cipher_rsa_decrypt(const unsigned char *ciphertext, size_t len, const struct private_key *private_key)
 {
 	PKCS8_PRIV_KEY_INFO *p8inf = NULL;
 	EVP_PKEY *pkey = NULL;
@@ -102,7 +99,7 @@ out:
 	return ret;
 }
 
-char *cipher_aes_decrypt(const char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
+char *cipher_aes_decrypt(const unsigned char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
 {
 	EVP_CIPHER_CTX ctx;
 	char *plaintext;
@@ -223,11 +220,11 @@ char *cipher_base64(const char *bytes, size_t len)
 	return base64(bytes, len);
 }
 
-static size_t unbase64(const char *bytes, char **unbase64)
+static size_t unbase64(const char *bytes, unsigned char **unbase64)
 {
 	size_t len;
 	BIO *memory, *b64;
-	char *buffer;
+	unsigned char *buffer;
 
 	len = strlen(bytes);
 	if (!len)
@@ -257,9 +254,9 @@ error:
 char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[KDF_HASH_LEN])
 {
 	_cleanup_free_ char *copy = NULL;
-	_cleanup_free_ char *iv = NULL;
-	_cleanup_free_ char *data = NULL;
-	_cleanup_free_ char *unbase64_ciphertext = NULL;
+	_cleanup_free_ unsigned char *iv = NULL;
+	_cleanup_free_ unsigned char *data = NULL;
+	_cleanup_free_ unsigned char *unbase64_ciphertext = NULL;
 	char *pipe;
 	size_t iv_len, data_len, len;
 

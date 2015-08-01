@@ -398,7 +398,7 @@ void *secure_resize(void *ptr, size_t oldlen, size_t newlen)
 }
 
 static char hex_digits[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-_unroll_ void bytes_to_hex(const char *bytes, char **hex, size_t len)
+_unroll_ void bytes_to_hex(const unsigned char *bytes, char **hex, size_t len)
 {
 	if (!*hex)
 		*hex = xmalloc(len * 2 + 1);
@@ -409,7 +409,7 @@ _unroll_ void bytes_to_hex(const char *bytes, char **hex, size_t len)
 	(*hex)[len * 2] = '\0';
 }
 
-int hex_to_bytes(const char *hex, char **bytes)
+int hex_to_bytes(const char *hex, unsigned char **bytes)
 {
 	size_t len = strlen(hex);
 	if (len % 2 != 0) {

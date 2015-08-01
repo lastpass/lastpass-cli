@@ -105,18 +105,18 @@ void blob_free(struct blob *blob)
 }
 
 struct blob_pos {
-	const char *data;
+	const unsigned char *data;
 	size_t len;
 };
 
 struct chunk {
 	char name[4 + 1];
-	const char *data;
+	const unsigned char *data;
 	size_t len;
 };
 
 struct item {
-	const char *data;
+	const unsigned char *data;
 	size_t len;
 };
 
@@ -176,7 +176,7 @@ static char *read_hex_string(struct chunk *chunk)
 	if (item.len == 0)
 		return xstrdup("");
 
-	result = hex_to_bytes(item.data, &str);
+	result = hex_to_bytes((char *) item.data, (unsigned char **) &str);
 	if (result) {
 		free(str);
 		return NULL;
@@ -194,7 +194,7 @@ static char *read_plain_string(struct chunk *chunk)
 	if (item.len == 0)
 		return xstrdup("");
 
-	return xstrndup(item.data, item.len);
+	return xstrndup((char *) item.data, item.len);
 }
 
 static char *read_crypt_string(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN], char **stored_base64)
@@ -205,7 +205,7 @@ static char *read_crypt_string(struct chunk *chunk, const unsigned char key[KDF_
 	if (!read_item(chunk, &item))
 		return NULL;
 	if (stored_base64)
-		*stored_base64 = cipher_base64(item.data, item.len);
+		*stored_base64 = cipher_base64((char *) item.data, item.len);
 
 	if (item.len == 0)
 		return xstrdup("");
@@ -340,7 +340,7 @@ static struct share *share_parse(struct chunk *chunk, const struct private_key *
 {
 	struct share *parsed = new0(struct share, 1);
 	struct item item;
-	_cleanup_free_ char *ciphertext = NULL;
+	_cleanup_free_ unsigned char *ciphertext = NULL;
 	_cleanup_free_ char *hex_key = NULL;
 	_cleanup_free_ unsigned char *key = NULL;
 	_cleanup_free_ char *base64_name = NULL;
@@ -359,7 +359,7 @@ static struct share *share_parse(struct chunk *chunk, const struct private_key *
 
 	if (!read_item(chunk, &item) || item.len == 0 || item.len % 2 != 0)
 		goto error;
-	hex_to_bytes(item.data, &ciphertext);
+	hex_to_bytes((char *) item.data, &ciphertext);
 	hex_key = cipher_rsa_decrypt(ciphertext, item.len / 2, private_key);
 	if (!hex_key)
 		goto error;
@@ -369,7 +369,7 @@ static struct share *share_parse(struct chunk *chunk, const struct private_key *
 	len /= 2;
 	if (len != KDF_HASH_LEN)
 		goto error;
-	hex_to_bytes(hex_key, (char **)&key);
+	hex_to_bytes(hex_key, &key);
 	mlock(parsed->key, KDF_HASH_LEN);
 	memcpy(parsed->key, key, KDF_HASH_LEN);
 
@@ -393,7 +393,7 @@ error:
 #undef entry_crypt
 #undef skip
 
-struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key)
+struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key)
 {
 	struct blob_pos blob_pos = { .data = blob, .len = len };
 	struct chunk chunk;
@@ -410,7 +410,7 @@ struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KD
 
 	while (read_chunk(&blob_pos, &chunk)) {
 		if (!strcmp(chunk.name, "LPAV")) {
-			versionstr = xstrndup(chunk.data, chunk.len);
+			versionstr = xstrndup((char *) chunk.data, chunk.len);
 			parsed->version = strtoull(versionstr, NULL, 10);
 		} else if (!strcmp(chunk.name, "ACCT")) {
 			account = account_parse(&chunk, last_share ? last_share->key : key);
@@ -487,7 +487,7 @@ static void write_plain_string(struct buffer *buffer, char *bytes)
 static void write_hex_string(struct buffer *buffer, char *bytes)
 {
 	_cleanup_free_ char *hex = NULL;
-	bytes_to_hex(bytes, &hex, strlen(bytes));
+	bytes_to_hex((unsigned char *) bytes, &hex, strlen(bytes));
 	write_plain_string(buffer, hex);
 }
 static void write_crypt_string(struct buffer *buffer, char *bytes, const unsigned char key[KDF_HASH_LEN])
@@ -612,7 +612,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 
 static struct blob *local_blob(const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key)
 {
-	_cleanup_free_ char *blob = NULL;
+	_cleanup_free_ unsigned char *blob = NULL;
 	size_t len = config_read_encrypted_buffer("blob", &blob, key);
 	if (!blob)
 		return NULL;

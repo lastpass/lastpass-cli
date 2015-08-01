@@ -87,7 +87,7 @@ int lastpass_share_user_add(const struct session *session,
 	enc_share_name = encrypt_and_base64(share->name, share->key);
 
 	/* encrypt sharekey with user's pubkey */
-	bytes_to_hex((char *) share->key, &hex_share_key, sizeof(share->key));
+	bytes_to_hex(share->key, &hex_share_key, sizeof(share->key));
 
 	size_t enc_share_key_len = user->sharing_key.len;
 	enc_share_key = xmalloc(enc_share_key_len);
@@ -97,7 +97,7 @@ int lastpass_share_user_add(const struct session *session,
 	if (ret)
 		die("Unable to encrypt sharing key with pubkey (%d)\n", ret);
 
-	bytes_to_hex((char * ) enc_share_key, &hex_enc_share_key, enc_share_key_len);
+	bytes_to_hex(enc_share_key, &hex_enc_share_key, enc_share_key_len);
 
 	reply = http_post_lastpass("share.php", session->sessionid, &len,
 				   "token", session->token,
@@ -204,7 +204,7 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 
 	kdf_decryption_key(sf_username, (char *) pw, 1, key);
 	kdf_login_key(sf_username, (char *) pw, 1, hash);
-	bytes_to_hex((char *) key, &hex_share_key, sizeof(key));
+	bytes_to_hex(key, &hex_share_key, sizeof(key));
 
 	/*
 	 * Sharing key is hex-encoded then RSA-encrypted with our pubkey.
@@ -217,7 +217,7 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 	if (ret)
 		die("Unable to RSA encrypt the sharing key (%d)", ret);
 
-	bytes_to_hex((char *) enc_share_key, &hex_enc_share_key, enc_share_key_len);
+	bytes_to_hex(enc_share_key, &hex_enc_share_key, enc_share_key_len);
 
 	xasprintf(&sf_fullname, "Shared-%s", sharename);
 	enc_share_name = encrypt_and_base64(sf_fullname, key);

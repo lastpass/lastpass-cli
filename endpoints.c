@@ -39,7 +39,7 @@ struct blob *lastpass_get_blob(const struct session *session, const unsigned cha
 	if (!blob || !len)
 		return NULL;
 	config_write_encrypted_buffer("blob", blob, len, key);
-	return blob_parse(blob, len, key, &session->private_key);
+	return blob_parse((unsigned char *) blob, len, key, &session->private_key);
 }
 
 void lastpass_remove_account(enum blobsync sync, unsigned const char key[KDF_HASH_LEN], const struct session *session, const struct account *account, struct blob *blob)
@@ -97,7 +97,7 @@ static char *stringify_fields(const struct list_head *field_head)
 		fields = xstrdup("");
 
 	field_str = NULL;
-	bytes_to_hex(fields, &field_str, strlen(fields));
+	bytes_to_hex((unsigned char *) fields, &field_str, strlen(fields));
 	free(fields);
 
 	return field_str;
@@ -108,7 +108,7 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	_cleanup_free_ char *url = NULL;
 	_cleanup_free_ char *fields = NULL;
 
-	bytes_to_hex(account->url, &url, strlen(account->url));
+	bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
 	fields = stringify_fields(&account->field_head);
 
 	++blob->version;

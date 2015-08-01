@@ -34,9 +34,10 @@ void session_set_private_key(struct session *session, unsigned const char key[KD
 	#define start_str "LastPassPrivateKey<"
 	#define end_str ">LastPassPrivateKey"
 	size_t len;
-	_cleanup_free_ char *encrypted_key = NULL;
+	_cleanup_free_ unsigned char *encrypted_key = NULL;
 	_cleanup_free_ char *decrypted_key = NULL;
-	char *encrypted_key_start, *start, *end;
+	unsigned char *encrypted_key_start;
+	char *start, *end;
 
 	len = strlen(key_hex);
 	if (len % 2 != 0)
@@ -66,7 +67,7 @@ void session_set_private_key(struct session *session, unsigned const char key[KD
 				die("Invalid private key after decryption and decoding.");
 			len /= 2;
 
-			hex_to_bytes(start, (char **)&session->private_key.key);
+			hex_to_bytes(start, &session->private_key.key);
 			session->private_key.len = len;
 			mlock(session->private_key.key, len);
 		}
@@ -87,7 +88,7 @@ struct session *sesssion_load(unsigned const char key[KDF_HASH_LEN])
 	session->uid = config_read_encrypted_string("session_uid", key);
 	session->sessionid = config_read_encrypted_string("session_sessionid", key);
 	session->token = config_read_encrypted_string("session_token", key);
-	session->private_key.len = config_read_encrypted_buffer("session_privatekey", (char **)&session->private_key.key, key);
+	session->private_key.len = config_read_encrypted_buffer("session_privatekey", &session->private_key.key, key);
 	mlock(session->private_key.key, session->private_key.len);
 
 	if (session_is_valid(session))

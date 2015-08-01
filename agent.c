@@ -279,7 +279,7 @@ bool agent_get_decryption_key(unsigned char key[KDF_HASH_LEN])
 	char *disable_str;
 
 	if (config_exists("plaintext_key")) {
-		_cleanup_free_ char *key_buffer = NULL;
+		_cleanup_free_ unsigned char *key_buffer = NULL;
 		if (config_read_buffer("plaintext_key", &key_buffer) == KDF_HASH_LEN) {
 			_cleanup_free_ char *verify = config_read_encrypted_string("verify", (unsigned char *)key_buffer);
 			if (!verify || strcmp(verify, AGENT_VERIFICATION_STRING))

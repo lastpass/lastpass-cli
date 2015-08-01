@@ -222,7 +222,7 @@ xml_parse_share_user(xmlDoc *doc, xmlNode *item, struct share_user *user)
 		if (xml_parse_bool(doc, child, "accepted", &user->accepted))
 			continue;
 		if (xml_parse_str(doc, child, "sharingkey", &tmp)) {
-			int ret = hex_to_bytes(tmp, (char **) &user->sharing_key.key);
+			int ret = hex_to_bytes(tmp, &user->sharing_key.key);
 			if (ret == 0)
 				user->sharing_key.len = strlen(tmp) / 2;
 			free(tmp);
@@ -312,7 +312,7 @@ int xml_parse_share_getpubkey(const char *buf, struct share_user *user)
 	for (xmlNode *item = root->children; item; item = item->next) {
 
 		if (xml_parse_str(doc, item, "pubkey0", &tmp)) {
-			int ret = hex_to_bytes(tmp, (char **) &user->sharing_key.key);
+			int ret = hex_to_bytes(tmp, &user->sharing_key.key);
 			if (ret == 0)
 				user->sharing_key.len = strlen(tmp) / 2;
 			free(tmp);

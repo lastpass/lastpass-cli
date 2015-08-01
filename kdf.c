@@ -61,14 +61,14 @@ void kdf_login_key(const char *username, const char *password, int iterations, c
 
 	if (iterations == 1) {
 		sha256_hash(user_lower, strlen(user_lower), password, password_len, hash);
-		bytes_to_hex((char *)hash, &hex, KDF_HASH_LEN);
+		bytes_to_hex(hash, &hex, KDF_HASH_LEN);
 		sha256_hash(hex, KDF_HEX_LEN - 1, password, password_len, hash);
 	} else {
 		pdkdf2_hash(user_lower, strlen(user_lower), password, password_len, iterations, hash);
 		pdkdf2_hash(password, password_len, (char *)hash, KDF_HASH_LEN, 1, hash);
 	}
 
-	bytes_to_hex((char *)hash, &hex, KDF_HASH_LEN);
+	bytes_to_hex(hash, &hex, KDF_HASH_LEN);
 	mlock(hex, KDF_HEX_LEN);
 }
 

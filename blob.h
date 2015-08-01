@@ -72,7 +72,7 @@ struct blob {
 
 enum blobsync { BLOB_SYNC_AUTO, BLOB_SYNC_YES, BLOB_SYNC_NO };
 
-struct blob *blob_parse(const char *blob, size_t len, const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key);
+struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key);
 void blob_free(struct blob *blob);
 size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN], char **out);
 struct blob *blob_load(enum blobsync sync, struct session *session, const unsigned char key[KDF_HASH_LEN]);
