@@ -103,6 +103,7 @@ void *secure_resize(void *ptr, size_t oldlen, size_t newlen);
 
 /* [min, max) */
 unsigned long range_rand(unsigned long min, unsigned long max);
+void get_random_bytes(unsigned char *buf, size_t len);
 
 const char *bool_str(bool val);
 #endif

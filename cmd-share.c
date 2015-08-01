@@ -37,6 +37,7 @@ struct share_args {
 #define share_useradd_usage "useradd [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
 #define share_usermod_usage "usermod [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
 #define share_userdel_usage "userdel SHARE USERNAME"
+#define share_create_usage "create SHARE"
 
 static char *checkmark(int x) {
 	return (x) ? "x" : "_";
@@ -183,6 +184,17 @@ int share_userdel(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
+int share_create(int argc, char **argv, struct share_args *args)
+{
+	if (argc != 0)
+		die_usage(cmd_share_usage);
+
+	UNUSED(argv);
+
+	lastpass_share_create(args->session, args->sharename);
+	return 0;
+}
+
 #define SHARE_CMD(name) { #name, "share " share_##name##_usage, share_##name }
 static struct {
 	const char *name;
@@ -193,6 +205,7 @@ static struct {
 	SHARE_CMD(useradd),
 	SHARE_CMD(usermod),
 	SHARE_CMD(userdel),
+	SHARE_CMD(create),
 };
 #undef SHARE_CMD
 
@@ -265,7 +278,8 @@ int cmd_share(int argc, char **argv)
 
 	init_all(args.sync, args.key, &args.session, &args.blob);
 
-	args.share = find_unique_share(args.blob, args.sharename);
+	if (strcmp(subcmd, "create") != 0)
+		args.share = find_unique_share(args.blob, args.sharename);
 
 	for (unsigned int i=0; i < ARRAY_SIZE(share_commands); i++) {
 		if (strcmp(subcmd, share_commands[i].name) == 0) {

@@ -448,6 +448,12 @@ unsigned long range_rand(unsigned long min, unsigned long max)
 	return range_rand(min, max);
 }
 
+void get_random_bytes(unsigned char *buf, size_t len)
+{
+	if (!RAND_bytes(buf, len))
+		die("Could not generate random bytes.");
+}
+
 const char *bool_str(bool val)
 {
 	return val ? "1" : "0";
