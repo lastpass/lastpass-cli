@@ -23,8 +23,7 @@
 #ifndef PBKDF2_H
 #define PBKDF2_H
 
-#include <string.h>
-#include <openssl/hmac.h>
+#include <openssl/evp.h>
 
 #if OPENSSL_VERSION_NUMBER < 0x10000000L
 #define PKCS5_PBKDF2_HMAC fallback_pkcs5_pbkdf2_hmac

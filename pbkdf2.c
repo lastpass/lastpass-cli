@@ -21,6 +21,9 @@
  */
 
 #include "pbkdf2.h"
+#include <string.h>
+#include <openssl/hmac.h>
+
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
