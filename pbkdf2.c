@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 Thomas Hurst.
+ * Copyright (c) 2014-2015 Thomas Hurst.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,10 +20,9 @@
  * THE SOFTWARE.
  */
 
+#include "pbkdf2.h"
 #include <string.h>
 #include <openssl/hmac.h>
-
-#if OPENSSL_VERSION_NUMBER < 0x10000000L && !(defined(__APPLE__) && defined(__MACH__))
 
 #ifndef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -31,11 +30,13 @@
 
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
 #define ERR_IFZERO(x) if (!(x)) goto err
+#define ERR_LABEL err:
 #else
 #define ERR_IFZERO(x) (x)
+#define ERR_LABEL
 #endif
 
-int PKCS5_PBKDF2_HMAC(const unsigned char *pass, size_t pass_len,
+int fallback_pkcs5_pbkdf2_hmac(const char *pass, size_t pass_len,
 	const unsigned char *salt, size_t salt_len, unsigned int iterations,
 	const EVP_MD *digest, size_t key_len, unsigned char *output)
 {
@@ -52,6 +53,7 @@ int PKCS5_PBKDF2_HMAC(const unsigned char *pass, size_t pass_len,
 	unsigned char tmp_md[md_len];
 
 	HMAC_CTX_init(&ctx);
+	ERR_IFZERO(HMAC_Init_ex(&ctx, pass, pass_len, digest, NULL));
 
 	while (key_left) {
 		cp_len = min(key_left, md_len);
@@ -62,15 +64,16 @@ int PKCS5_PBKDF2_HMAC(const unsigned char *pass, size_t pass_len,
 		c[2] = (count >> 8) & 0xff;
 		c[3] = (count) & 0xff;
 
-		ERR_IFZERO(HMAC_Init_ex(&ctx, pass, pass_len, digest, NULL));
+		ERR_IFZERO(HMAC_Init_ex(&ctx, NULL, 0, digest, NULL));
 		ERR_IFZERO(HMAC_Update(&ctx, salt, salt_len));
 		ERR_IFZERO(HMAC_Update(&ctx, c, 4));
 		ERR_IFZERO(HMAC_Final(&ctx, tmp_md, NULL));
 		memcpy(out, tmp_md, cp_len);
 
 		for (iter=1; iter < iterations; iter++) {
-			if (HMAC(digest, pass, pass_len, tmp_md, md_len, tmp_md, NULL) == NULL)
-				goto err;
+			ERR_IFZERO(HMAC_Init_ex(&ctx, NULL, 0, digest, NULL));
+			ERR_IFZERO(HMAC_Update(&ctx, tmp_md, md_len));
+			ERR_IFZERO(HMAC_Final(&ctx, tmp_md, NULL));
 
 			for (i = 0; i < cp_len; i++) {
 				out[i] ^= tmp_md[i];
@@ -83,8 +86,7 @@ int PKCS5_PBKDF2_HMAC(const unsigned char *pass, size_t pass_len,
 	}
 	ret = 1;
 
-err:
+ERR_LABEL
 	HMAC_CTX_cleanup(&ctx);
 	return ret;
 }
-#endif
