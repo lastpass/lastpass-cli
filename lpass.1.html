@@ -795,16 +795,22 @@ asciidoc.install(2);
 <div class="paragraph"><p><em>lpass</em> is a simple command line interface to LastPass. It is comprised of
 several subcommands:</p></div>
 <div class="verseblock">
-<pre class="content">lpass <strong>login</strong> [--trust] [--plaintext-key [--force, -f]] USERNAME
-lpass <strong>logout</strong> [--force, -f]
-lpass <strong>show</strong> [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] {UNIQUENAME|UNIQUEID}
-lpass <strong>ls</strong> [--sync=auto|now|no] [GROUP]
-lpass <strong>edit</strong> [--sync=auto|now|no] [--non-interactive] {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}
-lpass <strong>generate</strong> [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] {NAME|UNIQUEID} LENGTH
-lpass <strong>duplicate</strong> [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
-lpass <strong>rm</strong> [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
-lpass <strong>sync</strong> [--background, -b]
-lpass <strong>export</strong> [--sync=auto|now|no]</pre>
+<pre class="content">lpass <strong>login</strong> [--trust] [--plaintext-key [--force, -f]] [--color=auto|never|always] USERNAME
+lpass <strong>logout</strong> [--force, -f] [--color=auto|never|always]
+lpass <strong>show</strong> [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}
+lpass <strong>ls</strong> [--sync=auto|now|no] [--color=auto|never|always] [GROUP]
+lpass <strong>edit</strong> [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} [--color=auto|never|always] {NAME|UNIQUEID}
+lpass <strong>generate</strong> [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
+lpass <strong>duplicate</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
+lpass <strong>rm</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
+lpass <strong>sync</strong> [--background, -b] [--color=auto|never|always]
+lpass <strong>export</strong> [--sync=auto|now|no] [--color=auto|never|always]
+lpass <strong>share</strong> <strong>userls</strong> SHARE
+lpass <strong>share</strong> <strong>useradd</strong> [--read_only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+lpass <strong>share</strong> <strong>usermod</strong> [--read_only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+lpass <strong>share</strong> <strong>userdel</strong> SHARE USERNAME
+lpass <strong>share</strong> <strong>create</strong> SHARE
+lpass <strong>share</strong> <strong>rm</strong> SHARE</pre>
 <div class="attribution">
 </div></div>
 <div class="sect2">
@@ -863,7 +869,7 @@ credentials or by interactively prompting (in the case of multifactor or an
 unprovided password). The <em>--trust</em> option will cause subsequent logins to not
 require multifactor authentication. If the <em>--plaintext-key</em> option is
 specified, the decryption key will be saved to the hard disk in plaintext.
-Please note that use of this option is discourages except in limited
+Please note that use of this option is discouraged except in limited
 situations, as it greatly decreases the security of data.</p></div>
 <div class="paragraph"><p>The <em>logout</em> subcommand will remove the local cache and stored encryption
 keys. It will prompt the user to confirm, unless <em>--force</em> is specified.</p></div>
@@ -890,10 +896,28 @@ generated password.</p></div>
 will create a duplicate entry of the one specified, but with a different <em>ID</em>.</p></div>
 </div>
 <div class="sect2">
+<h3 id="_shared_folder_commands">Shared Folder Commands</h3>
+<div class="paragraph"><p>The <em>share</em> command and its accompanying subcommands can be used to manipulate
+shared folders, if available to the (enterprise or premium) user.  The
+<em>userls</em>, <em>useradd</em>, <em>usermod</em>, and <em>userdel</em> subcommands may be used to
+query and modify membership of the shared folder, while the <em>create</em> and <em>rm</em>
+share subcommands may be used to add new, or delete existing shared folders.
+The normal <em>generate</em> and <em>edit</em> commands may be used to edit accounts within
+the shared folder.</p></div>
+</div>
+<div class="sect2">
 <h3 id="_clipboard">Clipboard</h3>
 <div class="paragraph"><p>Commands that take a <em>-c</em> or <em>--clip</em> option will copy the output to the
-clipboard, using <strong>xclip</strong>(1) or <strong>xsel</strong>(1) on X11-based systems or <strong>pbcopy</strong>(1)
-on OSX.</p></div>
+clipboard, using <strong>xclip</strong>(1) or <strong>xsel</strong>(1) on X11-based systems, <strong>pbcopy</strong>(1)
+on OSX, or <strong>putclip</strong> on Cygwin.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_color_output">Color Output</h3>
+<div class="paragraph"><p>The <em>--color</em> option controls colored output to the terminal.  By default,
+commands will use <em>--color=auto</em>, in which color output is used unless the
+output is not a tty (for example, when passed to a pipe or file).  If <em>always</em>
+is used, colors are produced regardless of the output detection.  If <em>never</em>
+is used, no color escape sequences are emitted.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_configuration">Configuration</h3>
@@ -947,7 +971,8 @@ in the section above:</p></div>
 <div id="footnotes"><hr></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2014-10-27 12:06:59 EDT
+Last updated
+ 2015-08-11 16:00:11 EDT
 </div>
 </div>
 </body>
