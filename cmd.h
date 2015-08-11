@@ -35,37 +35,38 @@ void find_matching_substr(struct blob *blob, const char *pattern,
 enum color_mode parse_color_mode_string(const char *colormode);
 bool parse_bool_arg_string(const char *extra);
 
+#define color_usage "[--color=auto|never|always]"
 
 int cmd_login(int argc, char **argv);
-#define cmd_login_usage "login [--trust] [--plaintext-key [--force, -f]] USERNAME"
+#define cmd_login_usage "login [--trust] [--plaintext-key [--force, -f]] " color_usage " USERNAME"
 
 int cmd_logout(int argc, char **argv);
-#define cmd_logout_usage "logout [--force, -f]"
+#define cmd_logout_usage "logout [--force, -f] " color_usage
 
 int cmd_show(int argc, char **argv);
-#define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] {UNIQUENAME|UNIQUEID}"
+#define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] " color_usage " {UNIQUENAME|UNIQUEID}"
 
 int cmd_ls(int argc, char **argv);
-#define cmd_ls_usage "ls [--sync=auto|now|no] [GROUP]"
+#define cmd_ls_usage "ls [--sync=auto|now|no] " color_usage " [GROUP]"
 
 int cmd_edit(int argc, char **argv);
-#define cmd_edit_usage "edit [--sync=auto|now|no] [--non-interactive] {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}"
+#define cmd_edit_usage "edit [--sync=auto|now|no] [--non-interactive] " color_usage " {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}"
 
 int cmd_generate(int argc, char **argv);
 #define cmd_generate_usage "generate [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] {NAME|UNIQUEID} LENGTH"
 
 int cmd_duplicate(int argc, char **argv);
-#define cmd_duplicate_usage "duplicate [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}"
+#define cmd_duplicate_usage "duplicate [--sync=auto|now|no] " color_usage " {UNIQUENAME|UNIQUEID}"
 
 int cmd_rm(int argc, char **argv);
-#define cmd_rm_usage "rm [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}"
+#define cmd_rm_usage "rm [--sync=auto|now|no] " color_usage " {UNIQUENAME|UNIQUEID}"
 
 int cmd_sync(int argc, char **argv);
-#define cmd_sync_usage "sync [--background, -b]"
+#define cmd_sync_usage "sync [--background, -b] " color_usage
 
 int cmd_export(int argc, char **argv);
-#define cmd_export_usage "export [--sync=auto|now|no]"
+#define cmd_export_usage "export [--sync=auto|now|no] " color_usage
 
 int cmd_share(int argc, char **argv);
-#define cmd_share_usage "share subcommand sharename..."
+#define cmd_share_usage "share " color_usage " subcommand sharename..."
 #endif

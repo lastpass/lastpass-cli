@@ -21,16 +21,16 @@ DESCRIPTION
 several subcommands:
 
 [verse]
- lpass *login* [--trust] [--plaintext-key [--force, -f]] USERNAME
- lpass *logout* [--force, -f]
- lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] {NAME|UNIQUEID}
- lpass *ls* [--sync=auto|now|no] [GROUP]
- lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} {NAME|UNIQUEID}
- lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] {NAME|UNIQUEID} LENGTH
- lpass *duplicate* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
- lpass *rm* [--sync=auto|now|no] {UNIQUENAME|UNIQUEID}
- lpass *sync* [--background, -b]
- lpass *export* [--sync=auto|now|no]
+ lpass *login* [--trust] [--plaintext-key [--force, -f]] [--color=auto|never|always] USERNAME
+ lpass *logout* [--force, -f] [--color=auto|never|always]
+ lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}
+ lpass *ls* [--sync=auto|now|no] [--color=auto|never|always] [GROUP]
+ lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} [--color=auto|never|always] {NAME|UNIQUEID}
+ lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
+ lpass *duplicate* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
+ lpass *rm* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
+ lpass *sync* [--background, -b] [--color=auto|never|always]
+ lpass *export* [--sync=auto|now|no] [--color=auto|never|always]
 
 Synchronization
 ~~~~~~~~~~~~~~~
@@ -125,6 +125,14 @@ Clipboard
 Commands that take a '-c' or '--clip' option will copy the output to the
 clipboard, using *xclip*(1) or *xsel*(1) on X11-based systems, *pbcopy*(1)
 on OSX, or *putclip* on Cygwin.
+
+Color Output
+~~~~~~~~~~~~
+The '--color' option controls colored output to the terminal.  By default,
+commands will use '--color=auto', in which color output is used unless the
+output is not a tty (for example, when passed to a pipe or file).  If 'always'
+is used, colors are produced regardless of the output detection.  If 'never'
+is used, no color escape sequences are emitted.
 
 Configuration
 ~~~~~~~~~~~~~
