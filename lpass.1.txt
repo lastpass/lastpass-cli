@@ -31,6 +31,12 @@ several subcommands:
  lpass *rm* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
  lpass *sync* [--background, -b] [--color=auto|never|always]
  lpass *export* [--sync=auto|now|no] [--color=auto|never|always]
+ lpass *share* *userls* SHARE
+ lpass *share* *useradd* [--read_only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+ lpass *share* *usermod* [--read_only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+ lpass *share* *userdel* SHARE USERNAME
+ lpass *share* *create* SHARE
+ lpass *share* *rm* SHARE
 
 Synchronization
 ~~~~~~~~~~~~~~~
@@ -119,6 +125,16 @@ generated password.
 
 The 'rm' command will remove the specified entry, and the 'duplicate' command
 will create a duplicate entry of the one specified, but with a different 'ID'.
+
+Shared Folder Commands
+~~~~~~~~~~~~~~~~~~~~~~
+The 'share' command and its accompanying subcommands can be used to manipulate
+shared folders, if available to the (enterprise or premium) user.  The
+'userls', 'useradd', 'usermod', and 'userdel' subcommands may be used to
+query and modify membership of the shared folder, while the 'create' and 'rm'
+share subcommands may be used to add new, or delete existing shared folders.
+The normal 'generate' and 'edit' commands may be used to edit accounts within
+the shared folder.
 
 Clipboard
 ~~~~~~~~~
