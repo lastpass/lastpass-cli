@@ -201,7 +201,11 @@ int cmd_edit(int argc, char **argv)
 		account_set_fullname(editable, xstrdup(name), key);
 		account_set_username(editable, xstrdup(""), key);
 		account_set_note(editable, xstrdup(""), key);
-		editable->url = xstrdup("");
+		if (choice == NOTES) {
+			editable->url = xstrdup("http://sn");
+		} else {
+			editable->url = xstrdup("");
+		}
 		list_add(&editable->list, &blob->account_head);
 	}
 	notes_expansion = notes_expand(editable);
