@@ -75,10 +75,54 @@ static int global_options(int argc, char *argv[])
 	return 1;
 }
 
+static void expand_aliases(int *argc, char ***argv)
+{
+	int i;
+	const char *alias = (*argv)[0];
+	char **new_argv = NULL;
+	int argv_alloced;
+	int new_argc = 0;
+	_cleanup_free_ char *config_name;
+	_cleanup_free_ char *alias_val;
+
+	xasprintf(&config_name, "alias.%s", alias);
+
+	alias_val = config_read_string(config_name);
+	if (!alias_val)
+		return;
+
+	trim(alias_val);
+
+	/* split commandline and prepend to argv */
+	argv_alloced = 0;
+	new_argv = xcalloc(*argc + 1, sizeof(*new_argv));
+
+	char *tok = strtok(alias_val, " \t");
+	while (tok) {
+		if (new_argc >= argv_alloced) {
+			argv_alloced += 16;
+			new_argv = xreallocarray(new_argv,
+				argv_alloced + *argc + 1, sizeof(*new_argv));
+		}
+		new_argv[new_argc++] = xstrdup(tok);
+		tok = strtok(NULL, " \t");
+	}
+
+	/* copy in remaining items from argc */
+	for (i=1; i < *argc; i++) {
+		new_argv[new_argc++] = xstrdup((*argv)[i]);
+	}
+	new_argv[new_argc] = 0;
+	*argv = new_argv;
+	*argc = new_argc;
+}
+
 static int process_command(int argc, char *argv[])
 {
+	expand_aliases(&argc, &argv);
+
 	for (size_t i = 0; i < ARRAY_SIZE(commands); ++i) {
-		if (!strcmp(argv[0], commands[i].name))
+		if (argc && !strcmp(argv[0], commands[i].name))
 			return commands[i].cmd(argc, argv);
 	}
 	help();
