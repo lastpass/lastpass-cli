@@ -24,7 +24,7 @@ several subcommands:
  lpass *login* [--trust] [--plaintext-key [--force, -f]] [--color=auto|never|always] USERNAME
  lpass *logout* [--force, -f] [--color=auto|never|always]
  lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}
- lpass *ls* [--sync=auto|now|no] [--color=auto|never|always] [GROUP]
+ lpass *ls* [--sync=auto|now|no] [--long, -l] [-m] [-u] [--color=auto|never|always] [GROUP]
  lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} [--color=auto|never|always] {NAME|UNIQUEID}
  lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
  lpass *duplicate* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
@@ -105,7 +105,10 @@ Viewing
 ~~~~~~~
 The 'show' subcommand will display a password or selected field.
 
-The 'ls' subcommand will list names in groups in a tree structure.
+The 'ls' subcommand will list names in groups in a tree structure. If
+the '--long' or '-l' option is set, then also list the last modification
+time.  The '-u' option may be passed to show the last use (last touch) time
+instead, if available. Both times are in GMT.
 
 The 'export' subcommand will dump all account information including
 passwords to stdout (unencrypted).

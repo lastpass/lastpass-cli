@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
+
+static bool long_listing = false;
+static bool show_mtime = true;
 
 struct node {
 	char *name;
@@ -19,6 +23,26 @@ struct node {
 	struct node *first_child;
 	struct node *next_sibling;
 };
+
+static char *format_timestamp(char *timestamp, bool utc)
+{
+	char temp[60];
+	struct tm *ts_tm;
+
+	time_t ts_time_t = (time_t) strtoul(timestamp, NULL, 10);
+
+	if (ts_time_t == 0)
+		return xstrdup("");
+
+	if (utc)
+		ts_tm = gmtime(&ts_time_t);
+	else
+		ts_tm = localtime(&ts_time_t);
+
+	strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M", ts_tm);
+
+	return xstrdup(temp);
+}
 
 static void insert_node(struct node *head, const char *path, struct account *account)
 {
@@ -73,8 +97,17 @@ static void print_node(struct node *head, int level)
 		if (node->name) {
 			for (int i = 0; i < level; ++i)
 				printf("    ");
-			if (node->account)
+			if (node->account) {
+				if (long_listing) {
+					_cleanup_free_ char *timestr;
+					if (show_mtime)
+						timestr = format_timestamp(node->account->last_modified_gmt, true);
+					else
+						timestr = format_timestamp(node->account->last_touch, false);
+					terminal_printf(TERMINAL_FG_CYAN "%s ", timestr);
+				}
 				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]" TERMINAL_RESET "\n", node->name, node->account->id);
+			}
 			else if (node->shared)
 				terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
 			else
@@ -104,6 +137,7 @@ int cmd_ls(int argc, char **argv)
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
 		{"color", required_argument, NULL, 'C'},
+		{"long", no_argument, NULL, 'l'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -118,13 +152,22 @@ int cmd_ls(int argc, char **argv)
 	bool print_tree;
 	struct account *account;
 
-	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "lmu", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
 				break;
 			case 'C':
 				cmode = parse_color_mode_string(optarg);
+				break;
+			case 'l':
+				long_listing = true;
+				break;
+			case 'm':
+				show_mtime = true;
+				break;
+			case 'u':
+				show_mtime = false;
 				break;
 			case '?':
 			default:
@@ -169,8 +212,17 @@ int cmd_ls(int argc, char **argv)
 
 		if (print_tree)
 			insert_node(root, fullname, account);
-		else
+		else {
+			if (long_listing) {
+				_cleanup_free_ char *timestr;
+				if (show_mtime)
+					timestr = format_timestamp(account->last_modified_gmt, true);
+				else
+					timestr = format_timestamp(account->last_touch, false);
+				printf("%s ", timestr);
+			}
 			printf("%s [id: %s]\n", fullname, account->id);
+		}
 
 		free(fullname);
 	}
