@@ -276,7 +276,7 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	entry_boolean(pwprotect);
 	skip(genpw);
 	skip(sn);
-	skip(last_touch);
+	entry_plain(last_touch);
 	skip(autologin);
 	skip(never_autofill);
 	skip(realm_data);
@@ -295,7 +295,7 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	skip(individualshare);
 	skip(notetype);
 	skip(noalert);
-	skip(last_modified_gmt);
+	entry_plain(last_modified_gmt);
 	skip(hasbeenshared);
 	skip(last_pwchange_gmt);
 	skip(created_gmt);

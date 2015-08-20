@@ -47,7 +47,7 @@ int cmd_show(int argc, char **argv);
 #define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] " color_usage " {UNIQUENAME|UNIQUEID}"
 
 int cmd_ls(int argc, char **argv);
-#define cmd_ls_usage "ls [--sync=auto|now|no] " color_usage " [GROUP]"
+#define cmd_ls_usage "ls [--sync=auto|now|no] [--long, -l] " color_usage " [GROUP]"
 
 int cmd_edit(int argc, char **argv);
 #define cmd_edit_usage "edit [--sync=auto|now|no] [--non-interactive] " color_usage " {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}"
