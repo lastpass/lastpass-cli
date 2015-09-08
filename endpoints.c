@@ -136,7 +136,7 @@ unsigned long long lastpass_get_blob_version(struct session *session, unsigned c
 	_cleanup_free_ char *reply = NULL;
 	unsigned long long version;
 
-	reply = http_post_lastpass("login_check.php", session->sessionid, NULL, NULL);
+	reply = http_post_lastpass("login_check.php", session->sessionid, NULL, "method", "cli", NULL);
 	if (!reply)
 		return 0;
 	version = xml_login_check(reply, session);
