@@ -71,7 +71,7 @@ int cmd_show(int argc, char **argv)
 	bool clip = false;
 	struct list_head matches;
 	enum search_type search = SEARCH_EXACT_MATCH;
-	int fields = ACCOUNT_NAME;
+	int fields = ACCOUNT_NAME | ACCOUNT_ID;
 
 	while ((option = getopt_long(argc, argv, "cupFG", long_options, &option_index)) != -1) {
 		switch (option) {
