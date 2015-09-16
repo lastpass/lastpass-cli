@@ -15,7 +15,7 @@
 #if defined(__APPLE__) && defined(__MACH__)
 #include <CommonCrypto/CommonCryptor.h>
 #include <CommonCrypto/CommonKeyDerivation.h>
-static void pdkdf2_hash(const char *username, size_t username_len, const char *password, size_t password_len, int iterations, unsigned char hash[KDF_HASH_LEN])
+static void pbkdf2_hash(const char *username, size_t username_len, const char *password, size_t password_len, int iterations, unsigned char hash[KDF_HASH_LEN])
 {
 	if (CCKeyDerivationPBKDF(kCCPBKDF2, password, password_len, (const uint8_t *)username, username_len, kCCPRFHmacAlgSHA256, iterations, hash, KDF_HASH_LEN) == kCCParamError)
 		die("Failed to compute PBKDF2 for %s", username);
@@ -23,7 +23,7 @@ static void pdkdf2_hash(const char *username, size_t username_len, const char *p
 #else
 #include "pbkdf2.h"
 
-static void pdkdf2_hash(const char *username, size_t username_len, const char *password, size_t password_len, int iterations, unsigned char hash[KDF_HASH_LEN])
+static void pbkdf2_hash(const char *username, size_t username_len, const char *password, size_t password_len, int iterations, unsigned char hash[KDF_HASH_LEN])
 {
 	if (!PKCS5_PBKDF2_HMAC(password, password_len, (const unsigned char *)username, username_len, iterations, EVP_sha256(), KDF_HASH_LEN, hash))
 		die("Failed to compute PBKDF2 for %s", username);
@@ -64,8 +64,8 @@ void kdf_login_key(const char *username, const char *password, int iterations, c
 		bytes_to_hex(hash, &hex, KDF_HASH_LEN);
 		sha256_hash(hex, KDF_HEX_LEN - 1, password, password_len, hash);
 	} else {
-		pdkdf2_hash(user_lower, strlen(user_lower), password, password_len, iterations, hash);
-		pdkdf2_hash(password, password_len, (char *)hash, KDF_HASH_LEN, 1, hash);
+		pbkdf2_hash(user_lower, strlen(user_lower), password, password_len, iterations, hash);
+		pbkdf2_hash(password, password_len, (char *)hash, KDF_HASH_LEN, 1, hash);
 	}
 
 	bytes_to_hex(hash, &hex, KDF_HASH_LEN);
@@ -82,6 +82,6 @@ void kdf_decryption_key(const char *username, const char *password, int iteratio
 	if (iterations == 1)
 		sha256_hash(user_lower, strlen(user_lower), password, strlen(password), hash);
 	else
-		pdkdf2_hash(user_lower, strlen(user_lower), password, strlen(password), iterations, hash);
+		pbkdf2_hash(user_lower, strlen(user_lower), password, strlen(password), iterations, hash);
 	mlock(hash, KDF_HASH_LEN);
 }
