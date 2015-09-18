@@ -44,7 +44,7 @@ static char *checkmark(int x) {
 	return (x) ? "x" : "_";
 }
 
-int share_userls(int argc, char **argv, struct share_args *args)
+static int share_userls(int argc, char **argv, struct share_args *args)
 {
 	UNUSED(argv);
 	struct share_user *user;
@@ -112,7 +112,7 @@ int share_userls(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
-int share_useradd(int argc, char **argv, struct share_args *args)
+static int share_useradd(int argc, char **argv, struct share_args *args)
 {
 	struct share_user new_user = {
 		.read_only = args->read_only,
@@ -153,7 +153,7 @@ struct share_user *get_user_from_share(struct session *session,
 }
 
 
-int share_usermod(int argc, char **argv, struct share_args *args)
+static int share_usermod(int argc, char **argv, struct share_args *args)
 {
 	struct share_user *user;
 
@@ -173,7 +173,7 @@ int share_usermod(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
-int share_userdel(int argc, char **argv, struct share_args *args)
+static int share_userdel(int argc, char **argv, struct share_args *args)
 {
 	struct share_user *found;
 
@@ -185,7 +185,7 @@ int share_userdel(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
-int share_create(int argc, char **argv, struct share_args *args)
+static int share_create(int argc, char **argv, struct share_args *args)
 {
 	if (argc != 0)
 		die_usage(cmd_share_usage);
@@ -196,7 +196,7 @@ int share_create(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
-int share_rm(int argc, char **argv, struct share_args *args)
+static int share_rm(int argc, char **argv, struct share_args *args)
 {
 	if (argc != 0)
 		die_usage(cmd_share_usage);
