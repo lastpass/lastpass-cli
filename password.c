@@ -18,6 +18,61 @@
 #include <errno.h>
 #include <termios.h>
 
+static char *password_prompt_askpass(const char *askpass, const char *prompt, const char *error, const char *descfmt, va_list params)
+{
+	int status;
+	int write_fds[2], read_fds[2];
+	pid_t child;
+	FILE *output;
+	char *password = NULL, *lastlf;
+	size_t len;
+	UNUSED(error);
+	UNUSED(descfmt);
+	UNUSED(params);
+
+	if (pipe(write_fds) < 0 || pipe(read_fds) < 0)
+		die_errno("pipe");
+
+	child = fork();
+	if (child == -1)
+		die_errno("fork");
+
+	if (child == 0) {
+		dup2(read_fds[1], STDOUT_FILENO);
+
+		close(read_fds[0]);
+		close(read_fds[1]);
+		close(write_fds[0]);
+		close(write_fds[1]);
+		execlp(askpass, "lpass-askpass", prompt, NULL);
+		_exit(76);
+	}
+	close(read_fds[1]);
+	close(write_fds[0]);
+	close(write_fds[1]);
+
+	output = fdopen(read_fds[0], "r");
+	if (!output)
+		die_errno("fdopen");
+
+	if (getline(&password, &len, output) < 0) {
+		free(password);
+		die("Unable to retrieve password from askpass (no reply)");
+	}
+	lastlf = strrchr(password, '\n');
+	if (lastlf)
+		*lastlf = '\0';
+	waitpid(child, &status, 0);
+
+	if (WEXITSTATUS(status) == 76) {
+		die("Unable to execute askpass %s", askpass);
+	} else if (WEXITSTATUS(status)) {
+		die("There was an unspecified problem with askpass (%d)",
+		    WEXITSTATUS(status));
+	}
+	return password;
+}
+
 static char *password_prompt_fallback(const char *prompt, const char *error, const char *descfmt, va_list params)
 {
 	struct termios old_termios, mask_echo;
@@ -143,9 +198,18 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 	_cleanup_free_ char *prompt_colon = NULL;
 	_cleanup_free_ char *password = NULL;
 	char *password_fallback;
+	char *askpass;
 	char *ret;
 	va_list params;
 	int devnull;
+
+	askpass = getenv("LPASS_ASKPASS");
+	if (askpass) {
+		va_start(params, descfmt);
+		askpass = password_prompt_askpass(askpass, prompt, error, descfmt, params);
+		va_end(params);
+		return askpass;
+	}
 
 	password_fallback = getenv("LPASS_DISABLE_PINENTRY");
 	if (password_fallback && !strcmp(password_fallback, "1")) {
