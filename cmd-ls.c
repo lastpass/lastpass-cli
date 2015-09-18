@@ -10,6 +10,12 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
+
+#define MODIFIED_TAG	"m"
+#define TOUCHED_TAG	"t"
+
+static bool long_listing = false;
 
 struct node {
 	char *name;
@@ -19,6 +25,28 @@ struct node {
 	struct node *first_child;
 	struct node *next_sibling;
 };
+
+static char* format_timestamp(char* timestamp, char* tag, bool utc)
+{
+	char*  result    = NULL;
+	time_t ts_time_t = (time_t) strtoul(timestamp, NULL, 10);
+
+	if (ts_time_t == 0) {
+		result = (char*) calloc(1, 1);
+	} else {
+		char temp[24];
+		struct tm* ts_tm;
+		if (utc) {
+			ts_tm = gmtime(&ts_time_t);
+		} else {
+			ts_tm = localtime(&ts_time_t);
+		}
+		strftime(temp, sizeof (temp), "%Y.%m.%d-%H:%M:%S", ts_tm);
+		xasprintf(&result, "[%s: %s]", tag, temp);
+	}
+
+	return (result);
+}
 
 static void insert_node(struct node *head, const char *path, struct account *account)
 {
@@ -70,11 +98,17 @@ static void print_node(struct node *head, int level)
 	struct node *node;
 
 	for (node = head; node; node = node->next_sibling) {
+
 		if (node->name) {
 			for (int i = 0; i < level; ++i)
 				printf("    ");
 			if (node->account)
-				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]" TERMINAL_RESET "\n", node->name, node->account->id);
+				if (long_listing) {
+					char* last_mod   = format_timestamp(node->account->last_modified_gmt, MODIFIED_TAG, true);
+					char* last_touch = format_timestamp(node->account->last_touch,        TOUCHED_TAG,  false);
+					terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]" TERMINAL_FG_CYAN " %s %s" TERMINAL_RESET "\n", node->name, node->account->id, last_mod, last_touch);
+				} else
+					terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]" TERMINAL_RESET "\n", node->name, node->account->id);
 			else if (node->shared)
 				terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
 			else
@@ -104,6 +138,7 @@ int cmd_ls(int argc, char **argv)
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
 		{"color", required_argument, NULL, 'C'},
+		{"long", no_argument, NULL, 'l'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -118,13 +153,16 @@ int cmd_ls(int argc, char **argv)
 	bool print_tree;
 	struct account *account;
 
-	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "l", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
 				break;
 			case 'C':
 				cmode = parse_color_mode_string(optarg);
+				break;
+			case 'l':
+				long_listing = true;
 				break;
 			case '?':
 			default:
@@ -170,7 +208,14 @@ int cmd_ls(int argc, char **argv)
 		if (print_tree)
 			insert_node(root, fullname, account);
 		else
-			printf("%s [id: %s]\n", fullname, account->id);
+			if (long_listing) {
+				char* last_mod   = format_timestamp(account->last_modified_gmt, MODIFIED_TAG, true);
+				char* last_touch = format_timestamp(account->last_touch,        TOUCHED_TAG,  false);
+				printf("%s [id: %s] %s %s\n", fullname, account->id, last_mod, last_touch);
+				free(last_mod);
+				free(last_touch);
+			} else
+				printf("%s [id: %s]\n", fullname, account->id);
 
 		free(fullname);
 	}

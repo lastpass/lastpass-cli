@@ -52,6 +52,7 @@ struct account {
 	char *username, *username_encrypted;
 	char *password, *password_encrypted;
 	char *note, *note_encrypted;
+	char *last_touch, *last_modified_gmt;
 	bool pwprotect;
 
 	struct list_head field_head;
