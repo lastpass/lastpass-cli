@@ -93,17 +93,19 @@ out:
 
 void process_set_name(const char *name)
 {
+	size_t argslen = 0;
 	prctl(PR_SET_NAME, name);
 
 	if (!ARGC || !ARGV)
 		return;
 
 	for (int i = 0; i < ARGC; ++i) {
+		argslen += strlen(ARGV[i]) + 1;
 		for (char *p = ARGV[i]; *p; ++p)
 			*p = '\0';
 	}
 
-	strcpy(ARGV[0], name);
+	strlcpy(ARGV[0], name, argslen);
 }
 
 bool process_is_same_executable(pid_t pid)
