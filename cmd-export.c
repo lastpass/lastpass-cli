@@ -15,7 +15,7 @@
 #include <string.h>
 
 
-void print_csv_cell(char *cell, bool is_last)
+static void print_csv_cell(char *cell, bool is_last)
 {
 	char *ptr;
 	bool needs_quote = false;
