@@ -199,8 +199,8 @@ int cmd_ls(int argc, char **argv)
 
 	list_for_each_entry(account, &blob->account_head, list) {
 		if (group) {
-			sub = strstr(account->group, group);
-			if (!sub || sub != account->group)
+			sub = strstr(account->fullname, group);
+			if (!sub || sub != account->fullname)
 				continue;
 			group_len = strlen(group);
 			sub += group_len;
