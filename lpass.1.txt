@@ -76,6 +76,20 @@ passwords if it is installed. If unavailable, or if the 'LPASS_DISABLE_PINENTRY'
 environment variable is set to 1, passwords will be read from standard input and a
 prompt will be displayed on standard error.
 
+The program used for inputting passwords may also be configured by setting the
+'LPASS_ASKPASS` environment variable. 'LPASS_ASKPASS' is expected to be a
+binary that produces a prompt using its first command-line argument, and
+outputs the entered password to standard out.  ssh-askpass implements this
+protocol, as does the following shell script:
+
+[verse]
+ #!/bin/bash
+ echo -n "$*: " >/dev/stderr
+ stty -echo
+ read answer
+ stty echo
+ echo $answer
+
 Entry Specification
 ~~~~~~~~~~~~~~~~~~~
 Commands that take a 'UNIQUENAME' will fail if the provided name is used
@@ -175,4 +189,5 @@ in the section above:
 * 'LPASS_AGENT_TIMEOUT'
 * 'LPASS_AGENT_DISABLE'
 * 'LPASS_DISABLE_PINENTRY'
+* 'LPASS_ASKPASS'
 * 'LPASS_CLIPBOARD_COMMAND'
