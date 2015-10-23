@@ -27,6 +27,16 @@ void clipboard_close(void)
 	saved_stdout = -1;
 }
 
+void exec_command(char *command) {
+	char *shell = getenv("SHELL");
+
+	if (!shell) {
+		shell = "/bin/sh";
+	}
+
+	execlp(shell, shell, "-c", command, NULL);
+}
+
 void clipboard_open(void)
 {
 	int pipefd[2];
@@ -46,11 +56,17 @@ void clipboard_open(void)
 		close(pipefd[1]);
 		dup2(pipefd[0], STDIN_FILENO);
 		close(pipefd[0]);
-		execlp("xclip", "xclip", "-selection", "clipboard", "-in", NULL);
-		execlp("xsel", "xsel", "--clipboard", "--input", NULL);
-		execlp("pbcopy", "pbcopy", NULL);
-		execlp("putclip", "putclip", "--dos", NULL);
-		die("Unable to copy contents to clipboard. Please make sure you have `xclip`, `xsel`, `pbcopy`, or `putclip` installed.");
+		char *clipboard_command = getenv("LPASS_CLIPBOARD_COMMAND");
+		if (clipboard_command) {
+			exec_command(clipboard_command);
+			die("Unable to copy contents to clipboard. Please make sure you have `xclip`, `xsel`, `pbcopy`, or `putclip` installed.");
+		} else {
+			execlp("xclip", "xclip", "-selection", "clipboard", "-in", NULL);
+			execlp("xsel", "xsel", "--clipboard", "--input", NULL);
+			execlp("pbcopy", "pbcopy", NULL);
+			execlp("putclip", "putclip", "--dos", NULL);
+			die("Unable to copy contents to clipboard. Please make sure you have `xclip`, `xsel`, `pbcopy`, or `putclip` installed.");
+		}
 	}
 	close(pipefd[0]);
 	dup2(pipefd[1], STDOUT_FILENO);
