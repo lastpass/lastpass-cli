@@ -143,7 +143,8 @@ Clipboard
 ~~~~~~~~~
 Commands that take a '-c' or '--clip' option will copy the output to the
 clipboard, using *xclip*(1) or *xsel*(1) on X11-based systems, *pbcopy*(1)
-on OSX, or *putclip* on Cygwin.
+on OSX, or *putclip* on Cygwin. The command to be used can be overridden by
+specifying the `LPASS_CLIPBOARD_COMMAND` environment variable.
 
 Color Output
 ~~~~~~~~~~~~
@@ -174,3 +175,4 @@ in the section above:
 * 'LPASS_AGENT_TIMEOUT'
 * 'LPASS_AGENT_DISABLE'
 * 'LPASS_DISABLE_PINENTRY'
+* 'LPASS_CLIPBOARD_COMMAND'
