@@ -47,9 +47,9 @@ int lastpass_share_get_user_by_uid(const struct session *session,
 }
 
 static
-int lastpass_share_get_user_by_username(const struct session *session,
-					const char *username,
-					struct share_user *user)
+int lastpass_share_get_users_by_username(const struct session *session,
+					 const char *username,
+					 struct list_head *users)
 {
 	_cleanup_free_ char *reply = NULL;
 	_cleanup_free_ char *uid_param;
@@ -64,7 +64,7 @@ int lastpass_share_get_user_by_username(const struct session *session,
 				   "uid", uid_param,
 				   "xmlr", "1", NULL);
 
-	return xml_parse_share_getpubkey(reply, user);
+	return xml_parse_share_getpubkeys(reply, users);
 }
 
 int lastpass_share_user_add(const struct session *session,
@@ -79,39 +79,52 @@ int lastpass_share_user_add(const struct session *session,
 	int ret;
 	size_t len;
 
-	ret = lastpass_share_get_user_by_username(session, user->username, user);
+	struct list_head user_list;
+	struct share_user *share_user, *tmp;
+
+	INIT_LIST_HEAD(&user_list);
+
+	ret = lastpass_share_get_users_by_username(session, user->username,
+						   &user_list);
 	if (ret)
 		die("Unable to lookup user %s (%d)\n", user->username, ret);
 
-	/* encrypt sharename with sharekey */
-	enc_share_name = encrypt_and_base64(share->name, share->key);
+	list_for_each_entry_safe(share_user, tmp, &user_list, list) {
 
-	/* encrypt sharekey with user's pubkey */
-	bytes_to_hex(share->key, &hex_share_key, sizeof(share->key));
+		/* encrypt sharename with sharekey */
+		enc_share_name = encrypt_and_base64(share->name, share->key);
 
-	size_t enc_share_key_len = user->sharing_key.len;
-	enc_share_key = xmalloc(enc_share_key_len);
+		/* encrypt sharekey with user's pubkey */
+		bytes_to_hex(share->key, &hex_share_key, sizeof(share->key));
 
-	ret = cipher_rsa_encrypt(hex_share_key, &user->sharing_key,
-				 enc_share_key, &enc_share_key_len);
-	if (ret)
-		die("Unable to encrypt sharing key with pubkey (%d)\n", ret);
+		size_t enc_share_key_len = share_user->sharing_key.len;
+		enc_share_key = xmalloc(enc_share_key_len);
 
-	bytes_to_hex(enc_share_key, &hex_enc_share_key, enc_share_key_len);
+		ret = cipher_rsa_encrypt(hex_share_key, &share_user->sharing_key,
+					 enc_share_key, &enc_share_key_len);
+		if (ret)
+			die("Unable to encrypt sharing key with pubkey (%d)\n",
+			     ret);
 
-	reply = http_post_lastpass("share.php", session->sessionid, &len,
-				   "token", session->token,
-				   "id", share->id,
-				   "update", "1",
-				   "add", "1",
-				   "notify", "1",
-				   "uid0", user->uid,
-				   "sharekey0", hex_enc_share_key,
-				   "sharename", enc_share_name,
-				   "readonly", bool_str(user->read_only),
-				   "give", bool_str(!user->hide_passwords),
-				   "canadminister", bool_str(user->admin),
-				   "xmlr", "1", NULL);
+		bytes_to_hex(enc_share_key, &hex_enc_share_key,
+			     enc_share_key_len);
+
+		reply = http_post_lastpass("share.php", session->sessionid, &len,
+					   "token", session->token,
+					   "id", share->id,
+					   "update", "1",
+					   "add", "1",
+					   "notify", "1",
+					   "uid0", share_user->uid,
+					   "cgid0", share_user->cgid ? share_user->cgid : "",
+					   "sharekey0", hex_enc_share_key,
+					   "sharename", enc_share_name,
+					   "readonly", bool_str(share_user->read_only),
+					   "give", bool_str(!share_user->hide_passwords),
+					   "canadminister", bool_str(share_user->admin),
+					   "xmlr", "1", NULL);
+		free(share_user);
+	}
 
 	if (!reply)
 		return -EPERM;
