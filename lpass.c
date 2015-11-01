@@ -83,11 +83,10 @@ static void expand_aliases(int *argc, char ***argv)
 	int argv_alloced;
 	int new_argc = 0;
 	_cleanup_free_ char *config_name;
-	_cleanup_free_ char *alias_val;
 
 	xasprintf(&config_name, "alias.%s", alias);
 
-	alias_val = config_read_string(config_name);
+	_cleanup_free_ char *alias_val = config_read_string(config_name);
 	if (!alias_val)
 		return;
 

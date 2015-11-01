@@ -103,7 +103,6 @@ static int agent_socket_get_cred(int fd, struct ucred *cred)
 
 static void agent_run(unsigned const char key[KDF_HASH_LEN])
 {
-	_cleanup_free_ char *path;
 	char *agent_timeout_str;
 	unsigned int agent_timeout;
 	struct sockaddr_un sa, listensa;
@@ -123,7 +122,7 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 	if (agent_timeout)
 		alarm(agent_timeout);
 
-	path = agent_socket_path();
+	_cleanup_free_ char *path = agent_socket_path();
 	if (strlen(path) >= sizeof(sa.sun_path))
 		die("Path too large for agent control socket.");
 
@@ -170,12 +169,11 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 
 void agent_kill(void)
 {
-	_cleanup_free_ char *path;
 	struct sockaddr_un sa;
 	struct ucred cred;
 	int fd;
 
-	path = agent_socket_path();
+	_cleanup_free_ char *path = agent_socket_path();
 	if (strlen(path) >= sizeof(sa.sun_path))
 		die("Path too large for agent control socket.");
 
@@ -205,12 +203,11 @@ out:
 
 static bool agent_ask(unsigned char key[KDF_HASH_LEN])
 {
-	_cleanup_free_ char *path;
 	struct sockaddr_un sa;
 	int fd;
 	bool ret = false;
 
-	path = agent_socket_path();
+	_cleanup_free_ char *path = agent_socket_path();
 	if (strlen(path) >= sizeof(sa.sun_path))
 		die("Path too large for agent control socket.");
 
