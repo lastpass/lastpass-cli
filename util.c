@@ -31,6 +31,8 @@
  * version.  If you delete this exception statement from all source
  * files in the program, then also delete it here.
  *
+ * See LICENSE.OpenSSL for more details regarding this exception.
+ *
  * reallocarray is:
  *     Copyright (c) 2008 Otto Moerbeek <otto@drijf.net>.
  * strlcpy and strlcat are:

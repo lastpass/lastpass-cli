@@ -21,6 +21,8 @@
  * additional permission to link or combine this program with the OpenSSL
  * library and distribute the resulting work.  See the LICENSE.OpenSSL file
  * in this distribution for more details.
+ *
+ * See LICENSE.OpenSSL for more details regarding this exception.
  */
 #include "cmd.h"
 #include "util.h"
