@@ -41,7 +41,7 @@ install-doc: doc-man
 	@install -v -d "$(DESTDIR)$(MANDIR)/man1" && install -m 0644 -v lpass.1 "$(DESTDIR)$(MANDIR)/man1/lpass.1"
 
 install: all
-	@install -v -d "$(DESTDIR)$(BINDIR)" && install -s -m 0755 -v lpass "$(DESTDIR)$(BINDIR)/lpass"
+	@install -v -d "$(DESTDIR)$(BINDIR)" && install -m 0755 -v lpass "$(DESTDIR)$(BINDIR)/lpass"
 
 uninstall:
 	@rm -vrf "$(DESTDIR)$(MANDIR)/man1/lpass.1" "$(DESTDIR)$(BINDIR)/lpass"
