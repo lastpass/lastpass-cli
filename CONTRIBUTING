@@ -3,8 +3,9 @@ Contributions are welcome!  Please open a pull request at github:
 
     https://github.com/lastpass/lastpass-cli
 
-The project is licensed under the GPL version 2 (see COPYING) and
-requires acceptance of the Developer's Certificate of Origin for
+The project is licensed under the GPL version 2 or later with an
+exception for linking with OpenSSL (see COPYING and LICENSE.OpenSSL),
+and requires acceptance of the Developer's Certificate of Origin for
 contributions (see below).
 
 To indicate your acceptance of Developer's Certificate of Origin 1.1
