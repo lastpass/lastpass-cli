@@ -612,12 +612,11 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 {
 	struct buffer buffer;
 	struct share *last_share = NULL;
-	_cleanup_free_ char *version;
 	struct account *account;
 
 	memset(&buffer, 0, sizeof(buffer));
 
-	version = xultostr(blob->version);
+	_cleanup_free_ char *version = xultostr(blob->version);
 	buffer_append(&buffer, "LPAV", 4);
 	write_plain_string(&buffer, version);
 	buffer_append(&buffer, "LOCL", 4);

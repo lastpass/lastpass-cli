@@ -65,9 +65,8 @@ void lastpass_logout(const struct session *session)
 struct blob *lastpass_get_blob(const struct session *session, const unsigned char key[KDF_HASH_LEN])
 {
 	size_t len;
-	_cleanup_free_ char *blob;
 
-	blob = http_post_lastpass("getaccts.php", session->sessionid, &len, "mobile", "1", "requestsrc", "cli", "hasplugin", LASTPASS_CLI_VERSION, NULL);
+	_cleanup_free_ char *blob = http_post_lastpass("getaccts.php", session->sessionid, &len, "mobile", "1", "requestsrc", "cli", "hasplugin", LASTPASS_CLI_VERSION, NULL);
 	if (!blob || !len)
 		return NULL;
 	config_write_encrypted_buffer("blob", blob, len, key);

@@ -131,11 +131,9 @@ static void print_node(struct node *head, int level)
 				printf("    ");
 			if (node->account) {
 				if (long_listing) {
-					_cleanup_free_ char *timestr;
-					if (show_mtime)
-						timestr = format_timestamp(node->account->last_modified_gmt, true);
-					else
-						timestr = format_timestamp(node->account->last_touch, false);
+					_cleanup_free_ char *timestr = show_mtime ?
+						format_timestamp(node->account->last_modified_gmt, true) :
+						format_timestamp(node->account->last_touch, false);
 					terminal_printf(TERMINAL_FG_CYAN "%s ", timestr);
 				}
 				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]" TERMINAL_RESET "\n", node->name, node->account->id);
@@ -246,11 +244,9 @@ int cmd_ls(int argc, char **argv)
 			insert_node(root, fullname, account);
 		else {
 			if (long_listing) {
-				_cleanup_free_ char *timestr;
-				if (show_mtime)
-					timestr = format_timestamp(account->last_modified_gmt, true);
-				else
-					timestr = format_timestamp(account->last_touch, false);
+				_cleanup_free_ char *timestr = show_mtime ?
+					format_timestamp(account->last_modified_gmt, true) :
+					format_timestamp(account->last_touch, false);
 				printf("%s ", timestr);
 			}
 			printf("%s [id: %s]\n", fullname, account->id);
