@@ -168,12 +168,51 @@ error:
 	free(plaintext);
 	return NULL;
 }
-size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HASH_LEN], char **out)
+
+static
+size_t cipher_aes_encrypt_bytes(const unsigned char *bytes, size_t len,
+				const unsigned char key[KDF_HASH_LEN],
+				const unsigned char *iv,
+				unsigned char **out)
 {
 	EVP_CIPHER_CTX ctx;
-	char *ciphertext;
-	unsigned char iv[AES_BLOCK_SIZE];
 	int out_len;
+	size_t ret_len = 0;
+	unsigned char *ctext;
+
+	ctext = *out;
+	if (!ctext)
+		ctext = xcalloc(len + AES_BLOCK_SIZE * 2 + 1, 1);
+
+	EVP_CIPHER_CTX_init(&ctx);
+	if (!EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv))
+		goto error;
+
+	if (!EVP_EncryptUpdate(&ctx, ctext, &out_len, bytes, len))
+		goto error;
+
+	ret_len += out_len;
+	if (!EVP_EncryptFinal_ex(&ctx, ctext + ret_len, &out_len))
+		goto error;
+	ret_len += out_len;
+
+	EVP_CIPHER_CTX_cleanup(&ctx);
+	*out = ctext;
+	return ret_len;
+
+error:
+	EVP_CIPHER_CTX_cleanup(&ctx);
+	if (!*out)
+		free(ctext);
+	die("Failed to encrypt data.");
+
+}
+
+size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HASH_LEN], char **out)
+{
+	char *ciphertext;
+	unsigned char *tmp;
+	unsigned char iv[AES_BLOCK_SIZE];
 	int in_len;
 	size_t len;
 
@@ -182,33 +221,21 @@ size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HAS
 
 	in_len = strlen(plaintext);
 
-	EVP_CIPHER_CTX_init(&ctx);
 	ciphertext = xcalloc(in_len + AES_BLOCK_SIZE * 2 + 1, 1);
-
 	ciphertext[0] = '!';
 	len = 1;
 
 	memcpy(ciphertext + len, iv, AES_BLOCK_SIZE);
 	len += AES_BLOCK_SIZE;
 
-	if (!EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv))
-		goto error;
-	if (!EVP_EncryptUpdate(&ctx, (unsigned char *)(ciphertext + len), &out_len, (unsigned char *)plaintext, in_len))
-		goto error;
-	len += out_len;
-	if (!EVP_EncryptFinal_ex(&ctx, (unsigned char *)(ciphertext + len), &out_len))
-		goto error;
-	len += out_len;
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	tmp = (unsigned char *) ciphertext + len;
+	len += cipher_aes_encrypt_bytes((unsigned char *)plaintext, in_len,
+					key, iv, &tmp);
 
 	*out = ciphertext;
 	return len;
-
-error:
-	EVP_CIPHER_CTX_cleanup(&ctx);
-	free(ciphertext);
-	die("Failed to encrypt data.");
 }
+
 static char *base64(const char *bytes, size_t len)
 {
 	BIO *memory, *b64;
