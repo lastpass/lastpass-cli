@@ -13,5 +13,5 @@ char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[
 size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HASH_LEN], char **ciphertext);
 char *cipher_base64(const char *bytes, size_t len);
 char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN]);
-
+void cipher_decrypt_private_key(const char *key_hex, unsigned const char key[KDF_HASH_LEN], struct private_key *out_key);
 #endif

@@ -35,6 +35,7 @@
  */
 #include "cipher.h"
 #include "util.h"
+#include <sys/mman.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 #include <openssl/err.h>
@@ -330,4 +331,68 @@ char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
 	base64 = cipher_base64(intermediate, len);
 	free(intermediate);
 	return base64;
+}
+
+/*
+ * Decrypt the LastPass sharing RSA private key.  The key has start_str
+ * and end_str prepended / appended before encryption, and the result
+ * is encrypted with the AES key.
+ *
+ * On success, the resulting key is stored in out_key and mlock()ed.
+ * If there is a non-fatal error (or no key), the resulting structure
+ * will have len = 0.
+ */
+void cipher_decrypt_private_key(const char *key_hex,
+				unsigned const char key[KDF_HASH_LEN],
+				struct private_key *out_key)
+{
+	#define start_str "LastPassPrivateKey<"
+	#define end_str ">LastPassPrivateKey"
+	size_t len;
+	_cleanup_free_ unsigned char *encrypted_key = NULL;
+	_cleanup_free_ char *decrypted_key = NULL;
+	unsigned char *encrypted_key_start;
+	char *start, *end;
+	unsigned char *dec_key = NULL;
+	int ret;
+
+	memset(out_key, 0, sizeof(*out_key));
+
+	len = strlen(key_hex);
+	if (len % 2 != 0)
+		die("Key hex in wrong format.");
+	len /= 2;
+
+	len += 16 /* IV */ + 1 /* pound symbol */;
+	encrypted_key = xcalloc(len + 1, 1);
+	encrypted_key[0] = '!';
+	memcpy(&encrypted_key[1], key, 16);
+	encrypted_key_start = &encrypted_key[17];
+	hex_to_bytes(key_hex, &encrypted_key_start);
+	decrypted_key = cipher_aes_decrypt(encrypted_key, len, key);
+	if (!decrypted_key) {
+		warn("Could not decrypt private key.");
+		return;
+	}
+
+	start = strstr(decrypted_key, start_str);
+	end = strstr(decrypted_key, end_str);
+	if (!start || !end || end <= start) {
+		warn("Could not decode decrypted private key.");
+		return;
+	}
+
+	start += strlen(start_str);
+	*end = '\0';
+
+	ret = hex_to_bytes(start, &dec_key);
+	if (ret)
+		die("Invalid private key after decryption and decoding.");
+
+	out_key->key = dec_key;
+	out_key->len = strlen(start) / 2;
+	mlock(out_key->key, out_key->len);
+
+	#undef start_str
+	#undef end_str
 }
