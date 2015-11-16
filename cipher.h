@@ -18,4 +18,6 @@ size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HAS
 char *cipher_base64(const char *bytes, size_t len);
 char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN]);
 void cipher_decrypt_private_key(const char *key_hex, unsigned const char key[KDF_HASH_LEN], struct private_key *out_key);
+char *cipher_encrypt_private_key(struct private_key *private_key,
+				 unsigned const char key[KDF_HASH_LEN]);
 #endif

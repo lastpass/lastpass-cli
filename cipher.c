@@ -46,6 +46,9 @@
 #include <string.h>
 #include <openssl/err.h>
 
+#define LP_PKEY_PREFIX "LastPassPrivateKey<"
+#define LP_PKEY_SUFFIX ">LastPassPrivateKey"
+
 char *cipher_rsa_decrypt(const unsigned char *ciphertext, size_t len, const struct private_key *private_key)
 {
 	PKCS8_PRIV_KEY_INFO *p8inf = NULL;
@@ -383,8 +386,6 @@ void cipher_decrypt_private_key(const char *key_hex,
 				unsigned const char key[KDF_HASH_LEN],
 				struct private_key *out_key)
 {
-	#define start_str "LastPassPrivateKey<"
-	#define end_str ">LastPassPrivateKey"
 	size_t len;
 	_cleanup_free_ unsigned char *encrypted_key = NULL;
 	_cleanup_free_ char *decrypted_key = NULL;
@@ -392,6 +393,9 @@ void cipher_decrypt_private_key(const char *key_hex,
 	char *start, *end;
 	unsigned char *dec_key = NULL;
 	int ret;
+
+	#define start_str LP_PKEY_PREFIX
+	#define end_str LP_PKEY_SUFFIX
 
 	memset(out_key, 0, sizeof(*out_key));
 
@@ -432,4 +436,38 @@ void cipher_decrypt_private_key(const char *key_hex,
 
 	#undef start_str
 	#undef end_str
+}
+
+/*
+ * Encrypt RSA sharing key.  Encrypted key is returned as a hex-encoded string.
+ */
+char *cipher_encrypt_private_key(struct private_key *private_key,
+				 unsigned const char key[KDF_HASH_LEN])
+{
+	unsigned char *key_ptext;
+	unsigned char *ctext = NULL;
+	char *key_hex_dst;
+	char *ctext_hex = NULL;
+	size_t len, ctext_len, hex_len;
+
+	if (!private_key->len)
+		return xstrdup("");
+
+	hex_len = private_key->len * 2;
+	len = strlen(LP_PKEY_PREFIX) + hex_len + strlen(LP_PKEY_SUFFIX);
+
+	key_ptext = xcalloc(len + 1, 1);
+	memcpy(key_ptext, LP_PKEY_PREFIX, strlen(LP_PKEY_PREFIX));
+
+	key_hex_dst = (char *) key_ptext + strlen(LP_PKEY_PREFIX);
+	bytes_to_hex(private_key->key, &key_hex_dst, private_key->len);
+
+	memcpy(key_ptext + strlen(LP_PKEY_PREFIX) + hex_len,
+	       LP_PKEY_SUFFIX, strlen(LP_PKEY_SUFFIX));
+
+	ctext_len = cipher_aes_encrypt_bytes(key_ptext, len, key, key, &ctext);
+	bytes_to_hex(ctext, &ctext_hex, ctext_len);
+
+	free(ctext);
+	return ctext_hex;
 }
