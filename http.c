@@ -128,24 +128,57 @@ out:
 	return ret;
 }
 
+static
+void vhttp_post_add_params(struct http_param_set *param_set, va_list args)
+{
+	char **argv_ptr;
+	char *arg;
+	size_t count = 0;
+
+	if (!param_set->argv) {
+		param_set->n_alloced = 2;
+		param_set->argv = xcalloc(param_set->n_alloced, sizeof(char *));
+	}
+	argv_ptr = param_set->argv;
+	while (*argv_ptr) {
+		argv_ptr++;
+		count++;
+	}
+
+	while ((arg = va_arg(args, char *))) {
+		if (count == param_set->n_alloced - 1) {
+			param_set->n_alloced += 2;
+			param_set->argv = xreallocarray(param_set->argv,
+				param_set->n_alloced, sizeof(char *));
+			argv_ptr = &param_set->argv[count];
+		}
+		*argv_ptr++ = arg;
+		count++;
+	}
+	*argv_ptr = 0;
+}
+
+void http_post_add_params(struct http_param_set *param_set, ...)
+{
+	va_list args;
+	va_start(args, param_set);
+	vhttp_post_add_params(param_set, args);
+	va_end(args);
+}
+
 char *http_post_lastpass(const char *page, const char *session, size_t *final_len, ...)
 {
-	va_list params;
-	_cleanup_free_ char **argv = NULL;
-	char **argv_ptr;
-	int count = 0;
+	va_list args;
+	struct http_param_set params = {
+		.argv = NULL,
+		.n_alloced = 0
+	};
 
-	va_start(params, final_len);
-	while (va_arg(params, char *))
-		++count;
-	va_end(params);
-
-	argv_ptr = argv = xcalloc(count + 1, sizeof(char **));
-	va_start(params, final_len);
-	while ((*(argv_ptr++) = va_arg(params, char *)));
-	va_end(params);
-
-	return http_post_lastpass_v(page, session, final_len, argv);
+	va_start(args, final_len);
+	vhttp_post_add_params(&params, args);
+	char *result = http_post_lastpass_param_set(page, session, final_len, &params);
+	free(params.argv);
+	return result;
 }
 char *http_post_lastpass_v(const char *page, const char *session, size_t *final_len, char **argv)
 {
@@ -221,4 +254,8 @@ char *http_post_lastpass_v(const char *page, const char *session, size_t *final_
 	if (final_len)
 		*final_len = result.len;
 	return result.ptr;
+}
+
+char *http_post_lastpass_param_set(const char *page, const char *session, size_t *final_len, struct http_param_set *param_set) {
+	return http_post_lastpass_v(page, session, final_len, param_set->argv);
 }
