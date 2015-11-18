@@ -5,6 +5,10 @@
 #include "session.h"
 
 char *cipher_rsa_decrypt(const unsigned char *ciphertext, size_t len, const struct private_key *private_key);
+int cipher_rsa_encrypt_bytes(const unsigned char *plaintext,
+			     size_t in_len,
+			     const struct public_key *public_key,
+			     unsigned char *out_crypttext, size_t *out_len);
 int cipher_rsa_encrypt(const char *plaintext,
 		       const struct public_key *public_key,
 		       unsigned char *out_crypttext, size_t *out_len);

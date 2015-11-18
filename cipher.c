@@ -88,9 +88,10 @@ out:
 	return ret;
 }
 
-int cipher_rsa_encrypt(const char *plaintext,
-		       const struct public_key *public_key,
-		       unsigned char *out_crypttext, size_t *out_len)
+int cipher_rsa_encrypt_bytes(const unsigned char *plaintext,
+			     size_t in_len,
+			     const struct public_key *public_key,
+			     unsigned char *out_crypttext, size_t *out_len)
 {
 	EVP_PKEY *pubkey = NULL;
 	RSA *rsa = NULL;
@@ -116,8 +117,8 @@ int cipher_rsa_encrypt(const char *plaintext,
 	if (!rsa)
 		goto out;
 
-	ret = RSA_public_encrypt(strlen(plaintext), (unsigned char *) plaintext,
-			         (unsigned char *) out_crypttext,
+	ret = RSA_public_encrypt(in_len, plaintext,
+			         out_crypttext,
 			         rsa, RSA_PKCS1_OAEP_PADDING);
 	if (ret < 0)
 		goto out;
@@ -130,6 +131,15 @@ out:
 	RSA_free(rsa);
 	BIO_free_all(memory);
 	return ret;
+}
+
+int cipher_rsa_encrypt(const char *plaintext,
+		       const struct public_key *public_key,
+		       unsigned char *out_crypttext, size_t *out_len)
+{
+	return cipher_rsa_encrypt_bytes((unsigned char *) plaintext,
+					strlen(plaintext),
+					public_key, out_crypttext, out_len);
 }
 
 char *cipher_aes_decrypt(const unsigned char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
