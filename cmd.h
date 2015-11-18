@@ -43,6 +43,9 @@ int cmd_login(int argc, char **argv);
 int cmd_logout(int argc, char **argv);
 #define cmd_logout_usage "logout [--force, -f] " color_usage
 
+int cmd_passwd(int argc, char **argv);
+#define cmd_passwd_usage "passwd"
+
 int cmd_show(int argc, char **argv);
 #define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] " color_usage " {UNIQUENAME|UNIQUEID}"
 
