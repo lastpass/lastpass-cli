@@ -471,3 +471,25 @@ char *cipher_encrypt_private_key(struct private_key *private_key,
 	free(ctext);
 	return ctext_hex;
 }
+
+/*
+ * Get hex-encoded sha256() of a buffer.
+ */
+char *cipher_sha256_hex(unsigned char *bytes, size_t len)
+{
+	char *tmp = NULL;
+	SHA256_CTX sha256;
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+
+	if (!SHA256_Init(&sha256))
+		goto die;
+	if (!SHA256_Update(&sha256, bytes, len))
+		goto die;
+	if (!SHA256_Final(hash, &sha256))
+		goto die;
+
+	bytes_to_hex(hash, &tmp, sizeof(hash));
+	return tmp;
+die:
+	die("SHA-256 hash failed");
+}
