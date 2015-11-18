@@ -71,6 +71,34 @@ struct blob {
 	struct list_head share_head;
 };
 
+/* state used during master password change */
+struct pwchange_info {
+	char *reencrypt_id;
+	char *token;
+	char *privkey_encrypted;
+	char *new_privkey_encrypted;
+	char *new_privkey_hash;
+	char *new_key_hash;
+	struct list_head fields;
+	struct list_head su_keys;
+};
+
+/* replacement items for password change blob updates */
+struct pwchange_field {
+	char *old_ctext;
+	char *new_ctext;
+	bool optional;
+	struct list_head list;
+};
+
+/* Super-user keys used for enterprise password recovery. */
+struct pwchange_su_key {
+	char *uid;			/* uid for super user */
+	struct public_key sharing_key;	/* pubkey for this user */
+	char *new_enc_key;		/* user AES key, enc w/ SU's RSA key */
+	struct list_head list;
+};
+
 enum blobsync { BLOB_SYNC_AUTO, BLOB_SYNC_YES, BLOB_SYNC_NO };
 
 struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key);
