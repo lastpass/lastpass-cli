@@ -37,6 +37,8 @@
 #include "config.h"
 #include "util.h"
 #include "cipher.h"
+#include "agent.h"
+#include "upload-queue.h"
 #include <sys/mman.h>
 #include <string.h>
 
@@ -86,4 +88,17 @@ struct session *sesssion_load(unsigned const char key[KDF_HASH_LEN])
 		session_free(session);
 		return NULL;
 	}
+}
+
+void session_kill()
+{
+	if (!config_unlink("verify") || !config_unlink("username") || !config_unlink("session_sessionid") || !config_unlink("iterations"))
+		die_errno("could not log out.");
+	config_unlink("blob");
+	config_unlink("session_token");
+	config_unlink("session_uid");
+	config_unlink("session_privatekey");
+	config_unlink("plaintext_key");
+	agent_kill();
+	upload_queue_kill();
 }

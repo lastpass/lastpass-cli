@@ -221,8 +221,13 @@ int cmd_passwd(int argc, char **argv)
 	terminal_printf(TERMINAL_FG_CYAN "Uploading...\n" TERMINAL_RESET);
 
 	_cleanup_free_ char *enc_username = encrypt_and_base64(username, new_key);
-	lastpass_pwchange_complete(session, username, enc_username,
-				   new_hex, iterations, &info);
+	ret = lastpass_pwchange_complete(session, username, enc_username,
+					 new_hex, iterations, &info);
 
+	if (ret)
+		die("Password change failed.");
+
+	session_kill();
+	terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "Success" TERMINAL_RESET ": Password changed and logged out.\n");
 	return 0;
 }
