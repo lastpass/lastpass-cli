@@ -48,6 +48,7 @@ static void show_status_bar(const char *operation,
 			    unsigned int cur, unsigned int max)
 {
 	char progress[41] = {0};
+	size_t len;
 
 	if (!max)
 		max = 1;
@@ -55,7 +56,9 @@ static void show_status_bar(const char *operation,
 	if (cur > max)
 		cur = max;
 
-	memset(progress, '=', cur * (sizeof(progress) - 1) / max);
+	len = (cur * (sizeof(progress) - 1)) / max;
+	if (len)
+		memset(progress, '=', len);
 
 	terminal_fprintf(stderr, TERMINAL_FG_CYAN "%s " TERMINAL_RESET
                      TERMINAL_FG_BLUE "[%-*s] " TERMINAL_RESET
