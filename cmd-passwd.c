@@ -104,6 +104,10 @@ static void reencrypt(struct session *session,
 	list_for_each_entry(field, &info->fields, list) {
 		show_status_bar("Re-encrypting", i++, n_fields);
 		char *ptext = cipher_aes_decrypt_base64(field->old_ctext, key);
+		if (!ptext) {
+			field->new_ctext = NULL;
+			continue;
+		}
 		field->new_ctext = encrypt_and_base64(ptext, new_key);
 	}
 
