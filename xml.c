@@ -360,3 +360,146 @@ free_doc:
 	xmlFreeDoc(doc);
 	return ret;
 }
+
+static
+int xml_parse_su_key_entry(xmlDoc *doc, xmlNode *parent,
+			   struct pwchange_su_key *su_key, int idx)
+{
+	char *tmp;
+	_cleanup_free_ char *pubkey = NULL;
+	_cleanup_free_ char *uid = NULL;
+
+	xasprintf(&pubkey, "sukey%d", idx);
+	xasprintf(&uid, "suuid%d", idx);
+
+	memset(su_key, 0, sizeof(*su_key));
+	for (xmlAttrPtr attr = parent->properties; attr; attr = attr->next) {
+		if (!xmlStrcmp(attr->name, BAD_CAST pubkey)) {
+			tmp = (char *) xmlNodeListGetString(doc, attr->children, 1);
+			int ret = hex_to_bytes(tmp, &su_key->sharing_key.key);
+			if (ret == 0)
+				su_key->sharing_key.len = strlen(tmp) / 2;
+			free(tmp);
+			continue;
+		}
+		if (!xmlStrcmp(attr->name, BAD_CAST uid)) {
+			tmp = (char *) xmlNodeListGetString(doc, attr->children, 1);
+			su_key->uid = tmp;
+			continue;
+		}
+	}
+	if (!su_key->sharing_key.len || !su_key->uid) {
+		free(su_key->uid);
+		free(su_key->sharing_key.key);
+		return -ENOENT;
+	}
+	return 0;
+}
+
+static
+int xml_parse_pwchange_su_keys(xmlDoc *doc, xmlNode *parent,
+			       struct pwchange_info *info)
+{
+	for (int count = 0; ; count++) {
+		struct pwchange_su_key *su_key = new0(struct pwchange_su_key,1);
+		int ret = xml_parse_su_key_entry(doc, parent, su_key, count);
+		if (ret) {
+			free(su_key);
+			break;
+		}
+		list_add(&su_key->list, &info->su_keys);
+	}
+	return 0;
+}
+
+static
+int xml_parse_pwchange_data(char *data, struct pwchange_info *info)
+{
+	char *token, *end;
+	struct pwchange_field *field;
+
+	/*
+	 * read the first two lines without strtok: in case there are
+	 * empty lines we don't want to skip them.
+	 */
+#define next_line(x) { \
+	end = strchr(data, '\n'); \
+	if (!end) \
+		return -ENOENT; \
+	*end++ = 0; \
+	info->x = xstrdup(data); \
+	data = end; \
+}
+	next_line(reencrypt_id);
+	next_line(privkey_encrypted);
+
+#undef next_line
+
+	for (token = strtok(data, "\n"); token; token = strtok(NULL, "\n")) {
+
+		if (!strncmp(token, "endmarker", 9))
+			break;
+
+		field = new0(struct pwchange_field, 1);
+
+		char *delim = strchr(token, '\t');
+		if (delim) {
+			*delim = 0;
+			field->optional = *(delim + 1) == '0';
+		}
+		field->old_ctext = xstrdup(token);
+		list_add_tail(&field->list, &info->fields);
+	}
+	return 0;
+}
+
+int xml_parse_pwchange(const char *buf, struct pwchange_info *info)
+{
+	int ret;
+	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
+
+	INIT_LIST_HEAD(&info->fields);
+	INIT_LIST_HEAD(&info->su_keys);
+
+	xmlNode *root = xmlDocGetRootElement(doc);
+	if (!root || xmlStrcmp(root->name, BAD_CAST "lastpass") ||
+			       !root->children) {
+		ret = -EINVAL;
+		goto free_doc;
+	}
+
+	for (xmlAttrPtr attr = root->properties; attr; attr = attr->next) {
+		if (!xmlStrcmp(attr->name, BAD_CAST "rc")) {
+			_cleanup_free_ char *val = (char *)
+				xmlNodeListGetString(doc, attr->children, 1);
+			if (strcmp(val, "OK") != 0) {
+				ret = -EPERM;
+				goto free_doc;
+			}
+		}
+	}
+
+	for (xmlNode *item = root->children; item; item = item->next) {
+		if (xmlStrcmp(item->name, BAD_CAST "data"))
+			continue;
+
+		for (xmlAttrPtr attr = item->properties; attr; attr = attr->next) {
+			if (!xmlStrcmp(attr->name, BAD_CAST "xml")) {
+				_cleanup_free_ char *data = (char *)
+					xmlNodeListGetString(doc, attr->children, 1);
+
+				ret = xml_parse_pwchange_data(data, info);
+				if (ret)
+					goto free_doc;
+			}
+			if (!xmlStrcmp(attr->name, BAD_CAST "token"))
+				info->token = (char *)xmlNodeListGetString(doc, attr->children, 1);
+		}
+		xml_parse_pwchange_su_keys(doc, item, info);
+	}
+
+	ret = 0;
+free_doc:
+	xmlFreeDoc(doc);
+	return ret;
+}

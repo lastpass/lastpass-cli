@@ -35,6 +35,7 @@
  */
 #include "cipher.h"
 #include "util.h"
+#include <sys/mman.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>
 #include <openssl/err.h>
@@ -44,6 +45,9 @@
 #include <openssl/x509.h>
 #include <string.h>
 #include <openssl/err.h>
+
+#define LP_PKEY_PREFIX "LastPassPrivateKey<"
+#define LP_PKEY_SUFFIX ">LastPassPrivateKey"
 
 char *cipher_rsa_decrypt(const unsigned char *ciphertext, size_t len, const struct private_key *private_key)
 {
@@ -87,9 +91,10 @@ out:
 	return ret;
 }
 
-int cipher_rsa_encrypt(const char *plaintext,
-		       const struct public_key *public_key,
-		       unsigned char *out_crypttext, size_t *out_len)
+int cipher_rsa_encrypt_bytes(const unsigned char *plaintext,
+			     size_t in_len,
+			     const struct public_key *public_key,
+			     unsigned char *out_crypttext, size_t *out_len)
 {
 	EVP_PKEY *pubkey = NULL;
 	RSA *rsa = NULL;
@@ -115,8 +120,8 @@ int cipher_rsa_encrypt(const char *plaintext,
 	if (!rsa)
 		goto out;
 
-	ret = RSA_public_encrypt(strlen(plaintext), (unsigned char *) plaintext,
-			         (unsigned char *) out_crypttext,
+	ret = RSA_public_encrypt(in_len, plaintext,
+			         out_crypttext,
 			         rsa, RSA_PKCS1_OAEP_PADDING);
 	if (ret < 0)
 		goto out;
@@ -129,6 +134,15 @@ out:
 	RSA_free(rsa);
 	BIO_free_all(memory);
 	return ret;
+}
+
+int cipher_rsa_encrypt(const char *plaintext,
+		       const struct public_key *public_key,
+		       unsigned char *out_crypttext, size_t *out_len)
+{
+	return cipher_rsa_encrypt_bytes((unsigned char *) plaintext,
+					strlen(plaintext),
+					public_key, out_crypttext, out_len);
 }
 
 char *cipher_aes_decrypt(const unsigned char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
@@ -167,12 +181,51 @@ error:
 	free(plaintext);
 	return NULL;
 }
-size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HASH_LEN], char **out)
+
+static
+size_t cipher_aes_encrypt_bytes(const unsigned char *bytes, size_t len,
+				const unsigned char key[KDF_HASH_LEN],
+				const unsigned char *iv,
+				unsigned char **out)
 {
 	EVP_CIPHER_CTX ctx;
-	char *ciphertext;
-	unsigned char iv[AES_BLOCK_SIZE];
 	int out_len;
+	size_t ret_len = 0;
+	unsigned char *ctext;
+
+	ctext = *out;
+	if (!ctext)
+		ctext = xcalloc(len + AES_BLOCK_SIZE * 2 + 1, 1);
+
+	EVP_CIPHER_CTX_init(&ctx);
+	if (!EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv))
+		goto error;
+
+	if (!EVP_EncryptUpdate(&ctx, ctext, &out_len, bytes, len))
+		goto error;
+
+	ret_len += out_len;
+	if (!EVP_EncryptFinal_ex(&ctx, ctext + ret_len, &out_len))
+		goto error;
+	ret_len += out_len;
+
+	EVP_CIPHER_CTX_cleanup(&ctx);
+	*out = ctext;
+	return ret_len;
+
+error:
+	EVP_CIPHER_CTX_cleanup(&ctx);
+	if (!*out)
+		free(ctext);
+	die("Failed to encrypt data.");
+
+}
+
+size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HASH_LEN], char **out)
+{
+	char *ciphertext;
+	unsigned char *tmp;
+	unsigned char iv[AES_BLOCK_SIZE];
 	int in_len;
 	size_t len;
 
@@ -181,33 +234,21 @@ size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HAS
 
 	in_len = strlen(plaintext);
 
-	EVP_CIPHER_CTX_init(&ctx);
 	ciphertext = xcalloc(in_len + AES_BLOCK_SIZE * 2 + 1, 1);
-
 	ciphertext[0] = '!';
 	len = 1;
 
 	memcpy(ciphertext + len, iv, AES_BLOCK_SIZE);
 	len += AES_BLOCK_SIZE;
 
-	if (!EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv))
-		goto error;
-	if (!EVP_EncryptUpdate(&ctx, (unsigned char *)(ciphertext + len), &out_len, (unsigned char *)plaintext, in_len))
-		goto error;
-	len += out_len;
-	if (!EVP_EncryptFinal_ex(&ctx, (unsigned char *)(ciphertext + len), &out_len))
-		goto error;
-	len += out_len;
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	tmp = (unsigned char *) ciphertext + len;
+	len += cipher_aes_encrypt_bytes((unsigned char *)plaintext, in_len,
+					key, iv, &tmp);
 
 	*out = ciphertext;
 	return len;
-
-error:
-	EVP_CIPHER_CTX_cleanup(&ctx);
-	free(ciphertext);
-	die("Failed to encrypt data.");
 }
+
 static char *base64(const char *bytes, size_t len)
 {
 	BIO *memory, *b64;
@@ -321,13 +362,131 @@ char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
 	char *base64 = NULL;
 	size_t len;
 
-	base64 = trim(xstrdup(str));
-	if (!*base64)
-		return base64;
-
+	base64 = xstrdup(str);
 	len = cipher_aes_encrypt(base64, key, &intermediate);
 	free(base64);
 	base64 = cipher_base64(intermediate, len);
 	free(intermediate);
 	return base64;
+}
+
+/*
+ * Decrypt the LastPass sharing RSA private key.  The key has start_str
+ * and end_str prepended / appended before encryption, and the result
+ * is encrypted with the AES key.
+ *
+ * On success, the resulting key is stored in out_key and mlock()ed.
+ * If there is a non-fatal error (or no key), the resulting structure
+ * will have len = 0.
+ */
+void cipher_decrypt_private_key(const char *key_hex,
+				unsigned const char key[KDF_HASH_LEN],
+				struct private_key *out_key)
+{
+	size_t len;
+	_cleanup_free_ unsigned char *encrypted_key = NULL;
+	_cleanup_free_ char *decrypted_key = NULL;
+	unsigned char *encrypted_key_start;
+	char *start, *end;
+	unsigned char *dec_key = NULL;
+	int ret;
+
+	#define start_str LP_PKEY_PREFIX
+	#define end_str LP_PKEY_SUFFIX
+
+	memset(out_key, 0, sizeof(*out_key));
+
+	len = strlen(key_hex);
+	if (len % 2 != 0)
+		die("Key hex in wrong format.");
+	len /= 2;
+
+	len += 16 /* IV */ + 1 /* pound symbol */;
+	encrypted_key = xcalloc(len + 1, 1);
+	encrypted_key[0] = '!';
+	memcpy(&encrypted_key[1], key, 16);
+	encrypted_key_start = &encrypted_key[17];
+	hex_to_bytes(key_hex, &encrypted_key_start);
+	decrypted_key = cipher_aes_decrypt(encrypted_key, len, key);
+	if (!decrypted_key) {
+		warn("Could not decrypt private key.");
+		return;
+	}
+
+	start = strstr(decrypted_key, start_str);
+	end = strstr(decrypted_key, end_str);
+	if (!start || !end || end <= start) {
+		warn("Could not decode decrypted private key.");
+		return;
+	}
+
+	start += strlen(start_str);
+	*end = '\0';
+
+	ret = hex_to_bytes(start, &dec_key);
+	if (ret)
+		die("Invalid private key after decryption and decoding.");
+
+	out_key->key = dec_key;
+	out_key->len = strlen(start) / 2;
+	mlock(out_key->key, out_key->len);
+
+	#undef start_str
+	#undef end_str
+}
+
+/*
+ * Encrypt RSA sharing key.  Encrypted key is returned as a hex-encoded string.
+ */
+char *cipher_encrypt_private_key(struct private_key *private_key,
+				 unsigned const char key[KDF_HASH_LEN])
+{
+	unsigned char *key_ptext;
+	unsigned char *ctext = NULL;
+	char *key_hex_dst;
+	char *ctext_hex = NULL;
+	size_t len, ctext_len, hex_len;
+
+	if (!private_key->len)
+		return xstrdup("");
+
+	hex_len = private_key->len * 2;
+	len = strlen(LP_PKEY_PREFIX) + hex_len + strlen(LP_PKEY_SUFFIX);
+
+	key_ptext = xcalloc(len + 1, 1);
+	memcpy(key_ptext, LP_PKEY_PREFIX, strlen(LP_PKEY_PREFIX));
+
+	key_hex_dst = (char *) key_ptext + strlen(LP_PKEY_PREFIX);
+	bytes_to_hex(private_key->key, &key_hex_dst, private_key->len);
+
+	memcpy(key_ptext + strlen(LP_PKEY_PREFIX) + hex_len,
+	       LP_PKEY_SUFFIX, strlen(LP_PKEY_SUFFIX));
+
+	ctext_len = cipher_aes_encrypt_bytes(key_ptext, len, key, key, &ctext);
+	bytes_to_hex(ctext, &ctext_hex, ctext_len);
+
+	free(ctext);
+	return ctext_hex;
+}
+
+/*
+ * Get hex-encoded sha256() of a buffer.
+ */
+char *cipher_sha256_hex(unsigned char *bytes, size_t len)
+{
+	char *tmp = NULL;
+	SHA256_CTX sha256;
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+
+	if (!SHA256_Init(&sha256))
+		goto die;
+	if (!SHA256_Update(&sha256, bytes, len))
+		goto die;
+	if (!SHA256_Final(hash, &sha256))
+		goto die;
+
+	bytes_to_hex(hash, &tmp, sizeof(hash));
+	return tmp;
+die:
+	die("SHA-256 hash failed");
 }

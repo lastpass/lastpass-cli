@@ -51,6 +51,7 @@ static struct {
 } commands[] = {
 	CMD(login),
 	CMD(logout),
+	CMD(passwd),
 	CMD(show),
 	CMD(ls),
 	CMD(edit),

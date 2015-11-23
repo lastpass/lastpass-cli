@@ -84,15 +84,7 @@ int cmd_logout(int argc, char **argv)
 
 	init_all(0, key, &session, NULL);
 
-	if (!config_unlink("verify") || !config_unlink("username") || !config_unlink("session_sessionid") || !config_unlink("iterations"))
-		die_errno("could not log out.");
-	config_unlink("blob");
-	config_unlink("session_token");
-	config_unlink("session_uid");
-	config_unlink("session_privatekey");
-	config_unlink("plaintext_key");
-	agent_kill();
-	upload_queue_kill();
+	session_kill();
 	lastpass_logout(session);
 	terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Log out" TERMINAL_RESET ": complete.\n");
 	return 0;

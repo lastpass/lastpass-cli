@@ -41,6 +41,7 @@
 #include "util.h"
 #include "upload-queue.h"
 #include <string.h>
+#include <errno.h>
 #include <curl/curl.h>
 
 unsigned int lastpass_iterations(const char *username)
@@ -186,3 +187,114 @@ void lastpass_log_access(enum blobsync sync, const struct session *session, unsi
 		upload_queue_enqueue(sync, key, session, "loglogin.php", "id", account->id, "method", "cli", "sharedfolderid", account->share->id, NULL);
 }
 
+
+int lastpass_pwchange_start(const struct session *session, const char *username, const char hash[KDF_HEX_LEN], struct pwchange_info *info)
+{
+	_cleanup_free_ char *reply = NULL;
+
+	reply = http_post_lastpass("lastpass/api.php", session->sessionid, NULL,
+				   "cmd", "getacctschangepw",
+				   "username", username,
+				   "hash", hash,
+				   "changepw", "1",
+				   "changepw2", "1",
+				   "includersaprivatekeyenc", "1",
+				   "changeun", "",
+				   "resetrsakeys", "0",
+				   "includeendmarker", "1", NULL);
+	if (!reply)
+		return -ENOENT;
+
+	return xml_parse_pwchange(reply, info);
+}
+
+int lastpass_pwchange_complete(const struct session *session,
+			       const char *username,
+			       const char *enc_username,
+			       const char new_hash[KDF_HEX_LEN],
+			       int new_iterations,
+			       struct pwchange_info *info)
+{
+	struct http_param_set params = {
+		.argv = NULL,
+		.n_alloced = 0
+	};
+
+	struct pwchange_field *field;
+	struct pwchange_su_key *su_key;
+	_cleanup_free_ char *iterations_str = xultostr(new_iterations);
+	_cleanup_free_ char *sukeycnt_str = NULL;
+	_cleanup_free_ char *reencrypt_string = NULL;
+	_cleanup_free_ char *reply = NULL;
+	size_t len;
+	int su_key_ind;
+	char suuid_str[30] = {0};
+	char sukey_str[30] = {0};
+	unsigned int i;
+
+	/* build reencrypt string from change pw info */
+	len = strlen(info->reencrypt_id) + 1;
+	list_for_each_entry(field, &info->fields, list) {
+		len += strlen(field->old_ctext) + strlen(field->new_ctext) +
+		       1 /* ':' */ + 1 /* '\n' */;
+	}
+	reencrypt_string = xcalloc(len + 1, 1);
+	strlcat(reencrypt_string, info->reencrypt_id, len);
+	strlcat(reencrypt_string, "\n", len);
+
+	list_for_each_entry(field, &info->fields, list) {
+		if (!field->new_ctext)
+			continue;
+		strlcat(reencrypt_string, field->old_ctext, len);
+		strlcat(reencrypt_string, ":", len);
+		strlcat(reencrypt_string, field->new_ctext, len);
+		strlcat(reencrypt_string, "\n", len);
+	}
+
+	http_post_add_params(&params,
+		"cmd", "updatepassword",
+		"pwupdate", "1",
+		"email", username,
+		"token", info->token,
+		"reencrypt", reencrypt_string,
+		"newprivatekeyenc", info->new_privkey_encrypted,
+		"newuserkeyhexhash", info->new_key_hash,
+		"newprivatekeyenchexhash", info->new_privkey_hash,
+		"newpasswordhash", new_hash,
+		"key_iterations", iterations_str,
+		"encrypted_username", enc_username,
+		"origusername", username,
+		NULL);
+
+	su_key_ind = 0;
+	list_for_each_entry(su_key, &info->su_keys, list) {
+		snprintf(suuid_str, sizeof(suuid_str), "suuid%d", su_key_ind);
+		snprintf(sukey_str, sizeof(sukey_str), "sukey%d", su_key_ind);
+		http_post_add_params(&params,
+				     xstrdup(suuid_str), su_key->uid,
+				     xstrdup(sukey_str), su_key->new_enc_key,
+				     NULL);
+		su_key_ind++;
+	}
+	sukeycnt_str = xultostr(su_key_ind);
+	http_post_add_params(&params, xstrdup("sukeycnt"), sukeycnt_str, NULL);
+
+	reply = http_post_lastpass_param_set("lastpass/api.php",
+					     session->sessionid, NULL,
+					     &params);
+
+	for (i=0; i < params.n_alloced && params.argv[i]; i++) {
+		if (starts_with(params.argv[i], "sukey") ||
+		    starts_with(params.argv[i], "suuid")) {
+			free(params.argv[i]);
+		}
+	}
+
+	if (!reply)
+		return -EINVAL;
+
+	if (!strstr(reply, "pwchangeok"))
+		return -EINVAL;
+
+	return 0;
+}
