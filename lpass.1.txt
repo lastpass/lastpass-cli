@@ -26,6 +26,7 @@ several subcommands:
  lpass *passwd*
  lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}
  lpass *ls* [--sync=auto|now|no] [--long, -l] [-m] [-u] [--color=auto|never|always] [GROUP]
+ lpass *mv* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID} GROUP
  lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} [--color=auto|never|always] {NAME|UNIQUEID}
  lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
  lpass *duplicate* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}

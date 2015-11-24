@@ -73,3 +73,6 @@ int cmd_export(int argc, char **argv);
 int cmd_share(int argc, char **argv);
 #define cmd_share_usage "share " color_usage " subcommand sharename..."
 #endif
+
+int cmd_mv(int argc, char **argv);
+#define cmd_mv_usage "mv " color_usage " {UNIQUENAME|UNIQUEID} GROUP"

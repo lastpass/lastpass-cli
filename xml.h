@@ -12,5 +12,6 @@ unsigned long long xml_login_check(const char *buf, struct session *session);
 int xml_parse_share_getinfo(const char *buf, struct list_head *users);
 int xml_parse_share_getpubkey(const char *buf, struct share_user *user);
 int xml_parse_pwchange(const char *buf, struct pwchange_info *info);
+int xml_api_err(const char *buf);
 
 #endif

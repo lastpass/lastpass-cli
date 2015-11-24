@@ -719,6 +719,10 @@ void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN])
 	free(obj->field##_encrypted); \
 	obj->field##_encrypted = encrypt_and_base64(field, account->share ? account->share->key : key); \
 } while (0)
+#define reencrypt_field(obj, field) do { \
+	free(obj->field##_encrypted); \
+	obj->field##_encrypted = encrypt_and_base64(obj->field, account->share ? account->share->key : key); \
+} while (0)
 
 void account_set_username(struct account *account, char *username, unsigned const char key[KDF_HASH_LEN])
 {
@@ -751,6 +755,21 @@ void field_set_value(struct account *account, struct field *field, char *value, 
 static bool is_shared_folder_name(const char *fullname)
 {
 	return !strncmp(fullname, "Shared-", 7);
+}
+
+void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN])
+{
+	struct field *field;
+
+	reencrypt_field(account, name);
+	reencrypt_field(account, group);
+	reencrypt_field(account, username);
+	reencrypt_field(account, password);
+	reencrypt_field(account, note);
+
+	list_for_each_entry(field, &account->field_head, list) {
+		reencrypt_field(field, value);
+	}
 }
 
 void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN])

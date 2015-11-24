@@ -19,6 +19,7 @@ int lastpass_share_getinfo(const struct session *session, const char *shareid, s
 int lastpass_share_user_add(const struct session *session, struct share *share, struct share_user *user);
 int lastpass_share_user_del(const struct session *session, const char *shareid, struct share_user *user);
 int lastpass_share_user_mod(const struct session *session, struct share *share, struct share_user *user);
+int lastpass_share_move(const struct session *session, struct account *account, struct share *orig_folder);
 int lastpass_share_create(const struct session *session, const char *sharename);
 int lastpass_share_delete(const struct session *session, struct share *share);
 int lastpass_pwchange_start(const struct session *session, const char *username, const char hash[KDF_HEX_LEN], struct pwchange_info *pwchange_info);

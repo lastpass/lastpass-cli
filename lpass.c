@@ -54,6 +54,7 @@ static struct {
 	CMD(passwd),
 	CMD(show),
 	CMD(ls),
+	CMD(mv),
 	CMD(edit),
 	CMD(generate),
 	CMD(duplicate),

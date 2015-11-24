@@ -453,6 +453,34 @@ int xml_parse_pwchange_data(char *data, struct pwchange_info *info)
 	return 0;
 }
 
+int xml_api_err(const char *buf)
+{
+	int ret;
+	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
+
+	xmlNode *root = xmlDocGetRootElement(doc);
+	if (!root || xmlStrcmp(root->name, BAD_CAST "lastpass") ||
+			       !root->children) {
+		ret = -EINVAL;
+		goto free_doc;
+	}
+
+	for (xmlAttrPtr attr = root->properties; attr; attr = attr->next) {
+		if (!xmlStrcmp(attr->name, BAD_CAST "rc")) {
+			_cleanup_free_ char *val = (char *)
+				xmlNodeListGetString(doc, attr->children, 1);
+			if (strcmp(val, "OK") != 0) {
+				ret = -EPERM;
+				goto free_doc;
+			}
+		}
+	}
+	ret = 0;
+free_doc:
+	xmlFreeDoc(doc);
+	return ret;
+}
+
 int xml_parse_pwchange(const char *buf, struct pwchange_info *info)
 {
 	int ret;

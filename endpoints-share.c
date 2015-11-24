@@ -283,3 +283,64 @@ int lastpass_share_delete(const struct session *session, struct share *share)
 				   "xmlr", "1", NULL);
 	return 0;
 }
+
+/*
+ * Move a site into or out of a shared folder.
+ *
+ * account should already be encrypted with the new share key.
+ * orig_folder or account->share may be null, indicating the
+ * transition to or from a regular site and a shared folder.
+ */
+int lastpass_share_move(const struct session *session,
+			struct account *account,
+			struct share *orig_folder)
+{
+	_cleanup_free_ char *url = NULL;
+	_cleanup_free_ char *reply = NULL;
+
+	struct http_param_set params = {
+		.argv = NULL,
+		.n_alloced = 0
+	};
+
+	if (!account->share && !orig_folder)
+		return 0;
+
+	bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
+
+	http_post_add_params(&params,
+			     "token", session->token,
+			     "cmd", "uploadaccounts",
+			     "aid0", account->id,
+			     "name0", account->name_encrypted,
+			     "grouping0", account->group_encrypted,
+			     "url0", url,
+			     "username0", account->username_encrypted,
+			     "password0", account->password_encrypted,
+			     "pwprotect0", account->pwprotect ? "on" : "off",
+			     "extra0", account->note_encrypted,
+			     "todelete", account->id, NULL);
+
+	if (account->share) {
+		http_post_add_params(&params,
+				     "sharedfolderid", account->share->id,
+				     NULL);
+	}
+
+	if (orig_folder) {
+		http_post_add_params(&params,
+				     "origsharedfolderid", orig_folder->id,
+				     NULL);
+	}
+
+	reply = http_post_lastpass_param_set("lastpass/api.php",
+					     session->sessionid, NULL,
+					     &params);
+
+	free(params.argv);
+
+	if (!reply)
+		return -EINVAL;
+
+	return xml_api_err(reply);
+}
