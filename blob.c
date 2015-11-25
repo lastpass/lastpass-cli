@@ -799,8 +799,10 @@ void account_assign_share(struct blob *blob, struct account *account, const char
 	struct share *share;
 	_cleanup_free_ char *shared_name = NULL;
 
-	if (!is_shared_folder_name(name))
+	if (!is_shared_folder_name(name)) {
+		account->share = NULL;
 		return;
+	}
 
 	/* strip off shared groupname */
 	char *slash = strchr(name, '/');
