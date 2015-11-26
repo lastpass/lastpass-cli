@@ -77,6 +77,8 @@ static void reencrypt(struct session *session,
 	struct private_key tmp;
 	unsigned int n_fields = 0;
 	unsigned int i = 0;
+	unsigned int n_required = 0;
+	unsigned int errors = 0;
 
 	/* count how many things we'll encrypt */
 	list_for_each_entry(field, &info->fields, list) {
@@ -106,13 +108,25 @@ static void reencrypt(struct session *session,
 	/* reencrypt site info */
 	list_for_each_entry(field, &info->fields, list) {
 		show_status_bar("Re-encrypting", i++, n_fields);
+		if (!field->optional)
+			n_required++;
+
 		char *ptext = cipher_aes_decrypt_base64(field->old_ctext, key);
 		if (!ptext) {
-			field->new_ctext = NULL;
-			continue;
+			if (!field->optional)
+				errors++;
+			ptext = " ";
 		}
 		field->new_ctext = encrypt_and_base64(ptext, new_key);
 	}
+
+	/*
+	 * Fail if > 10% decryption errors.  This indicates the blob and key
+	 * are out of sync somehow, or that user has reverted a password
+	 * change but some entries are encrypted with the new key.
+	 */
+	if (errors > n_required / 10)
+		die("Too many decryption failures.");
 
 	/* encrypt recovery copy of our key */
 	list_for_each_entry(su_key, &info->su_keys, list) {

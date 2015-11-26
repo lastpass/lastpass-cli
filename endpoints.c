@@ -243,8 +243,6 @@ int lastpass_pwchange_complete(const struct session *session,
 	strlcat(reencrypt_string, "\n", len);
 
 	list_for_each_entry(field, &info->fields, list) {
-		if (!field->new_ctext)
-			continue;
 		strlcat(reencrypt_string, field->old_ctext, len);
 		strlcat(reencrypt_string, ":", len);
 		strlcat(reencrypt_string, field->new_ctext, len);
