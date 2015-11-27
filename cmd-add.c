@@ -1,5 +1,5 @@
 /*
- * command for editing vault entries
+ * command for adding vault entries
  *
  * Copyright (C) 2014-2015 LastPass.
  *
@@ -46,7 +46,7 @@
 #include <string.h>
 #include <errno.h>
 
-int cmd_edit(int argc, char **argv)
+int cmd_add(int argc, char **argv)
 {
 	unsigned char key[KDF_HASH_LEN];
 	struct session *session = NULL;
@@ -57,7 +57,6 @@ int cmd_edit(int argc, char **argv)
 		{"password", no_argument, NULL, 'p'},
 		{"url", no_argument, NULL, 'L'},
 		{"field", required_argument, NULL, 'F'},
-		{"name", no_argument, NULL, 'N'},
 		{"notes", no_argument, NULL, 'O'},
 		{"non-interactive", no_argument, NULL, 'X'},
 		{"color", required_argument, NULL, 'C'},
@@ -69,7 +68,6 @@ int cmd_edit(int argc, char **argv)
 	char *name;
 	bool non_interactive = false;
 	enum blobsync sync = BLOB_SYNC_AUTO;
-	struct account *editable;
 	enum edit_choice choice = EDIT_ANY;
 
 	#define ensure_choice() if (choice != EDIT_ANY) goto choice_die;
@@ -95,10 +93,6 @@ int cmd_edit(int argc, char **argv)
 				choice = EDIT_FIELD;
 				field = xstrdup(optarg);
 				break;
-			case 'N':
-				ensure_choice();
-				choice = EDIT_NAME;
-				break;
 			case 'O':
 				ensure_choice();
 				choice = EDIT_NOTES;
@@ -112,28 +106,19 @@ int cmd_edit(int argc, char **argv)
 				break;
 			case '?':
 			default:
-				die_usage(cmd_edit_usage);
+				die_usage(cmd_add_usage);
 		}
 	}
 	#undef ensure_choice
 
 	if (argc - optind != 1)
-		die_usage(cmd_edit_usage);
+		die_usage(cmd_add_usage);
 	if (choice == EDIT_NONE)
-		choice_die: die_usage("edit ... {--name|--username|--password|--url|--notes|--field=FIELD}");
+		choice_die: die_usage("add ... {--username|--password|--url|--notes|--field=FIELD}");
 	name = argv[optind];
 
 	init_all(sync, key, &session, &blob);
 
-	editable = find_unique_account(blob, name);
-	if (!editable)
-		return edit_new_account(session, blob, sync, name, choice,
-					field, non_interactive, key);
-
-	if (editable->share && editable->share->readonly)
-		die("%s is a readonly shared entry from %s. It cannot be edited.",
-		    editable->fullname, editable->share->name);
-
-	return edit_account(session, blob, sync, editable, choice, field,
-			    non_interactive, key);
+	return edit_new_account(session, blob, sync, name, choice, field,
+				non_interactive, key);
 }

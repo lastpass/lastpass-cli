@@ -401,3 +401,33 @@ int edit_account(struct session *session,
 	blob_free(blob);
 	return 0;
 }
+
+int edit_new_account(struct session *session,
+		     struct blob *blob,
+		     enum blobsync sync,
+		     const char *name,
+		     enum edit_choice choice,
+		     const char *field,
+		     bool non_interactive,
+		     unsigned char key[KDF_HASH_LEN])
+{
+	struct account *account;
+
+	account = new_account();
+	account_assign_share(blob, account, name);
+
+	account->id = xstrdup("0");
+	account_set_password(account, xstrdup(""), key);
+	account_set_fullname(account, xstrdup(name), key);
+	account_set_username(account, xstrdup(""), key);
+	account_set_note(account, xstrdup(""), key);
+	if (choice == EDIT_NOTES) {
+		account->url = xstrdup("http://sn");
+	} else {
+		account->url = xstrdup("");
+	}
+	list_add(&account->list, &blob->account_head);
+
+	return edit_account(session, blob, sync, account, choice, field,
+			    non_interactive, key);
+}

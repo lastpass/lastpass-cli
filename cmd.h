@@ -57,6 +57,15 @@ int edit_account(struct session *session,
 		 bool non_interactive,
 		 unsigned char key[KDF_HASH_LEN]);
 
+int edit_new_account(struct session *session,
+		     struct blob *blob,
+		     enum blobsync sync,
+		     const char *name,
+		     enum edit_choice choice,
+		     const char *field,
+		     bool non_interactive,
+		     unsigned char key[KDF_HASH_LEN]);
+
 #define color_usage "[--color=auto|never|always]"
 
 int cmd_login(int argc, char **argv);
@@ -73,6 +82,9 @@ int cmd_show(int argc, char **argv);
 
 int cmd_ls(int argc, char **argv);
 #define cmd_ls_usage "ls [--sync=auto|now|no] [--long, -l] " color_usage " [GROUP]"
+
+int cmd_add(int argc, char **argv);
+#define cmd_add_usage "add [--sync=auto|now|no] [--non-interactive] " color_usage " {--username|--password|--url|--notes|--field=FIELD} NAME"
 
 int cmd_edit(int argc, char **argv);
 #define cmd_edit_usage "edit [--sync=auto|now|no] [--non-interactive] " color_usage " {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}"

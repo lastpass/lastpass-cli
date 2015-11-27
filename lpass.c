@@ -55,6 +55,7 @@ static struct {
 	CMD(show),
 	CMD(ls),
 	CMD(mv),
+	CMD(add),
 	CMD(edit),
 	CMD(generate),
 	CMD(duplicate),
