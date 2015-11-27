@@ -262,6 +262,50 @@ xml_parse_share_user(xmlDoc *doc, xmlNode *item, struct share_user *user)
 	}
 }
 
+static int
+xml_parse_share_key_entry(xmlDoc *doc, xmlNode *root,
+			  struct share_user *user, int idx)
+{
+	char *tmp;
+
+	_cleanup_free_ char *pubkey = NULL;
+	_cleanup_free_ char *username = NULL;
+	_cleanup_free_ char *uid = NULL;
+	_cleanup_free_ char *cgid = NULL;
+
+	xasprintf(&pubkey, "pubkey%d", idx);
+	xasprintf(&username, "username%d", idx);
+	xasprintf(&uid, "uid%d", idx);
+	xasprintf(&cgid, "cgid%d", idx);
+
+	memset(user, 0, sizeof(*user));
+
+	for (xmlNode *item = root->children; item; item = item->next) {
+		if (xml_parse_str(doc, item, pubkey, &tmp)) {
+			int ret = hex_to_bytes(tmp, &user->sharing_key.key);
+			if (ret == 0)
+				user->sharing_key.len = strlen(tmp) / 2;
+			free(tmp);
+			continue;
+		}
+		if (xml_parse_str(doc, item, username, &user->username))
+			continue;
+		if (xml_parse_str(doc, item, uid, &user->uid))
+			continue;
+		if (xml_parse_str(doc, item, cgid, &user->cgid))
+			continue;
+	}
+
+	if (!user->uid) {
+		free(user->cgid);
+		free(user->username);
+		free(user->sharing_key.key);
+		return -ENOENT;
+	}
+	return 0;
+}
+
+
 int xml_parse_share_getinfo(const char *buf, struct list_head *users)
 {
 	int ret;
@@ -311,11 +355,10 @@ free_doc:
 	return ret;
 }
 
-int xml_parse_share_getpubkey(const char *buf, struct share_user *user)
+int xml_parse_share_getpubkeys(const char *buf, struct list_head *user_list)
 {
 	int ret;
 	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
-	char *tmp;
 
 	if (!doc)
 		return -EINVAL;
@@ -327,6 +370,7 @@ int xml_parse_share_getpubkey(const char *buf, struct share_user *user)
 	 *   pubkey0
 	 *   uid0
 	 *   username0
+	 *   cgid0 (if group)
 	 */
 	xmlNode *root = xmlDocGetRootElement(doc);
 	if (!root || xmlStrcmp(root->name, BAD_CAST "xmlresponse") ||
@@ -335,24 +379,16 @@ int xml_parse_share_getpubkey(const char *buf, struct share_user *user)
 		goto free_doc;
 	}
 
-	user->sharing_key.key = NULL;
-	user->sharing_key.len = 0;
-
-	for (xmlNode *item = root->children; item; item = item->next) {
-
-		if (xml_parse_str(doc, item, "pubkey0", &tmp)) {
-			int ret = hex_to_bytes(tmp, &user->sharing_key.key);
-			if (ret == 0)
-				user->sharing_key.len = strlen(tmp) / 2;
-			free(tmp);
-			continue;
+	for (int count = 0; ; count++) {
+		struct share_user *user = new0(struct share_user, 1);
+		ret = xml_parse_share_key_entry(doc, root, user, count);
+		if (ret) {
+			free(user);
+			break;
 		}
-		if (xml_parse_str(doc, item, "username0", &user->username))
-			continue;
-		if (xml_parse_str(doc, item, "uid0", &user->uid))
-			continue;
+		list_add(&user->list, user_list);
 	}
-	if (!user->sharing_key.len)
+	if (list_empty(user_list))
 		ret = -ENOENT;
 	else
 		ret = 0;
@@ -530,4 +566,27 @@ int xml_parse_pwchange(const char *buf, struct pwchange_info *info)
 free_doc:
 	xmlFreeDoc(doc);
 	return ret;
+}
+
+int xml_parse_share_getpubkey(const char *buf, struct share_user *user)
+{
+	struct list_head users;
+	struct share_user *share_user, *tmp;
+	int ret;
+
+	INIT_LIST_HEAD(&users);
+	ret = xml_parse_share_getpubkeys(buf, &users);
+	if (ret)
+		return ret;
+
+	if (list_empty(&users))
+		return -ENOENT;
+
+	share_user = list_first_entry(&users, struct share_user, list);
+	*user = *share_user;
+
+	list_for_each_entry_safe(share_user, tmp, &users, list)
+		free(share_user);
+
+	return 0;
 }

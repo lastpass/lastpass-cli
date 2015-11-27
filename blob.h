@@ -12,6 +12,7 @@ struct share_user
 	char *uid;
 	char *username;
 	char *realname;
+	char *cgid;
 	bool read_only;
 	bool is_group;		/* if set uid, username store gid, groupname */
 	bool hide_passwords;
