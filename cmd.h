@@ -23,6 +23,19 @@ enum account_field
 	ACCOUNT_URL = BIT(3),
 	ACCOUNT_USERNAME = BIT(4),
 };
+
+enum edit_choice
+{
+	EDIT_NONE,
+	EDIT_USERNAME,
+	EDIT_PASSWORD,
+	EDIT_URL,
+	EDIT_FIELD,
+	EDIT_NAME,
+	EDIT_NOTES,
+	EDIT_ANY
+};
+
 void init_all(enum blobsync sync, unsigned char key[KDF_HASH_LEN], struct session **session, struct blob **blob);
 enum blobsync parse_sync_string(const char *str);
 struct account *find_unique_account(struct blob *blob, const char *name);
@@ -34,6 +47,15 @@ void find_matching_substr(struct blob *blob, const char *pattern,
 			  int fields, struct list_head *ret_list);
 enum color_mode parse_color_mode_string(const char *colormode);
 bool parse_bool_arg_string(const char *extra);
+
+int edit_account(struct session *session,
+		 struct blob *blob,
+		 enum blobsync sync,
+		 struct account *editable,
+		 enum edit_choice choice,
+		 const char *field,
+		 bool non_interactive,
+		 unsigned char key[KDF_HASH_LEN]);
 
 #define color_usage "[--color=auto|never|always]"
 
