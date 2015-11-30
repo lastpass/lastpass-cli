@@ -70,9 +70,9 @@ int cmd_edit(int argc, char **argv)
 	bool non_interactive = false;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	struct account *editable;
-	enum edit_choice choice = EDIT_NONE;
+	enum edit_choice choice = EDIT_ANY;
 
-	#define ensure_choice() if (choice != EDIT_NONE) goto choice_die;
+	#define ensure_choice() if (choice != EDIT_ANY) goto choice_die;
 	while ((option = getopt_long(argc, argv, "up", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':

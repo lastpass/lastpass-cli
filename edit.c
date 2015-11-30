@@ -128,6 +128,27 @@ _noreturn_ static inline void die_unlink_errno(const char *str, const char *file
 	die_errno("%s", str);
 }
 
+static void assign_account_value(struct account *account,
+				 const char *label,
+				 char *value,
+				 unsigned char key[KDF_HASH_LEN])
+{
+#define assign_if(title, field) do { \
+	if (!strcmp(label, title)) { \
+		account_set_##field(account, value, key); \
+		return; \
+	} \
+	} while (0)
+
+	value = xstrdup(trim(value));
+
+	assign_if("Name", fullname);
+	assign_if("URL", url);
+	assign_if("Username", username);
+	assign_if("Password", password);
+#undef assign_if
+}
+
 static
 int read_file_buf(FILE *fp, char **value_out, size_t *len_out)
 {
@@ -151,6 +172,78 @@ int read_file_buf(FILE *fp, char **value_out, size_t *len_out)
 	*value_out = value;
 	*len_out = len;
 	return 0;
+}
+
+/*
+ * Read a file representing all of the data in an account.
+ * We generate this file when editing an account, and parse it back
+ * after a user has edited it.  Each line, with the exception of the
+ * final "notes" label, is parsed from the end of the label to the
+ * first newline.  In the case of notes, the rest of the file is considered
+ * part of the note.
+ *
+ * Name: text0
+ * URL: text1
+ * [...]
+ * Notes:
+ * notes text here
+ *
+ */
+static void parse_account_file(FILE *input, struct account *account,
+			       unsigned char key[KDF_HASH_LEN])
+{
+	_cleanup_free_ char *line = NULL;
+	ssize_t read;
+	size_t len = 0;
+	char *label, *delim, *value;
+	bool parsing_notes = false;
+	int ret;
+
+	/* parse label: [value] */
+	while ((read = getline(&line, &len, input)) != -1) {
+		delim = strchr(line, ':');
+		if (!delim)
+			continue;
+		*delim = 0;
+		value = delim + 1;
+		label = line;
+
+		if (!strcmp(label, "Notes")) {
+			parsing_notes = true;
+			break;
+		}
+		assign_account_value(account, label, value, key);
+	}
+
+	if (!parsing_notes)
+		return;
+
+	/* everything else goes into notes section */
+	value = NULL;
+	len = 0;
+	ret = read_file_buf(input, &value, &len);
+	if (ret)
+		return;
+
+	account_set_note(account, value, key);
+}
+
+static int write_account_file(FILE *fp, struct account *account)
+{
+#define write_field(title, field) do { \
+	if (fprintf(fp, "%s: %s\n", title, account->field) < 0) \
+		return -errno; \
+	} while (0)
+
+	write_field("Name", fullname);
+	write_field("URL", url);
+	write_field("Username", username);
+	write_field("Password", password);
+	if (fprintf(fp, "Notes:    # Add notes below this line.\n%s", account->note) < 0)
+		return -errno;
+
+	return 0;
+#undef write_field
 }
 
 int edit_account(struct session *session,
@@ -228,8 +321,14 @@ int edit_account(struct session *session,
 		tmpfile = fdopen(tmpfd, "w");
 		if (!tmpfile)
 			die_unlink_errno("fdopen", tmppath, tmpdir);
-		if (fprintf(tmpfile, "%s\n", value) < 0)
-			die_unlink_errno("fprintf", tmppath, tmpdir);
+
+		if (choice == EDIT_ANY) {
+			if (write_account_file(tmpfile, editable))
+				die_unlink_errno("fprintf", tmppath, tmpdir);
+		} else {
+			if (fprintf(tmpfile, "%s\n", value) < 0)
+				die_unlink_errno("fprintf", tmppath, tmpdir);
+		}
 		fclose(tmpfile);
 
 		xasprintf(&editcmd, "${EDITOR:-vi} '%s'", tmppath);
@@ -246,6 +345,9 @@ int edit_account(struct session *session,
 		ret = read_file_buf(tmpfile, &value, &len);
 		if (ret)
 			die_unlink_errno("fread(tmpfile)", tmppath, tmpdir);
+	} else if (choice == EDIT_ANY) {
+		parse_account_file(tmpfile, editable, key);
+		value = NULL;
 	} else {
 		value = NULL;
 		len = 0;
@@ -253,9 +355,12 @@ int edit_account(struct session *session,
 			die_unlink_errno("getline", tmppath, tmpdir);
 	}
 	fclose(tmpfile);
-	len = strlen(value);
-	if (len && value[len - 1] == '\n')
-		value[len - 1] = '\0';
+
+	if (value) {
+		len = strlen(value);
+		if (len && value[len - 1] == '\n')
+			value[len - 1] = '\0';
+	}
 	if (tmppath) {
 		unlink(tmppath);
 		rmdir(tmpdir);
