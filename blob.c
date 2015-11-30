@@ -744,6 +744,11 @@ void account_set_note(struct account *account, char *note, unsigned const char k
 {
 	set_encrypted_field(account, note);
 }
+void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN])
+{
+	UNUSED(key);
+	set_field(account, url);
+}
 void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN])
 {
 	if (!strcmp(field->type, "email") || !strcmp(field->type, "tel") || !strcmp(field->type, "text") || !strcmp(field->type, "password") || !strcmp(field->type, "textarea"))

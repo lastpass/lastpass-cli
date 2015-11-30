@@ -246,10 +246,9 @@ int edit_account(struct session *session,
 		account_set_username(editable, value, key);
 	else if (choice == EDIT_PASSWORD)
 		account_set_password(editable, value, key);
-	else if (choice == EDIT_URL) {
-		free(editable->url);
-		editable->url = value;
-	} else if (choice == EDIT_NAME)
+	else if (choice == EDIT_URL)
+		account_set_url(editable, value, key);
+	else if (choice == EDIT_NAME)
 		account_set_fullname(editable, value, key);
 	else if (choice == EDIT_NOTES)
 		account_set_note(editable, value, key);
