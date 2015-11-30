@@ -133,6 +133,8 @@ static void assign_account_value(struct account *account,
 				 char *value,
 				 unsigned char key[KDF_HASH_LEN])
 {
+	struct field *editable_field = NULL;
+
 #define assign_if(title, field) do { \
 	if (!strcmp(label, title)) { \
 		account_set_##field(account, value, key); \
@@ -146,6 +148,15 @@ static void assign_account_value(struct account *account,
 	assign_if("URL", url);
 	assign_if("Username", username);
 	assign_if("Password", password);
+
+	/* if we got here maybe it's a secure note field */
+	list_for_each_entry(editable_field, &account->field_head, list) {
+		if (!strcmp(label, editable_field->name)) {
+			field_set_value(account, editable_field, value, key);
+			break;
+		}
+	}
+
 #undef assign_if
 }
 
@@ -230,15 +241,22 @@ static void parse_account_file(FILE *input, struct account *account,
 
 static int write_account_file(FILE *fp, struct account *account)
 {
+	struct field *editable_field = NULL;
+
 #define write_field(title, field) do { \
-	if (fprintf(fp, "%s: %s\n", title, account->field) < 0) \
+	if (fprintf(fp, "%s: %s\n", title, field) < 0) \
 		return -errno; \
 	} while (0)
 
-	write_field("Name", fullname);
-	write_field("URL", url);
-	write_field("Username", username);
-	write_field("Password", password);
+	write_field("Name", account->fullname);
+	write_field("URL", account->url);
+	write_field("Username", account->username);
+	write_field("Password", account->password);
+
+	list_for_each_entry(editable_field, &account->field_head, list) {
+		write_field(editable_field->name, editable_field->value);
+	}
+
 	if (fprintf(fp, "Notes:    # Add notes below this line.\n%s", account->note) < 0)
 		return -errno;
 
