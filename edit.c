@@ -128,6 +128,31 @@ _noreturn_ static inline void die_unlink_errno(const char *str, const char *file
 	die_errno("%s", str);
 }
 
+static
+int read_file_buf(FILE *fp, char **value_out, size_t *len_out)
+{
+	size_t len;
+	size_t read;
+	char *value;
+
+	*len_out = 0;
+	*value_out = NULL;
+
+	for (len = 0, value = xmalloc(8192 + 1); ; value = xrealloc(value, len + 8192 + 1)) {
+		read = fread(value + len, 1, 8192, fp);
+		len += read;
+		if (read != 8192) {
+			if (ferror(fp))
+				return -EIO;
+			break;
+		}
+	}
+	value[len] = '\0';
+	*value_out = value;
+	*len_out = len;
+	return 0;
+}
+
 int edit_account(struct session *session,
 		 struct blob *blob,
 		 enum blobsync sync,
@@ -137,7 +162,7 @@ int edit_account(struct session *session,
 		 bool non_interactive,
 		 unsigned char key[KDF_HASH_LEN])
 {
-	size_t len, read;
+	size_t len;
 	struct account *notes_expansion, *notes_collapsed = NULL;
 	struct field *editable_field = NULL;
 	_cleanup_free_ char *tmppath = NULL;
@@ -146,6 +171,7 @@ int edit_account(struct session *session,
 	int tmpfd;
 	FILE *tmpfile;
 	char *value;
+	int ret;
 
 	notes_expansion = notes_expand(editable);
 	if (notes_expansion) {
@@ -217,16 +243,9 @@ int edit_account(struct session *session,
 		die_unlink_errno("fopen", tmppath, tmpdir);
 
 	if (choice == EDIT_NOTES) {
-		for (len = 0, value = xmalloc(8192 + 1); ; value = xrealloc(value, len + 8192 + 1)) {
-			read = fread(value + len, 1, 8192, tmpfile);
-			len += read;
-			if (read != 8192) {
-				if (ferror(tmpfile))
-					die_unlink_errno("fread(tmpfile)", tmppath, tmpdir);
-				break;
-			}
-		}
-		value[len] = '\0';
+		ret = read_file_buf(tmpfile, &value, &len);
+		if (ret)
+			die_unlink_errno("fread(tmpfile)", tmppath, tmpdir);
 	} else {
 		value = NULL;
 		len = 0;
