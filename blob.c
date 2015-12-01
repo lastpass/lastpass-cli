@@ -521,15 +521,17 @@ static void write_hex_string(struct buffer *buffer, char *bytes)
 	bytes_to_hex((unsigned char *) bytes, &hex, strlen(bytes));
 	write_plain_string(buffer, hex);
 }
-static void write_crypt_string(struct buffer *buffer, char *bytes, const unsigned char key[KDF_HASH_LEN])
+static void write_crypt_string(struct buffer *buffer, char *enc_str)
 {
-	_cleanup_free_ char *encrypted = NULL;
+	_cleanup_free_ unsigned char *encrypted = NULL;
 	size_t len;
 
-	len = cipher_aes_encrypt(bytes, key, &encrypted);
-	if (!encrypted)
-		die("Could not write encrypted string.");
-	write_item(buffer, encrypted, len);
+	/*
+	 * enc_str is base64-encoded, but we write out raw bytes in
+	 * the saved blob, so un-base64.
+	 */
+	len = cipher_unbase64(enc_str, &encrypted);
+	write_item(buffer, (char *) encrypted, len);
 }
 
 static void write_boolean(struct buffer *buffer, bool yes)
@@ -545,21 +547,21 @@ static void write_chunk(struct buffer *dstbuffer, struct buffer *srcbuffer, char
 	write_item(dstbuffer, srcbuffer->bytes, srcbuffer->len);
 }
 
-static void write_account_chunk(struct buffer *buffer, struct account *account, const unsigned char key[KDF_HASH_LEN])
+static void write_account_chunk(struct buffer *buffer, struct account *account)
 {
 	struct buffer accbuf, fieldbuf;
 	struct field *field;
 
 	memset(&accbuf, 0, sizeof(accbuf));
 	write_plain_string(&accbuf, account->id);
-	write_crypt_string(&accbuf, account->name, key);
-	write_crypt_string(&accbuf, account->group, key);
+	write_crypt_string(&accbuf, account->name_encrypted);
+	write_crypt_string(&accbuf, account->group_encrypted);
 	write_hex_string(&accbuf, account->url);
-	write_crypt_string(&accbuf, account->note, key);
+	write_crypt_string(&accbuf, account->note_encrypted);
 	write_plain_string(&accbuf, "skipped");
 	write_plain_string(&accbuf, "skipped");
-	write_crypt_string(&accbuf, account->username, key);
-	write_crypt_string(&accbuf, account->password, key);
+	write_crypt_string(&accbuf, account->username_encrypted);
+	write_crypt_string(&accbuf, account->password_encrypted);
 	write_boolean(&accbuf, account->pwprotect);
 	write_plain_string(&accbuf, "skipped");
 	write_plain_string(&accbuf, "skipped");
@@ -594,7 +596,7 @@ static void write_account_chunk(struct buffer *buffer, struct account *account, 
 		write_plain_string(&fieldbuf, field->name);
 		write_plain_string(&fieldbuf, field->type);
 		if (!strcmp(field->type, "email") || !strcmp(field->type, "tel") || !strcmp(field->type, "text") || !strcmp(field->type, "password") || !strcmp(field->type, "textarea"))
-			write_crypt_string(&fieldbuf, field->value, key);
+			write_crypt_string(&fieldbuf, field->value_encrypted);
 		else
 			write_plain_string(&fieldbuf, field->value);
 		write_boolean(&fieldbuf, field->checked);
@@ -613,6 +615,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 	struct buffer buffer;
 	struct share *last_share = NULL;
 	struct account *account;
+	UNUSED(key);
 
 	memset(&buffer, 0, sizeof(buffer));
 
@@ -624,7 +627,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 
 	list_for_each_entry(account, &blob->account_head, list) {
 		if (!account->share)
-			write_account_chunk(&buffer, account, key);
+			write_account_chunk(&buffer, account);
 	}
 	list_for_each_entry(account, &blob->account_head, list) {
 		if (!account->share)
@@ -633,7 +636,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 			write_share_chunk(&buffer, account->share);
 			last_share = account->share;
 		}
-		write_account_chunk(&buffer, account, account->share->key);
+		write_account_chunk(&buffer, account);
 	}
 
 	*out = buffer.bytes;
@@ -715,9 +718,11 @@ void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN])
 	obj->field = field; \
 } while (0)
 #define set_encrypted_field(obj, field) do { \
-	set_field(obj, field); \
-	free(obj->field##_encrypted); \
-	obj->field##_encrypted = encrypt_and_base64(field, account->share ? account->share->key : key); \
+	if (!obj->field || !field || strcmp(obj->field, field)) { \
+		set_field(obj, field); \
+		free(obj->field##_encrypted); \
+		obj->field##_encrypted = encrypt_and_base64(field, account->share ? account->share->key : key); \
+	} \
 } while (0)
 #define reencrypt_field(obj, field) do { \
 	free(obj->field##_encrypted); \
