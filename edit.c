@@ -284,6 +284,8 @@ int edit_account(struct session *session,
 	char *value;
 	int ret;
 
+	struct share *old_share = editable->share;
+
 	notes_expansion = notes_expand(editable);
 	if (notes_expansion) {
 		notes_collapsed = editable;
@@ -410,6 +412,11 @@ int edit_account(struct session *session,
 		if (choice == EDIT_NAME)
 			account_set_fullname(editable, xstrdup(notes_collapsed->fullname), key);
 		account_free(notes_collapsed);
+	}
+
+	account_assign_share(blob, editable, key);
+	if (old_share != editable->share) {
+		die("Use lpass mv to move items to/from shared folders");
 	}
 
 	lastpass_update_account(sync, key, session, editable, blob);
