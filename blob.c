@@ -784,22 +784,22 @@ void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH
 
 void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN])
 {
+	char *groupname = fullname;
+
+	/* skip Shared-XXX/ for shared folders */
 	if (account->share && is_shared_folder_name(fullname)) {
-		char *groupname = strchr(fullname, '/');
-		if (groupname) {
-			char *tmp = fullname;
-			fullname = xstrdup(groupname + 1);
-			free(tmp);
-		}
+		char *tmp = strchr(fullname, '/');
+		if (tmp)
+			groupname = tmp + 1;
 	}
 
-	char *slash = strrchr(fullname, '/');
+	char *slash = strrchr(groupname, '/');
 	if (!slash) {
-		account_set_name(account, xstrdup(fullname), key);
+		account_set_name(account, xstrdup(groupname), key);
 		account_set_group(account, xstrdup(""), key);
 	} else {
 		account_set_name(account, xstrdup(slash + 1), key);
-		account_set_group(account, xstrndup(fullname, slash - fullname), key);
+		account_set_group(account, xstrndup(groupname, slash - groupname), key);
 	}
 	free(account->fullname);
 	account->fullname = fullname;
