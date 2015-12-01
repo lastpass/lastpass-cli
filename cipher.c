@@ -324,36 +324,48 @@ error:
 	die("Could not unbase64 the given bytes.");
 }
 
-char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[KDF_HASH_LEN])
+size_t cipher_unbase64(const char *ciphertext, unsigned char **b64data)
 {
 	_cleanup_free_ char *copy = NULL;
 	_cleanup_free_ unsigned char *iv = NULL;
 	_cleanup_free_ unsigned char *data = NULL;
-	_cleanup_free_ unsigned char *unbase64_ciphertext = NULL;
+	unsigned char *unbase64_ciphertext = NULL;
 	char *pipe;
 	size_t iv_len, data_len, len;
 
 	if (!strlen(ciphertext))
+		return 0;
+
+	if (ciphertext[0] != '!')
+		return unbase64(ciphertext, b64data);
+
+	copy = xstrdup(&ciphertext[1]);
+	pipe = strchr(copy, '|');
+	if (!pipe)
+		return 0;
+	*pipe = '\0';
+	iv_len = unbase64(copy, &iv);
+	data_len = unbase64(pipe + 1, &data);
+	len = iv_len + data_len + 1 /* '!' */;
+	unbase64_ciphertext = xcalloc(len, 1);
+	unbase64_ciphertext[0] = '!';
+	memcpy(&unbase64_ciphertext[1], iv, iv_len);
+	memcpy(&unbase64_ciphertext[1 + iv_len], data, data_len);
+
+	*b64data = unbase64_ciphertext;
+	return len;
+}
+
+char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[KDF_HASH_LEN])
+{
+	_cleanup_free_ unsigned char *unbase64_ciphertext = NULL;
+	size_t len;
+
+	len = cipher_unbase64(ciphertext, &unbase64_ciphertext);
+	if (!len)
 		return NULL;
 
-	if (ciphertext[0] == '!') {
-		copy = xstrdup(&ciphertext[1]);
-		pipe = strchr(copy, '|');
-		if (!pipe)
-			return NULL;
-		*pipe = '\0';
-		iv_len = unbase64(copy, &iv);
-		data_len = unbase64(pipe + 1, &data);
-		len = iv_len + data_len + 1 /* pound */;
-		unbase64_ciphertext = xcalloc(len, 1);
-		unbase64_ciphertext[0] = '!';
-		memcpy(&unbase64_ciphertext[1], iv, iv_len);
-		memcpy(&unbase64_ciphertext[1 + iv_len], data, data_len);
-		return cipher_aes_decrypt(unbase64_ciphertext, len, key);
-	} else {
-		len = unbase64(ciphertext, &data);
-		return cipher_aes_decrypt(data, len, key);
-	}
+	return cipher_aes_decrypt(unbase64_ciphertext, len, key);
 }
 
 char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
