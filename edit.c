@@ -432,7 +432,6 @@ int edit_new_account(struct session *session,
 	struct account *account;
 
 	account = new_account();
-	account_assign_share(blob, account, name);
 
 	account->id = xstrdup("0");
 	account_set_password(account, xstrdup(""), key);
@@ -444,6 +443,7 @@ int edit_new_account(struct session *session,
 	} else {
 		account->url = xstrdup("");
 	}
+	account_assign_share(blob, account, key);
 	list_add(&account->list, &blob->account_head);
 
 	return edit_account(session, blob, sync, account, choice, field,

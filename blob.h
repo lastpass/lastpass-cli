@@ -117,7 +117,7 @@ void account_set_name(struct account *account, char *name, unsigned const char k
 void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN]);
 void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN]);
 void account_set_note(struct account *account, char *note, unsigned const char key[KDF_HASH_LEN]);
-void account_assign_share(struct blob *blob, struct account *account, const char *name);
+void account_assign_share(struct blob *blob, struct account *account, unsigned const char key[KDF_HASH_LEN]);
 void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN]);
 void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN]);
 struct account *notes_expand(struct account *acc);

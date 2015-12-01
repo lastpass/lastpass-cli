@@ -764,7 +764,7 @@ void field_set_value(struct account *account, struct field *field, char *value, 
 
 static bool is_shared_folder_name(const char *fullname)
 {
-	return !strncmp(fullname, "Shared-", 7);
+	return !strncmp(fullname, "Shared-", 7) && strchr(fullname, '/');
 }
 
 void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN])
@@ -787,7 +787,7 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
 	char *groupname = fullname;
 
 	/* skip Shared-XXX/ for shared folders */
-	if (account->share && is_shared_folder_name(fullname)) {
+	if (is_shared_folder_name(fullname)) {
 		char *tmp = strchr(fullname, '/');
 		if (tmp)
 			groupname = tmp + 1;
@@ -820,16 +820,25 @@ struct share *find_unique_share(struct blob *blob, const char *name)
 /*
  * Assign an account to the proper shared folder, if any.
  *
+ * If the share changed from whatever it was previously, the account
+ * fields are reencrypted with either the share key or the blob key.
+ *
  * This function may exit if the name represents a shared folder but
  * same folder is not available.
  */
-void account_assign_share(struct blob *blob, struct account *account, const char *name)
+void account_assign_share(struct blob *blob, struct account *account,
+			  unsigned const char key[KDF_HASH_LEN])
 {
-	struct share *share;
+	struct share *share, *old_share;
 	_cleanup_free_ char *shared_name = NULL;
+	char *name = account->fullname;
+
+	old_share = account->share;
 
 	if (!is_shared_folder_name(name)) {
 		account->share = NULL;
+		if (old_share)
+			account_reencrypt(account, key);
 		return;
 	}
 
@@ -846,6 +855,9 @@ void account_assign_share(struct blob *blob, struct account *account, const char
 		die("Unable to find shared folder for %s in blob\n", name);
 
 	account->share = share;
+
+	if (old_share != account->share)
+		account_reencrypt(account, key);
 }
 
 struct account *notes_expand(struct account *acc)

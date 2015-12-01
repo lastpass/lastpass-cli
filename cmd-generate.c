@@ -136,12 +136,12 @@ int cmd_generate(int argc, char **argv)
 	} else {
 		new = new_account();
 		new->id = xstrdup("0");
-		account_assign_share(blob, new, name);
 		account_set_password(new, xstrdup(password), key);
 		account_set_fullname(new, xstrdup(name), key);
 		account_set_username(new, username ? username : xstrdup(""), key);
 		account_set_note(new, xstrdup(""), key);
 		new->url = url ? url : xstrdup("");
+		account_assign_share(blob, new, key);
 
 		list_add(&new->list, &blob->account_head);
 	}

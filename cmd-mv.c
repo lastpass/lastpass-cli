@@ -95,19 +95,19 @@ int cmd_mv(int argc, char **argv)
 
 	xasprintf(&new_fullname, "%s/%s", folder, account->name);
 	old_share = account->share;
-	account_assign_share(blob, account, new_fullname);
+
+	account_set_fullname(account, new_fullname, key);
+	account_assign_share(blob, account, key);
 	if (account->share && account->share->readonly) {
 		die("You do not have access to move %s into %s",
 		    account->name, account->share->name);
 	}
-	account_set_fullname(account, new_fullname, key);
 
 	if (old_share != account->share) {
 		/*
 		 * when moving into / out of a shared folder, we need to
 		 * reencrypt and make a special api call for that.
 		 */
-		account_reencrypt(account, key);
 		int ret = lastpass_share_move(session, account, old_share);
 		if (ret) {
 			die("Move to/from shared folder failed (%d)\n", ret);
