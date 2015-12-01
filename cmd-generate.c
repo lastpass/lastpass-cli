@@ -48,67 +48,15 @@
 #define NICE_CHARS_LEN 62
 static char *chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?";
 
-int cmd_generate(int argc, char **argv)
+static void update_account(char *username, char *url, char *name, enum blobsync sync, char *password)
 {
 	unsigned char key[KDF_HASH_LEN];
 	struct session *session = NULL;
 	struct blob *blob = NULL;
-	static struct option long_options[] = {
-		{"sync", required_argument, NULL, 'S'},
-		{"username", required_argument, NULL, 'U'},
-		{"url", required_argument, NULL, 'L'},
-		{"no-symbols", no_argument, NULL, 'X'},
-		{"clip", no_argument, NULL, 'c'},
-		{0, 0, 0, 0}
-	};
-	char option;
-	int option_index;
-	char *username = NULL;
-	char *url = NULL;
-	bool no_symbols = false;
-	unsigned long length;
-	char *name;
-	enum blobsync sync = BLOB_SYNC_AUTO;
-	_cleanup_free_ char *password = NULL;
-	struct account *new = NULL, *found;
+	struct account *new = NULL, *found = NULL;
 	struct account *notes_expansion, *notes_collapsed = NULL;
-	bool clip = false;
-
-	while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1) {
-		switch (option) {
-			case 'S':
-				sync = parse_sync_string(optarg);
-				break;
-			case 'U':
-				username = xstrdup(optarg);
-				break;
-			case 'L':
-				url = xstrdup(optarg);
-				break;
-			case 'X':
-				no_symbols = true;
-				break;
-			case 'c':
-				clip = true;
-				break;
-			case '?':
-			default:
-				die_usage(cmd_generate_usage);
-		}
-	}
-
-	if (argc - optind != 2)
-		die_usage(cmd_generate_usage);
-	name = argv[optind];
-	length = strtoul(argv[optind + 1], NULL, 10);
-	if (!length)
-		die_usage(cmd_generate_usage);
 
 	init_all(sync, key, &session, &blob);
-
-	password = xcalloc(length + 1, 1);
-	for (size_t i = 0; i < length; ++i)
-		password[i] = chars[range_rand(0, no_symbols ? NICE_CHARS_LEN : ALL_CHARS_LEN)];
 
 	found = find_unique_account(blob, name);
 	if (found) {
@@ -149,12 +97,77 @@ int cmd_generate(int argc, char **argv)
 	lastpass_update_account(sync, key, session, found ? found : new, blob);
 	blob_save(blob, key);
 
+	session_free(session);
+	blob_free(blob);
+}
+
+int cmd_generate(int argc, char **argv)
+{
+	static struct option long_options[] = {
+		{"sync", required_argument, NULL, 'S'},
+		{"username", required_argument, NULL, 'U'},
+		{"url", required_argument, NULL, 'L'},
+		{"no-symbols", no_argument, NULL, 'X'},
+		{"only", no_argument, NULL, 'O'},
+		{"clip", no_argument, NULL, 'c'},
+		{0, 0, 0, 0}
+	};
+	char option;
+	int option_index;
+	char *username = NULL;
+	char *url = NULL;
+	bool no_symbols = false;
+	bool only = false;
+	unsigned long length;
+	char *name;
+	enum blobsync sync = BLOB_SYNC_AUTO;
+	_cleanup_free_ char *password = NULL;
+	bool clip = false;
+
+	while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1) {
+		switch (option) {
+			case 'S':
+				sync = parse_sync_string(optarg);
+				break;
+			case 'U':
+				username = xstrdup(optarg);
+				break;
+			case 'L':
+				url = xstrdup(optarg);
+				break;
+			case 'X':
+				no_symbols = true;
+				break;
+			case 'O':
+				only = true;
+				break;
+			case 'c':
+				clip = true;
+				break;
+			case '?':
+			default:
+				die_usage(cmd_generate_usage);
+		}
+	}
+
+	if (argc - optind != 2)
+		die_usage(cmd_generate_usage);
+	name = argv[optind];
+	length = strtoul(argv[optind + 1], NULL, 10);
+	if (!length)
+		die_usage(cmd_generate_usage);
+
+	password = xcalloc(length + 1, 1);
+	for (size_t i = 0; i < length; ++i)
+		password[i] = chars[range_rand(0, no_symbols ? NICE_CHARS_LEN : ALL_CHARS_LEN)];
+
+	if (!only)
+		update_account(username, url, name, sync, password);
+
 	if (clip)
 		clipboard_open();
 
 	printf("%s\n", password);
 
-	session_free(session);
-	blob_free(blob);
 	return 0;
 }
