@@ -199,6 +199,10 @@ static bool oob_login(const unsigned char key[KDF_HASH_LEN], char **args, char *
 	if (!*oob_name || !oob_capabilities)
 		return error_other(message, session, "Could not determine out-of-band type.");
 	can_do_passcode = has_capabilities(oob_capabilities, "passcode");
+	if (can_do_passcode && !has_capabilities(oob_capabilities, "outofband")) {
+		xstrappend(oob_name, " OTP");
+		goto failure;
+	}
 
 	terminal_fprintf(stderr, TERMINAL_FG_YELLOW TERMINAL_BOLD "Waiting for approval of out-of-band %s login%s" TERMINAL_NO_BOLD "...", *oob_name, can_do_passcode ? ", or press Ctrl+C to enter a passcode" : "");
 	append_post(args, "outofbandrequest", "1");
