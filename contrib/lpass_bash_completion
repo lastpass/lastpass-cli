@@ -11,7 +11,9 @@ __lpass_complete_name()
 
     local IFS=$'\n'
     COMPREPLY=($(compgen -W "$matches" "$cur"))
-    COMPREPLY=($(printf "%q\n" "${COMPREPLY[@]}"))
+    if [[ ! -z $COMPREPLY ]]; then
+        COMPREPLY=($(printf "%q\n" "${COMPREPLY[@]}"))
+    fi
 }
 
 __lpass_complete_group()
@@ -22,7 +24,9 @@ __lpass_complete_group()
 
     local IFS=$'\n'
     COMPREPLY=($(compgen -W "$matches" "$cur"))
-    COMPREPLY=($(printf "%q\n" "${COMPREPLY[@]}"))
+    if [[ ! -z $COMPREPLY ]]; then
+        COMPREPLY=($(printf "%q\n" "${COMPREPLY[@]}"))
+    fi
 }
 
 __lpass_complete_opt()
