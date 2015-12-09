@@ -98,10 +98,10 @@ int cmd_show(int argc, char **argv)
 	struct account *notes_expansion = NULL;
 	struct field *found_field;
 	char *name, *pretty_field;
-	struct account *found, *last_found;
+	struct account *found, *last_found, *account;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
-	struct list_head matches;
+	struct list_head matches, potential_set;
 	enum search_type search = SEARCH_EXACT_MATCH;
 	int fields = ACCOUNT_NAME | ACCOUNT_ID | ACCOUNT_FULLNAME;
 
@@ -154,27 +154,36 @@ int cmd_show(int argc, char **argv)
 		}
 	}
 
-	if (argc - optind != 1)
+	if (argc - optind < 1)
 		die_usage(cmd_show_usage);
-	name = argv[optind];
 
 	init_all(sync, key, &session, &blob);
 
 	INIT_LIST_HEAD(&matches);
-	switch (search) {
-	case SEARCH_EXACT_MATCH:
-		find_matching_accounts(blob, name, &matches);
-		break;
-	case SEARCH_BASIC_REGEX:
-		find_matching_regex(blob, name, fields, &matches);
-		break;
-	case SEARCH_FIXED_SUBSTRING:
-		find_matching_substr(blob, name, fields, &matches);
-		break;
+	INIT_LIST_HEAD(&potential_set);
+
+	list_for_each_entry(account, &blob->account_head, list)
+		list_add(&account->match_list, &potential_set);
+
+	for (; optind < argc; optind++) {
+
+		name = argv[optind];
+
+		switch (search) {
+		case SEARCH_EXACT_MATCH:
+			find_matching_accounts(&potential_set, name, &matches);
+			break;
+		case SEARCH_BASIC_REGEX:
+			find_matching_regex(&potential_set, name, fields, &matches);
+			break;
+		case SEARCH_FIXED_SUBSTRING:
+			find_matching_substr(&potential_set, name, fields, &matches);
+			break;
+		}
 	}
 
 	if (list_empty(&matches))
-		die("Could not find specified account '%s'.", name);
+		die("Could not find specified account(s).");
 
 	found = list_first_entry(&matches, struct account, match_list);
 	last_found = list_last_entry(&matches, struct account, match_list);

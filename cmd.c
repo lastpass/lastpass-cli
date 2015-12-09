@@ -104,19 +104,31 @@ static int cmp_substr(const char *haystack, const char *needle)
 	return strstr(haystack, needle) == NULL;
 }
 
-static void search_accounts(struct blob *blob,
+/*
+ * Search accounts with a given comparator.
+ *
+ * Any matched account is removed from the accounts list, and added to
+ * ret_list.
+ *
+ * Note, the account list is iterated through match_list, so the caller
+ * must first create a list of possible matches (from blob->account_head).
+ * This is done instead of searching blob->account_head directly to enable
+ * multiple searches of the potential match set.
+ */
+static void search_accounts(struct list_head *accounts,
 			    const void *needle,
 			    int (*cmp)(const char *haystack, const char *needle),
 			    int fields,
 			    struct list_head *ret_list)
 {
-	struct account *account;
-	list_for_each_entry(account, &blob->account_head, list) {
+	struct account *account, *tmp;
+	list_for_each_entry_safe(account, tmp, accounts, match_list) {
 		if (((fields & ACCOUNT_ID) && cmp(account->id, needle) == 0) ||
 		    ((fields & ACCOUNT_NAME) && cmp(account->name, needle) == 0) ||
 		    ((fields & ACCOUNT_FULLNAME) && cmp(account->fullname, needle) == 0) ||
 		    ((fields & ACCOUNT_URL) && cmp(account->url, needle) == 0) ||
 		    ((fields & ACCOUNT_USERNAME) && cmp(account->username, needle) == 0)) {
+			list_del(&account->match_list);
 			list_add_tail(&account->match_list, ret_list);
 		}
 	}
@@ -128,14 +140,14 @@ static void search_accounts(struct blob *blob,
  * @pattern - a basic regular expression
  * @fields - which fields to search on
  */
-void find_matching_regex(struct blob *blob, const char *pattern,
+void find_matching_regex(struct list_head *accounts, const char *pattern,
 			 int fields, struct list_head *ret_list)
 {
 	regex_t regex;
 
 	if (regcomp(&regex, pattern, REG_ICASE))
 		die("Invalid regex '%s'", pattern);
-	search_accounts(blob, &regex, cmp_regex, fields, ret_list);
+	search_accounts(accounts, &regex, cmp_regex, fields, ret_list);
 	regfree(&regex);
 }
 
@@ -146,25 +158,25 @@ void find_matching_regex(struct blob *blob, const char *pattern,
  * @pattern - a basic regular expression
  * @fields - which fields to search on
  */
-void find_matching_substr(struct blob *blob, const char *pattern,
+void find_matching_substr(struct list_head *accounts, const char *pattern,
 			  int fields, struct list_head *ret_list)
 {
-	search_accounts(blob, pattern, cmp_substr, fields, ret_list);
+	search_accounts(accounts, pattern, cmp_substr, fields, ret_list);
 }
 
 /*
- * Search blob for any and all accounts matching a given name.
+ * Search list of accounts for any and all accounts matching a given name.
  * Matching accounts are appended to ret_list which should be initialized
  * by the caller.
  *
  * In the case of an id match, we return only the matching id entry.
  */
-void find_matching_accounts(struct blob *blob, const char *name,
+void find_matching_accounts(struct list_head *accounts, const char *name,
 			    struct list_head *ret_list)
 {
 	/* look for exact id match */
 	struct account *account;
-	list_for_each_entry(account, &blob->account_head, list) {
+	list_for_each_entry(account, accounts, match_list) {
 		if (strcmp(name, "0") && !strcasecmp(account->id, name)) {
 			list_add_tail(&account->match_list, ret_list);
 			/* if id match, stop processing */
@@ -173,18 +185,24 @@ void find_matching_accounts(struct blob *blob, const char *name,
 	}
 
 	/* search for fullname or name match */
-	search_accounts(blob, name, strcmp, ACCOUNT_NAME | ACCOUNT_FULLNAME,
+	search_accounts(accounts, name, strcmp,
+			ACCOUNT_NAME | ACCOUNT_FULLNAME,
 			ret_list);
 }
 
 struct account *find_unique_account(struct blob *blob, const char *name)
 {
 	struct list_head matches;
+	struct list_head potential_set;
 	struct account *account, *last_account;
 
 	INIT_LIST_HEAD(&matches);
+	INIT_LIST_HEAD(&potential_set);
 
-	find_matching_accounts(blob, name, &matches);
+	list_for_each_entry(account, &blob->account_head, list)
+		list_add(&account->match_list, &potential_set);
+
+	find_matching_accounts(&potential_set, name, &matches);
 
 	if (list_empty(&matches))
 		return NULL;
