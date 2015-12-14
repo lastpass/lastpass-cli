@@ -223,8 +223,9 @@ int cmd_show(int argc, char **argv)
 	if (clip)
 		clipboard_open();
 
-	list_for_each_entry(found, &matches, match_list) {
+	list_for_each_entry(account, &matches, match_list) {
 
+		found = account;
 		lastpass_log_access(sync, session, key, found);
 
 		notes_expansion = notes_expand(found);
