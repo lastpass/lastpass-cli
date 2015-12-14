@@ -46,6 +46,45 @@
 #include <string.h>
 #include <stdbool.h>
 
+/*
+ * If a secure note field contains ascii armor, its newlines will
+ * have been replaced by spaces when saving.  Undo this for
+ * display purposes.  The replacement (if applicable) is done
+ * in-place.
+ */
+static char *fix_ascii_armor(char *armor_str)
+{
+	char *end_header, *start_trailer, *ptr;
+
+	/* need at least 4 "-----" strings */
+	if (strlen(armor_str) < 20)
+		return armor_str;
+
+	/* look for -----BEGIN [xxx]----- and -----END [xxx]----- strings */
+	if (strncmp(armor_str, "-----BEGIN", 10))
+		return armor_str;
+
+	end_header = strstr(armor_str + 10, "----- ");
+	if (!end_header)
+		return armor_str;
+
+	start_trailer = strstr(end_header, "-----END");
+	if (!start_trailer)
+		return armor_str;
+
+	if (strncmp(armor_str + strlen(armor_str) - 5, "-----", 5))
+		return armor_str;
+
+	/* ok, probably ascii armor, go ahead and munge it as such */
+	ptr = end_header;
+	while ((ptr = strchr(ptr, ' ')) != NULL) {
+		if (ptr >= start_trailer)
+			break;
+		*ptr = '\n';
+	}
+	return armor_str;
+}
+
 static char *pretty_field_value(struct field *field)
 {
 	char *value;
@@ -54,7 +93,7 @@ static char *pretty_field_value(struct field *field)
 	else if (!strcmp(field->type, "radio"))
 		xasprintf(&value, "%s, %s", field->value, field->checked ? "Checked" : "Unchecked");
 	else
-		value = xstrdup(field->value);
+		value = fix_ascii_armor(xstrdup(field->value));
 	return value;
 }
 
