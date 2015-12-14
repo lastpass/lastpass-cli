@@ -88,6 +88,7 @@ int cmd_show(int argc, char **argv)
 		{"color", required_argument, NULL, 'C'},
 		{"basic-regexp", no_argument, NULL, 'G'},
 		{"fixed-strings", no_argument, NULL, 'F'},
+		{"expand-multi", no_argument, NULL, 'x'},
 		{0, 0, 0, 0}
 	};
 
@@ -101,11 +102,12 @@ int cmd_show(int argc, char **argv)
 	struct account *found, *last_found, *account;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
+	bool expand_multi = false;
 	struct list_head matches, potential_set;
 	enum search_type search = SEARCH_EXACT_MATCH;
 	int fields = ACCOUNT_NAME | ACCOUNT_ID | ACCOUNT_FULLNAME;
 
-	while ((option = getopt_long(argc, argv, "cupFG", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "cupFGx", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -148,6 +150,9 @@ int cmd_show(int argc, char **argv)
 				terminal_set_color_mode(
 					parse_color_mode_string(optarg));
 				break;
+			case 'x':
+				expand_multi = true;
+				break;
 			case '?':
 			default:
 				die_usage(cmd_show_usage);
@@ -156,6 +161,14 @@ int cmd_show(int argc, char **argv)
 
 	if (argc - optind < 1)
 		die_usage(cmd_show_usage);
+
+	if (argc - optind > 1) {
+		/*
+		 * if multiple search criteria supplied, go ahead
+		 * and expand all matches
+		 */
+		expand_multi = true;
+	}
 
 	init_all(sync, key, &session, &blob);
 
@@ -187,7 +200,7 @@ int cmd_show(int argc, char **argv)
 
 	found = list_first_entry(&matches, struct account, match_list);
 	last_found = list_last_entry(&matches, struct account, match_list);
-	if (found != last_found) {
+	if (found != last_found && !expand_multi) {
 		/* Multiple matches; dump the ids and exit */
 		terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Multiple matches found.\n");
 		list_for_each_entry(found, &matches, match_list)
@@ -195,71 +208,78 @@ int cmd_show(int argc, char **argv)
 		exit(EXIT_SUCCESS);
 	}
 
-	if (found->pwprotect) {
-		unsigned char pwprotect_key[KDF_HASH_LEN];
-		if (!agent_load_key(pwprotect_key))
-			die("Could not authenticate for protected entry.");
-		if (memcmp(pwprotect_key, key, KDF_HASH_LEN))
-			die("Current key is not on-disk key.");
-	}
-
-	lastpass_log_access(sync, session, key, found);
-
-	notes_expansion = notes_expand(found);
-	if (notes_expansion)
-		found = notes_expansion;
-
-	if (choice == FIELD) {
-		struct field *found_field;
-		list_for_each_entry(found_field, &found->field_head, list) {
-			if (!strcmp(found_field->name, field))
-				break;
+	/* reprompt if necessary for any matched item */
+	list_for_each_entry(found, &matches, match_list) {
+		if (found->pwprotect) {
+			unsigned char pwprotect_key[KDF_HASH_LEN];
+			if (!agent_load_key(pwprotect_key))
+				die("Could not authenticate for protected entry.");
+			if (memcmp(pwprotect_key, key, KDF_HASH_LEN))
+				die("Current key is not on-disk key.");
+			break;
 		}
-		if (!found_field)
-			die("Could not find specified field '%s'.", field);
-		value = pretty_field_value(found_field);
-	} else if (choice == USERNAME)
-		value = xstrdup(found->username);
-	else if (choice == PASSWORD)
-		value = xstrdup(found->password);
-	else if (choice == URL)
-		value = xstrdup(found->url);
-	else if (choice == ID)
-		value = xstrdup(found->id);
-	else if (choice == NAME)
-		value = xstrdup(found->name);
-	else if (choice == NOTES)
-		value = xstrdup(found->note);
+	}
 
 	if (clip)
 		clipboard_open();
 
-	if (choice == ALL) {
-		print_header(found);
+	list_for_each_entry(found, &matches, match_list) {
 
-		if (strlen(found->username))
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Username", found->username);
-		if (strlen(found->password))
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Password", found->password);
-		if (strlen(found->url) && strcmp(found->url, "http://"))
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "URL", found->url);
+		lastpass_log_access(sync, session, key, found);
 
-		list_for_each_entry(found_field, &found->field_head, list) {
-			pretty_field = pretty_field_value(found_field);
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", found_field->name, pretty_field);
-			free(pretty_field);
+		notes_expansion = notes_expand(found);
+		if (notes_expansion)
+			found = notes_expansion;
+
+		if (choice == FIELD) {
+			struct field *found_field;
+			list_for_each_entry(found_field, &found->field_head, list) {
+				if (!strcmp(found_field->name, field))
+					break;
+			}
+			if (!found_field)
+				die("Could not find specified field '%s'.", field);
+			value = pretty_field_value(found_field);
+		} else if (choice == USERNAME)
+			value = xstrdup(found->username);
+		else if (choice == PASSWORD)
+			value = xstrdup(found->password);
+		else if (choice == URL)
+			value = xstrdup(found->url);
+		else if (choice == ID)
+			value = xstrdup(found->id);
+		else if (choice == NAME)
+			value = xstrdup(found->name);
+		else if (choice == NOTES)
+			value = xstrdup(found->note);
+
+		if (choice == ALL) {
+			print_header(found);
+
+			if (strlen(found->username))
+				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Username", found->username);
+			if (strlen(found->password))
+				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Password", found->password);
+			if (strlen(found->url) && strcmp(found->url, "http://"))
+				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "URL", found->url);
+
+			list_for_each_entry(found_field, &found->field_head, list) {
+				pretty_field = pretty_field_value(found_field);
+				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", found_field->name, pretty_field);
+				free(pretty_field);
+			}
+			if (strlen(found->note))
+				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ":\n%s\n", "Notes", found->note);
+		} else {
+			if (!value)
+				die("Programming error.");
+			printf("%s", value);
+			if (!clip)
+				putchar('\n');
 		}
-		if (strlen(found->note))
-			terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ":\n%s\n", "Notes", found->note);
-	} else {
-		if (!value)
-			die("Programming error.");
-		printf("%s", value);
-		if (!clip)
-			putchar('\n');
-	}
 
-	account_free(notes_expansion);
+		account_free(notes_expansion);
+	}
 	session_free(session);
 	blob_free(blob);
 	return 0;

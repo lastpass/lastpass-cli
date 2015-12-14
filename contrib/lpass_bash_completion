@@ -43,7 +43,7 @@ __lpass_complete_opt()
             opts="--force --color"
             ;;
         show)
-            opts="--sync --clip --all --username --password --url --notes --field --id --name --basic-regexp --fixed-strings --color"
+            opts="--sync --clip --expand-multi --all --username --password --url --notes --field --id --name --basic-regexp --fixed-strings --color"
             ;;
         ls)
             opts="--sync --long --color"

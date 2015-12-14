@@ -24,7 +24,7 @@ several subcommands:
  lpass *login* [--trust] [--plaintext-key [--force, -f]] [--color=auto|never|always] USERNAME
  lpass *logout* [--force, -f] [--color=auto|never|always]
  lpass *passwd*
- lpass *show* [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}
+ lpass *show* [--sync=auto|now|no] [--clip, -c] [--expand-multi, -x] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
  lpass *ls* [--sync=auto|now|no] [--long, -l] [-m] [-u] [--color=auto|never|always] [GROUP]
  lpass *mv* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID} GROUP
  lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} [--color=auto|never|always] {NAME|UNIQUEID}
