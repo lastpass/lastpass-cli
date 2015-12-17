@@ -11,6 +11,10 @@ CFLAGS += -MMD
 
 UNAME_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 ifeq ($(UNAME_S),Darwin)
+HAS_XCODE := $(shell sh -c 'xcodebuild -version 2>/dev/null && echo 1')
+endif
+
+ifeq ($(HAS_XCODE),1)
 SDKROOT ?= $(shell xcodebuild -version -sdk macosx | sed -n 's/^Path: \(.*\)/\1/p')
 CFLAGS += -Wno-deprecated-declarations -isysroot $(SDKROOT) -I$(SDKROOT)/usr/include/libxml2
 LDLIBS = -lcurl -lxml2 -lssl -lcrypto
