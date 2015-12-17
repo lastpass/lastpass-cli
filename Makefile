@@ -16,8 +16,13 @@ endif
 
 ifeq ($(HAS_XCODE),1)
 SDKROOT ?= $(shell xcodebuild -version -sdk macosx | sed -n 's/^Path: \(.*\)/\1/p')
+ifeq ($(SDKROOT),)
+CFLAGS += $(shell pkg-config --cflags libxml-2.0 2>/dev/null || echo -I/usr/include/libxml2) -I/usr/local/include
+LDLIBS = -lcurl $(shell pkg-config --libs libxml-2.0 2>/dev/null || echo -lxml2) -lssl -lcrypto
+else
 CFLAGS += -Wno-deprecated-declarations -isysroot $(SDKROOT) -I$(SDKROOT)/usr/include/libxml2
 LDLIBS = -lcurl -lxml2 -lssl -lcrypto
+endif
 else
 CFLAGS += $(shell pkg-config --cflags libxml-2.0 2>/dev/null || echo -I/usr/include/libxml2) -I/usr/local/include
 LDLIBS = -lcurl $(shell pkg-config --libs libxml-2.0 2>/dev/null || echo -lxml2) -lssl -lcrypto
