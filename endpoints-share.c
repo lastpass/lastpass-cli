@@ -357,3 +357,64 @@ int lastpass_share_move(const struct session *session,
 
 	return xml_api_err(reply);
 }
+
+int lastpass_share_get_limits(const struct session *session,
+			      struct share *share,
+			      struct share_user *user,
+			      struct share_limit *ret_limit)
+{
+	_cleanup_free_ char *reply = NULL;
+	size_t len;
+
+	reply = http_post_lastpass("share.php", session, &len,
+				   "token", session->token,
+				   "id", share->id,
+				   "limit", "1",
+				   "uid", user->uid,
+				   "xmlr", "1", NULL);
+
+	xml_parse_share_get_limits(reply, ret_limit);
+	return 0;
+}
+
+int lastpass_share_set_limits(const struct session *session,
+			      struct share *share,
+			      struct share_user *user,
+			      struct share_limit *limit)
+{
+	_cleanup_free_ char *reply = NULL;
+	_cleanup_free_ char *aid_buf = NULL;
+	char numaids_str[30] = {0};
+	struct share_limit_aid *aid;
+	int numaids = 0;
+	size_t alloc_len = 0;
+	size_t len;
+
+	list_for_each_entry(aid, &limit->aid_list, list) {
+		alloc_len += strlen(aid->aid) + 1 /* comma or null */;
+		numaids++;
+	}
+
+	aid_buf = xcalloc(alloc_len, 1);
+
+	list_for_each_entry(aid, &limit->aid_list, list) {
+		strlcat(aid_buf, aid->aid, alloc_len);
+		strlcat(aid_buf, ",", alloc_len);
+	}
+	aid_buf[alloc_len-1] = '\0';
+
+	snprintf(numaids_str, sizeof(numaids_str), "%d", numaids);
+
+	reply = http_post_lastpass("share.php", session, &len,
+				   "token", session->token,
+				   "id", share->id,
+				   "limit", "1",
+				   "edit", "1",
+				   "uid", user->uid,
+				   "numaids", numaids_str,
+				   "hidebydefault", bool_str(limit->whitelist),
+				   "aids", aid_buf,
+				   "xmlr", "1", NULL);
+
+	return 0;
+}

@@ -596,3 +596,54 @@ int xml_parse_share_getpubkey(const char *buf, struct share_user *user)
 
 	return 0;
 }
+
+static
+void xml_parse_share_limit_aids(xmlDoc *doc, xmlNode *parent,
+				struct list_head *list)
+{
+	for (xmlNode *item = parent->children; item; item = item->next) {
+		if (xmlStrncmp(item->name, BAD_CAST "aid", 3))
+			continue;
+
+		struct share_limit_aid *aid = new0(struct share_limit_aid, 1);
+
+		aid->aid = (char *) xmlNodeListGetString(doc,
+				item->xmlChildrenNode, 1);
+
+		list_add_tail(&aid->list, list);
+	}
+}
+
+int xml_parse_share_get_limits(const char *buf, struct share_limit *limit)
+{
+	int ret;
+
+	memset(limit, 0, sizeof(*limit));
+	INIT_LIST_HEAD(&limit->aid_list);
+
+	xmlDoc *doc = xmlReadMemory(buf, strlen(buf), NULL, NULL, 0);
+
+	if (!doc)
+		return -EINVAL;
+
+	xmlNode *root = xmlDocGetRootElement(doc);
+	if (!root || xmlStrcmp(root->name, BAD_CAST "xmlresponse") ||
+	    !root->children) {
+		ret = -EINVAL;
+		goto free_doc;
+	}
+
+	for (xmlNode *item = root->children; item; item = item->next) {
+		if (xml_parse_bool(doc, item, "hidebydefault",
+				   &limit->whitelist))
+			continue;
+
+		if (!xmlStrcmp(item->name, BAD_CAST "aids")) {
+			xml_parse_share_limit_aids(doc, item, &limit->aid_list);
+		}
+	}
+	ret = 0;
+free_doc:
+	xmlFreeDoc(doc);
+	return ret;
+}

@@ -39,6 +39,7 @@ several subcommands:
  lpass *share* *userdel* SHARE USERNAME
  lpass *share* *create* SHARE
  lpass *share* *rm* SHARE
+ lpass *share* *limit* [--deny|--allow] [--add|--rm|--clear] SHARE USERNAME [sites]
 
 Synchronization
 ~~~~~~~~~~~~~~~
@@ -154,6 +155,12 @@ query and modify membership of the shared folder, while the 'create' and 'rm'
 share subcommands may be used to add new, or delete existing shared folders.
 The normal 'generate' and 'edit' commands may be used to edit accounts within
 the shared folder.
+
+The 'share limit' command may be used to manipulate account access lists on the
+share for a specific user.  Running with no arguments will display the
+current access levels for a user.  The '--add', '--rm', and '--clear' options
+may be used to add to, remove from, or reset the list.  Passing '--allow' or
+'--deny' will make the list a whitelist or blacklist, respectively.
 
 Clipboard
 ~~~~~~~~~

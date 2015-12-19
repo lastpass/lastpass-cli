@@ -7,8 +7,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-struct share_user
-{
+struct share_user {
 	char *uid;
 	char *username;
 	char *realname;
@@ -21,6 +20,16 @@ struct share_user
 	bool accepted;
 	struct public_key sharing_key;
 	struct list_head list;
+};
+
+struct share_limit_aid {
+	char *aid;
+	struct list_head list;
+};
+
+struct share_limit {
+	bool whitelist;
+	struct list_head aid_list;
 };
 
 struct share {
