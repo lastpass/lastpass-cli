@@ -60,7 +60,7 @@ unsigned int lastpass_iterations(const char *username)
 
 void lastpass_logout(const struct session *session)
 {
-	free(http_post_lastpass("logout.php", session->sessionid, NULL, "method", "cli", "noredirect", "1", NULL));
+	free(http_post_lastpass("logout.php", session->sessionid, NULL, "method", "cli", "noredirect", "1", "token", session->token, NULL));
 }
 
 struct blob *lastpass_get_blob(const struct session *session, const unsigned char key[KDF_HASH_LEN])
