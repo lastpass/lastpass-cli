@@ -46,7 +46,7 @@ struct session *xml_ok_session(const char *buf, unsigned const char key[KDF_HASH
 	struct session *session = NULL;
 	xmlDoc *doc = NULL;
 	xmlNode *root;
-	doc = xmlParseMemory(buf, strlen(buf));
+	doc = xmlReadMemory(buf, strlen(buf), NULL, NULL, 0);
 
 	if (!doc)
 		goto out;
@@ -90,7 +90,7 @@ unsigned long long xml_login_check(const char *buf, struct session *session)
 	xmlDoc *doc = NULL;
 	xmlNode *root, *child = NULL;
 
-	doc = xmlParseMemory(buf, strlen(buf));
+	doc = xmlReadMemory(buf, strlen(buf), NULL, NULL, 0);
 
 	if (!doc)
 		goto out;
@@ -131,7 +131,7 @@ char *xml_error_cause(const char *buf, const char *what)
 	xmlDoc *doc = NULL;
 	xmlNode *root;
 
-	doc = xmlParseMemory(buf, strlen(buf));
+	doc = xmlReadMemory(buf, strlen(buf), NULL, NULL, 0);
 
 	if (!doc)
 		goto out;
@@ -309,7 +309,7 @@ xml_parse_share_key_entry(xmlDoc *doc, xmlNode *root,
 int xml_parse_share_getinfo(const char *buf, struct list_head *users)
 {
 	int ret;
-	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
+	xmlDoc *doc = xmlReadMemory(buf, strlen(buf), NULL, NULL, 0);
 
 	if (!doc)
 		return -EINVAL;
@@ -358,7 +358,7 @@ free_doc:
 int xml_parse_share_getpubkeys(const char *buf, struct list_head *user_list)
 {
 	int ret;
-	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
+	xmlDoc *doc = xmlReadMemory(buf, strlen(buf), NULL, NULL, 0);
 
 	if (!doc)
 		return -EINVAL;
@@ -492,7 +492,7 @@ int xml_parse_pwchange_data(char *data, struct pwchange_info *info)
 int xml_api_err(const char *buf)
 {
 	int ret;
-	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
+	xmlDoc *doc = xmlReadMemory(buf, strlen(buf), NULL, NULL, 0);
 
 	xmlNode *root = xmlDocGetRootElement(doc);
 	if (!root || xmlStrcmp(root->name, BAD_CAST "lastpass") ||
@@ -520,7 +520,7 @@ free_doc:
 int xml_parse_pwchange(const char *buf, struct pwchange_info *info)
 {
 	int ret;
-	xmlDoc *doc = xmlParseMemory(buf, strlen(buf));
+	xmlDoc *doc = xmlReadMemory(buf, strlen(buf), NULL, NULL, 0);
 
 	INIT_LIST_HEAD(&info->fields);
 	INIT_LIST_HEAD(&info->su_keys);
