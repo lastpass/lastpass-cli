@@ -178,6 +178,7 @@ void find_matching_accounts(struct list_head *accounts, const char *name,
 	struct account *account;
 	list_for_each_entry(account, accounts, match_list) {
 		if (strcmp(name, "0") && !strcasecmp(account->id, name)) {
+			list_del(&account->match_list);
 			list_add_tail(&account->match_list, ret_list);
 			/* if id match, stop processing */
 			return;
