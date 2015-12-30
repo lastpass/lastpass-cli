@@ -105,7 +105,7 @@ int cmd_export(int argc, char **argv);
 #define cmd_export_usage "export [--sync=auto|now|no] " color_usage
 
 int cmd_share(int argc, char **argv);
-#define cmd_share_usage "share " color_usage " subcommand sharename..."
+#define cmd_share_usage "share subcommand sharename ..."
 #endif
 
 int cmd_mv(int argc, char **argv);

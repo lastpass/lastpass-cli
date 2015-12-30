@@ -33,6 +33,7 @@
 #include "endpoints.h"
 #include "clipboard.h"
 #include "upload-queue.h"
+#include "process.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>
@@ -55,6 +56,13 @@ struct share_args {
 	bool set_hide_passwords;
 };
 
+struct share_command {
+	const char *name;
+	const char *usage;
+	int (*cmd)(struct share_command *cmd, int, char **,
+		   struct share_args *share);
+};
+
 #define share_userls_usage "userls SHARE"
 #define share_useradd_usage "useradd [--read-only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
 #define share_usermod_usage "usermod [--read-only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
@@ -66,7 +74,13 @@ static char *checkmark(int x) {
 	return (x) ? "x" : "_";
 }
 
-static int share_userls(int argc, char **argv, struct share_args *args)
+static void die_share_usage(struct share_command *cmd)
+{
+	die_usage(cmd->usage);
+}
+
+static int share_userls(struct share_command *cmd, int argc, char **argv,
+			struct share_args *args)
 {
 	UNUSED(argv);
 	struct share_user *user;
@@ -75,7 +89,7 @@ static int share_userls(int argc, char **argv, struct share_args *args)
 	bool has_groups = false;
 
 	if (argc)
-		die_usage(cmd_share_usage);
+		die_share_usage(cmd);
 
 	if (!args->share)
 		die("Share %s not found.", args->sharename);
@@ -134,7 +148,8 @@ static int share_userls(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
-static int share_useradd(int argc, char **argv, struct share_args *args)
+static int share_useradd(struct share_command *cmd, int argc, char **argv,
+			 struct share_args *args)
 {
 	struct share_user new_user = {
 		.read_only = args->read_only,
@@ -143,7 +158,7 @@ static int share_useradd(int argc, char **argv, struct share_args *args)
 	};
 
 	if (argc != 1)
-		die_usage(cmd_share_usage);
+		die_share_usage(cmd);
 
 	new_user.username = argv[0];
 	lastpass_share_user_add(args->session, args->share, &new_user);
@@ -175,12 +190,13 @@ struct share_user *get_user_from_share(struct session *session,
 }
 
 
-static int share_usermod(int argc, char **argv, struct share_args *args)
+static int share_usermod(struct share_command *cmd, int argc, char **argv,
+			 struct share_args *args)
 {
 	struct share_user *user;
 
 	if (argc != 1)
-		die_usage(cmd_share_usage);
+		die_share_usage(cmd);
 
 	user = get_user_from_share(args->session, args->share, argv[0]);
 
@@ -195,22 +211,24 @@ static int share_usermod(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
-static int share_userdel(int argc, char **argv, struct share_args *args)
+static int share_userdel(struct share_command *cmd, int argc, char **argv,
+			 struct share_args *args)
 {
 	struct share_user *found;
 
 	if (argc != 1)
-		die_usage(cmd_share_usage);
+		die_share_usage(cmd);
 
 	found = get_user_from_share(args->session, args->share, argv[0]);
 	lastpass_share_user_del(args->session, args->share->id, found);
 	return 0;
 }
 
-static int share_create(int argc, char **argv, struct share_args *args)
+static int share_create(struct share_command *cmd, int argc, char **argv,
+			struct share_args *args)
 {
 	if (argc != 0)
-		die_usage(cmd_share_usage);
+		die_share_usage(cmd);
 
 	UNUSED(argv);
 
@@ -218,10 +236,11 @@ static int share_create(int argc, char **argv, struct share_args *args)
 	return 0;
 }
 
-static int share_rm(int argc, char **argv, struct share_args *args)
+static int share_rm(struct share_command *cmd, int argc, char **argv,
+		    struct share_args *args)
 {
 	if (argc != 0)
-		die_usage(cmd_share_usage);
+		die_share_usage(cmd);
 
 	UNUSED(argv);
 
@@ -230,11 +249,7 @@ static int share_rm(int argc, char **argv, struct share_args *args)
 }
 
 #define SHARE_CMD(name) { #name, "share " share_##name##_usage, share_##name }
-static struct {
-	const char *name;
-	const char *usage;
-	int (*cmd)(int, char **, struct share_args *share);
-} share_commands[] = {
+static struct share_command share_commands[] = {
 	SHARE_CMD(userls),
 	SHARE_CMD(useradd),
 	SHARE_CMD(usermod),
@@ -243,6 +258,17 @@ static struct {
 	SHARE_CMD(rm),
 };
 #undef SHARE_CMD
+
+/* Display more verbose usage if no subcmd is given or matched. */
+static void share_help(void)
+{
+	terminal_fprintf(stderr, "Usage: %s %s\n", ARGV[0], cmd_share_usage);
+
+	for (size_t i = 0; i < ARRAY_SIZE(share_commands); ++i)
+		printf("  %s %s\n", ARGV[0], share_commands[i].usage);
+
+	exit(1);
+}
 
 int cmd_share(int argc, char **argv)
 {
@@ -262,6 +288,9 @@ int cmd_share(int argc, char **argv)
 		.read_only = true,
 		.hide_passwords = true,
 	};
+
+	bool invalid_params = false;
+	struct share_command *command;
 
 	/*
 	 * Parse out all option commands for all subcommands, and store
@@ -301,14 +330,28 @@ int cmd_share(int argc, char **argv)
 				break;
 			case '?':
 			default:
-				die_usage(cmd_share_usage);
+				invalid_params = true;
 		}
 	}
 
-	if (argc - optind < 2)
-		die_usage(cmd_share_usage);
+	if (argc - optind < 1)
+		share_help();
 
 	subcmd = argv[optind++];
+	command = NULL;
+	for (unsigned int i=0; i < ARRAY_SIZE(share_commands); i++) {
+		if (strcmp(subcmd, share_commands[i].name) == 0) {
+			command = &share_commands[i];
+			break;
+		}
+	}
+
+	if (!command)
+		share_help();
+
+	if (argc - optind < 2 || invalid_params)
+		die_share_usage(command);
+
 	args.sharename = argv[optind++];
 
 	init_all(args.sync, args.key, &args.session, &args.blob);
@@ -316,13 +359,7 @@ int cmd_share(int argc, char **argv)
 	if (strcmp(subcmd, "create") != 0)
 		args.share = find_unique_share(args.blob, args.sharename);
 
-	for (unsigned int i=0; i < ARRAY_SIZE(share_commands); i++) {
-		if (strcmp(subcmd, share_commands[i].name) == 0) {
-			share_commands[i].cmd(argc - optind, &argv[optind],
-					      &args);
-		}
-	}
-
+	command->cmd(command, argc - optind, &argv[optind], &args);
 	session_free(args.session);
 	blob_free(args.blob);
 	return 0;
