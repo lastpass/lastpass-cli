@@ -91,9 +91,6 @@ static int share_userls(struct share_command *cmd, int argc, char **argv,
 	if (argc)
 		die_share_usage(cmd);
 
-	if (!args->share)
-		die("Share %s not found.", args->sharename);
-
 	if (lastpass_share_getinfo(args->session, args->share->id, &users))
 		die("Unable to access user list for share %s\n",
 		    args->sharename);
@@ -299,10 +296,6 @@ int cmd_share(int argc, char **argv)
 	 * All commands have at least subcmd and sharename non-option args.
 	 * Additional non-option commands are passed as argc/argv to the
 	 * sub-command.
-	 *
-	 * Although we look up the share based on the supplied sharename,
-	 * it may not exist, in the case of commands such as 'add'.  Subcmds
-	 * should check args.share before using it.
 	 */
 	int option;
 	int option_index;
@@ -356,8 +349,11 @@ int cmd_share(int argc, char **argv)
 
 	init_all(args.sync, args.key, &args.session, &args.blob);
 
-	if (strcmp(subcmd, "create") != 0)
+	if (strcmp(subcmd, "create") != 0) {
 		args.share = find_unique_share(args.blob, args.sharename);
+		if (!args.share)
+			die("Share %s not found.", args.sharename);
+	}
 
 	command->cmd(command, argc - optind, &argv[optind], &args);
 	session_free(args.session);
