@@ -173,6 +173,9 @@ xml_parse_str(xmlDoc *doc, xmlNode *parent, const char *name, char **ptr)
 		return false;
 
 	*ptr = (char *) xmlNodeListGetString(doc, parent->xmlChildrenNode, 1);
+	if (!*ptr)
+		return false;
+
 	return true;
 }
 
@@ -190,6 +193,9 @@ xml_parse_int(xmlDoc *doc, xmlNode *parent, const char *name, int *ptr)
 
 	_cleanup_free_ char *str = (char *)
 		xmlNodeListGetString(doc, parent->xmlChildrenNode, 1);
+
+	if (!str)
+		return false;
 
 	*ptr = atoi(str);
 	return true;
