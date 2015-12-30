@@ -342,7 +342,7 @@ int cmd_share(int argc, char **argv)
 	if (!command)
 		share_help();
 
-	if (argc - optind < 2 || invalid_params)
+	if (argc - optind < 1 || invalid_params)
 		die_share_usage(command);
 
 	args.sharename = argv[optind++];
