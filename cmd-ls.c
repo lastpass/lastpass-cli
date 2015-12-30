@@ -76,37 +76,110 @@ static char *format_timestamp(char *timestamp, bool utc)
 	return xstrdup(temp);
 }
 
-static void insert_node(struct node *head, const char *path, struct account *account)
+struct path_component
 {
-	char *slash = NULL;
+	char *component;
+	struct list_head list;
+};
+
+/*
+ * Tokenize path and add each component to the components list.
+ * For group names, the path separator is a backslash.  The path
+ * string is modified in place and the component list stores
+ * pointers to the modified string.
+ */
+static void parse_path(char *path, struct list_head *components)
+{
+	char *token;
+	struct path_component *pc;
+
+	for (token = strtok(path, "\\"); token; token = strtok(NULL, "\\")) {
+		pc = new0(struct path_component, 1);
+		pc->component = token;
+		list_add_tail(&pc->list, components);
+	}
+}
+
+static void __insert_node(struct node *head,
+			  struct list_head *components,
+			  struct account *account)
+{
+	struct path_component *pc;
 	struct node *child;
 
-	while (*path && (slash = strchr(path, '/')) == path)
-		++path;
-	if (!path)
-		return;
-	if (!slash) {
-		child = new0(struct node, 1);
-		child->account = account;
-		child->shared = !!account->share;
-		child->name = xstrdup(path);
-		child->next_sibling = head->first_child;
-		head->first_child = child;
-		return;
+	/* iteratively build a tree from all the path components */
+	list_for_each_entry(pc, components, list) {
+		for (child = head->first_child; child; child = child->next_sibling) {
+			if (!strcmp(child->name, pc->component))
+				break;
+		}
+		if (!child) {
+			child = new0(struct node, 1);
+			child->shared= !!account->share;
+			child->name = xstrdup(pc->component);
+			child->next_sibling = head->first_child;
+			head->first_child = child;
+		}
+		head = child;
 	}
 
-	for (child = head->first_child; child; child = child->next_sibling) {
-		if (!strncmp(child->name, path, slash - path) && strlen(child->name) == (size_t)(slash - path))
-			break;
+	/* and add the site at the lowest level */
+	child = new0(struct node, 1);
+	child->account = account;
+	child->shared= !!account->share;
+	child->name = xstrdup(account->name);
+	child->next_sibling = head->first_child;
+	head->first_child = child;
+
+}
+
+static void insert_node(struct node *head, const char *path, struct account *account)
+{
+	struct list_head components;
+	struct path_component *pc, *tmp;
+	_cleanup_free_ char *dirname = xstrdup(path);
+	char *pos;
+
+	/* remove name portion of fullname; we don't parse that */
+	if (strlen(dirname) >= strlen(account->name)) {
+		char *tmp = dirname + strlen(dirname) - strlen(account->name);
+		if (strcmp(tmp, account->name) == 0) {
+			*tmp = 0;
+		}
 	}
-	if (!child) {
-		child = new0(struct node, 1);
-		child->shared= !!account->share;
-		child->name = xstrndup(path, slash - path);
-		child->next_sibling = head->first_child;
-		head->first_child = child;
+
+	pos = dirname;
+	/* trim trailing slash */
+	if (strlen(pos))
+		pos[strlen(pos)-1] = 0;
+
+	/*
+	 * We are left with one of:
+	 *
+	 *     (none)/
+	 *     groupname/
+	 *     Shared-folder/
+	 *     Shared-folder/groupname/
+	 *
+	 * If there are embedded backslashes, these are treated as folder
+	 * names by parse_path().
+	 */
+	INIT_LIST_HEAD(&components);
+	if (account->share && strlen(pos) >= strlen(account->share->name)) {
+		pos[strlen(account->share->name)] = 0;
+		parse_path(pos, &components);
+		pos += strlen(account->share->name) + 1;
 	}
-	insert_node(child, slash + 1, account);
+
+	/* either '(none)/' or group/ or empty string */
+	parse_path(pos, &components);
+
+	__insert_node(head, &components, account);
+
+	list_for_each_entry_safe(pc, tmp, &components, list) {
+		list_del(&pc->list);
+		free(pc);
+	}
 }
 
 static void free_node(struct node *head)
