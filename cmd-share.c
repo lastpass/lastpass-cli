@@ -56,8 +56,8 @@ struct share_args {
 };
 
 #define share_userls_usage "userls SHARE"
-#define share_useradd_usage "useradd [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
-#define share_usermod_usage "usermod [--read_only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
+#define share_useradd_usage "useradd [--read-only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
+#define share_usermod_usage "usermod [--read-only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
 #define share_userdel_usage "userdel SHARE USERNAME"
 #define share_create_usage "create SHARE"
 #define share_rm_usage "rm SHARE"

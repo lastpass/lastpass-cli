@@ -34,8 +34,8 @@ several subcommands:
  lpass *sync* [--background, -b] [--color=auto|never|always]
  lpass *export* [--sync=auto|now|no] [--color=auto|never|always]
  lpass *share* *userls* SHARE
- lpass *share* *useradd* [--read_only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
- lpass *share* *usermod* [--read_only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+ lpass *share* *useradd* [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+ lpass *share* *usermod* [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
  lpass *share* *userdel* SHARE USERNAME
  lpass *share* *create* SHARE
  lpass *share* *rm* SHARE
