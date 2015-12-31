@@ -55,6 +55,9 @@
 #include <fcntl.h>
 #include <signal.h>
 
+/* keep around failed updates for a couple of weeks */
+#define FAIL_MAX_AGE	86400 * 14
+
 static void make_upload_dir(const char *path)
 {
 	_cleanup_free_ char *base_path = NULL;
@@ -92,6 +95,42 @@ static void upload_queue_write_entry(const char *entry, unsigned const char key[
 	config_write_encrypted_string(name, entry, key);
 }
 
+static void upload_queue_cleanup_failures()
+{
+	_cleanup_free_ char *base_path = config_path("upload-fail");
+	DIR *dir = opendir(base_path);
+	struct dirent *entry;
+	char *p;
+	struct stat sbuf;
+	int ret;
+
+	if (!dir)
+		return;
+
+	while ((entry = readdir(dir))) {
+		_cleanup_free_ char *fn = NULL;
+
+		if (entry->d_type != DT_REG)
+			continue;
+		for (p = entry->d_name; *p; ++p) {
+			if (!isdigit(*p))
+				break;
+		}
+		if (*p)
+			continue;
+
+		xasprintf(&fn, "%s/%s", base_path, entry->d_name);
+		ret = stat(fn, &sbuf);
+		if (ret)
+			continue;
+
+		if ((time(NULL) - sbuf.st_mtime) > FAIL_MAX_AGE) {
+			unlink(fn);
+		}
+	}
+	closedir(dir);
+}
+
 static void upload_queue_drop(const char *name)
 {
 	_cleanup_free_ char *newname = NULL;
@@ -112,6 +151,8 @@ static void upload_queue_drop(const char *name)
 	old_full = config_path(name);
 	new_full = config_path(newname);
 	rename(old_full, new_full);
+
+	upload_queue_cleanup_failures();
 }
 
 static char *upload_queue_next_entry(unsigned const char key[KDF_HASH_LEN], char **name, char **lock)
