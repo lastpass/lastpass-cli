@@ -55,15 +55,13 @@
 #include <fcntl.h>
 #include <signal.h>
 
-static void upload_queue_write_entry(const char *entry, unsigned const char key[KDF_HASH_LEN])
+static void make_upload_dir(const char *path)
 {
 	_cleanup_free_ char *base_path = NULL;
-	_cleanup_free_ char *name = NULL;
 	struct stat sbuf;
 	int ret;
-	unsigned long serial;
 
-	base_path = config_path("upload-queue");
+	base_path = config_path(path);
 
 	ret = stat(base_path, &sbuf);
 	if ((ret == -1 && errno == ENOENT) || !S_ISDIR(sbuf.st_mode)) {
@@ -72,6 +70,15 @@ static void upload_queue_write_entry(const char *entry, unsigned const char key[
 			die_errno("mkdir(%s)", base_path);
 	} else if (ret == -1)
 		die_errno("stat(%s)", base_path);
+
+}
+
+static void upload_queue_write_entry(const char *entry, unsigned const char key[KDF_HASH_LEN])
+{
+	_cleanup_free_ char *name = NULL;
+	unsigned long serial;
+
+	make_upload_dir("upload-queue");
 
 	for (serial = 0; serial < ULONG_MAX; ++serial) {
 		free(name);
@@ -83,6 +90,28 @@ static void upload_queue_write_entry(const char *entry, unsigned const char key[
 		die("No more upload queue entry slots available.");
 
 	config_write_encrypted_string(name, entry, key);
+}
+
+static void upload_queue_drop(const char *name)
+{
+	_cleanup_free_ char *newname = NULL;
+	_cleanup_free_ char *old_full = NULL;
+	_cleanup_free_ char *new_full = NULL;
+	char *basename;
+
+	make_upload_dir("upload-fail");
+
+	basename = strrchr(name, '/');
+	if (!basename) {
+		unlink(name);
+		return;
+	}
+	basename += 1;
+	xasprintf(&newname, "upload-fail/%s", basename);
+
+	old_full = config_path(name);
+	new_full = config_path(newname);
+	rename(old_full, new_full);
 }
 
 static char *upload_queue_next_entry(unsigned const char key[KDF_HASH_LEN], char **name, char **lock)
@@ -169,6 +198,8 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 	bool should_fetch_new_blob_after = false;
 	int curl_ret;
 	long http_code;
+	bool http_failed_all;
+	int backoff;
 
 	while ((entry = upload_queue_next_entry(key, &name, &lock))) {
 		size = 0;
@@ -196,11 +227,20 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 			}
 		}
 		argv[size] = NULL;
+
+		http_failed_all = true;
+		backoff = 1;
 		for (int i = 0; i < 5; ++i) {
-			sleep(i * 2);
+			if (i) {
+				sleep(backoff);
+				backoff *= 8;
+			}
+
 			result = http_post_lastpass_v_noexit(argv[0],
 				session->sessionid, NULL, &argv[1],
 				&curl_ret, &http_code);
+
+			http_failed_all &= curl_ret == HTTP_ERROR_CODE;
 
 			if (result && strlen(result))
 				should_fetch_new_blob_after = true;
@@ -209,7 +249,10 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 				break;
 		}
 		if (!result) {
-			sleep(30);
+			/* server failed response 5 times, remove it */
+			if (http_failed_all)
+				upload_queue_drop(name);
+
 			config_unlink(lock);
 		} else {
 			config_unlink(name);

@@ -3,12 +3,15 @@
 
 #include <stddef.h>
 #include <stdarg.h>
+#include <curl/curl.h>
 
 struct http_param_set
 {
 	char **argv;
 	size_t n_alloced;
 };
+
+#define HTTP_ERROR_CODE	CURLE_HTTP_RETURNED_ERROR
 
 void http_post_add_params(struct http_param_set *params, ...);
 char *http_post_lastpass(const char *page, const char *session, size_t *len, ...);
