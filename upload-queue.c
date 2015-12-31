@@ -175,6 +175,8 @@ static char *upload_queue_next_entry(unsigned const char key[KDF_HASH_LEN], char
 	config_write_encrypted_string(*lock, pidstr, key);
 	result = config_read_encrypted_string(*name, key);
 	if (!result) {
+		/* could not decrypt: drop this file */
+		upload_queue_drop(*name);
 		config_unlink(*lock);
 		return NULL;
 	}
