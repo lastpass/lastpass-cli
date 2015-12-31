@@ -167,6 +167,8 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 	char *name, *lock, *p;
 	bool do_break;
 	bool should_fetch_new_blob_after = false;
+	int curl_ret;
+	long http_code;
 
 	while ((entry = upload_queue_next_entry(key, &name, &lock))) {
 		size = 0;
@@ -196,7 +198,10 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 		argv[size] = NULL;
 		for (int i = 0; i < 5; ++i) {
 			sleep(i * 2);
-			result = http_post_lastpass_v(argv[0], session->sessionid, NULL, &argv[1]);
+			result = http_post_lastpass_v_noexit(argv[0],
+				session->sessionid, NULL, &argv[1],
+				&curl_ret, &http_code);
+
 			if (result && strlen(result))
 				should_fetch_new_blob_after = true;
 			free(result);

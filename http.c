@@ -180,7 +180,8 @@ char *http_post_lastpass(const char *page, const char *session, size_t *final_le
 	free(params.argv);
 	return result;
 }
-char *http_post_lastpass_v(const char *page, const char *session, size_t *final_len, char **argv)
+
+char *http_post_lastpass_v_noexit(const char *page, const char *session, size_t *final_len, char **argv, int *curl_ret, long *http_code)
 {
 	_cleanup_free_ char *url = NULL;
 	_cleanup_free_ char *postdata = NULL;
@@ -243,18 +244,36 @@ char *http_post_lastpass_v(const char *page, const char *session, size_t *final_
 	unset_interrupt_detect();
 
 	curl_easy_cleanup(curl);
+	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
+	*curl_ret = ret;
+
 	if (ret != CURLE_OK) {
 		result.len = 0;
 		free(result.ptr);
 		result.ptr = NULL;
-		if (ret != CURLE_ABORTED_BY_CALLBACK)
-			die("%s.", curl_easy_strerror(ret));
 	} else if (!result.ptr)
 		result.ptr = xstrdup("");
 	if (final_len)
 		*final_len = result.len;
+
 	return result.ptr;
 }
+
+char *http_post_lastpass_v(const char *page, const char *session, size_t *final_len, char **argv)
+{
+	char *result;
+	int ret;
+	long http_code;
+
+	result = http_post_lastpass_v_noexit(page, session, final_len,
+					     argv, &ret, &http_code);
+
+	if (ret != CURLE_OK && ret != CURLE_ABORTED_BY_CALLBACK)
+		die("%s.", curl_easy_strerror(ret));
+
+	return result;
+}
+
 
 char *http_post_lastpass_param_set(const char *page, const char *session, size_t *final_len, struct http_param_set *param_set) {
 	return http_post_lastpass_v(page, session, final_len, param_set->argv);
