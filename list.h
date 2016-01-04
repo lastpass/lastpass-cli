@@ -85,8 +85,13 @@ static inline void __list_del(struct list_head * prev, struct list_head * next)
 	prev->next = next;
 }
 
+#ifndef __clang_analyzer__
 #define LIST_POISON1  ((void *) 0x00100100)
 #define LIST_POISON2  ((void *) 0x00200200)
+#else
+#define LIST_POISON1  NULL
+#define LIST_POISON2  NULL
+#endif
 
 /**
  * list_empty - tests whether a list is empty
@@ -369,8 +374,13 @@ static inline void list_del(struct list_head *entry)
  * @member:	the name of the member within the struct.
  *
  */
+#ifndef __clang_analyzer__
 #define container_of(ptr, type, member) __extension__({			\
 	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
 	(type *)( (char *)__mptr - offsetof(type,member) );})
-
+#else
+#define container_of(ptr, type, member) __extension__({			\
+	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
+	(type *)( (char *)__mptr - (char *)offsetof(type,member) );})
+#endif
 #endif
