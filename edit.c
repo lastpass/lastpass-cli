@@ -293,15 +293,21 @@ int edit_account(struct session *session,
 	} else if (choice == EDIT_FIELD)
 		die("Editing fields of entries that are not secure notes is currently not supported.");
 
-	if (choice == EDIT_USERNAME)
+	switch(choice)
+	{
+	case EDIT_USERNAME:
 		value = editable->username;
-	else if (choice == EDIT_PASSWORD)
+		break;
+	case EDIT_PASSWORD:
 		value = editable->password;
-	else if (choice == EDIT_URL)
+		break;
+	case EDIT_URL:
 		value = editable->url;
-	else if (choice == EDIT_NAME)
+		break;
+	case EDIT_NAME:
 		value = editable->fullname;
-	else if (choice == EDIT_FIELD) {
+		break;
+	case EDIT_FIELD:
 		list_for_each_entry(editable_field, &editable->field_head, list) {
 			if (!strcmp(editable_field->name, field))
 				break;
@@ -315,8 +321,13 @@ int edit_account(struct session *session,
 			list_add(&editable_field->list, &editable->field_head);
 		}
 		value = editable_field->value;
-	} else if (choice == EDIT_NOTES)
+		break;
+	case EDIT_NOTES:
 		value = editable->note;
+		break;
+	default:
+		value = NULL;
+	}
 
 	if (!non_interactive) {
 		if (editable->pwprotect) {
