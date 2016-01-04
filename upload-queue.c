@@ -85,7 +85,7 @@ static void upload_queue_write_entry(const char *entry, unsigned const char key[
 
 	for (serial = 0; serial < ULONG_MAX; ++serial) {
 		free(name);
-		xasprintf(&name, "upload-queue/%lu%lu", time(NULL), serial);
+		xasprintf(&name, "upload-queue/%lu%04lu", time(NULL), serial);
 		if (!config_exists(name))
 			break;
 	}
