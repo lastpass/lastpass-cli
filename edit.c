@@ -408,7 +408,7 @@ int edit_account(struct session *session,
 	else if (choice == EDIT_NOTES)
 		account_set_note(editable, value, key);
 	else if (choice == EDIT_FIELD) {
-		if (!strlen(value)) {
+		if (!value || !strlen(value)) {
 			list_del(&editable_field->list);
 			field_free(editable_field);
 		} else
