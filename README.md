@@ -29,6 +29,11 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-devel libcurl-devel
 ```
 
+* (Optional) Install the needed documentation dependencies, then follow the instructions in the 'Documentation' section.
+```
+sudo yum install asciidoc
+```
+
 
 #### Debian/Ubuntu
 * Install the needed build dependencies, and then follow instructions in
