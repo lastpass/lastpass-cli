@@ -12,6 +12,7 @@ struct http_param_set
 };
 
 #define HTTP_ERROR_CODE	CURLE_HTTP_RETURNED_ERROR
+#define HTTP_ERROR_CONNECT	CURLE_SSL_CONNECT_ERROR
 
 void http_post_add_params(struct http_param_set *params, ...);
 char *http_post_lastpass(const char *page, const char *session, size_t *len, ...);

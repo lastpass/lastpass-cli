@@ -283,7 +283,9 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 				session->sessionid, NULL, &argv[1],
 				&curl_ret, &http_code);
 
-			http_failed_all &= curl_ret == HTTP_ERROR_CODE;
+			http_failed_all &=
+				(curl_ret == HTTP_ERROR_CODE ||
+				 curl_ret == HTTP_ERROR_CONNECT);
 
 			if (result && strlen(result))
 				should_fetch_new_blob_after = true;
