@@ -20,9 +20,23 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 #### Arch
 * Binary packages are available in the [Arch User Repository (AUR)](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli). Information about installing packages from the AUR [can be found on the Arch wiki](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages).
 
+#### Fedora
+
+* Packages are available in Fedora 22 and later.
+
+```
+sudo dnf install lastpass-cli
+```
 
 #### Redhat/Centos
-* Install the needed build dependencies, and then follow instructions in
+
+* Packages are available in [EPEL](https://fedoraproject.org/wiki/EPEL) for RHEL/CentOS 7 and later.
+
+```
+sudo yum install lastpass-cli
+```
+
+* For older versions: Install the needed build dependencies, and then follow instructions in
   the 'Building' section.
 
 ```
