@@ -61,7 +61,7 @@ int cmd_mv(int argc, char **argv)
 	int option_index;
 	char *name;
 	char *folder;
-	_cleanup_free_ char *new_fullname = NULL;
+	char *new_fullname = NULL;
 	struct account *account;
 	struct share *old_share;
 
