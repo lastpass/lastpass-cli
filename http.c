@@ -166,7 +166,7 @@ void http_post_add_params(struct http_param_set *param_set, ...)
 	va_end(args);
 }
 
-char *http_post_lastpass(const char *page, const char *session, size_t *final_len, ...)
+char *http_post_lastpass(const char *page, const struct session *session, size_t *final_len, ...)
 {
 	va_list args;
 	struct http_param_set params = {
@@ -181,7 +181,7 @@ char *http_post_lastpass(const char *page, const char *session, size_t *final_le
 	return result;
 }
 
-char *http_post_lastpass_v_noexit(const char *page, const char *session, size_t *final_len, char **argv, int *curl_ret, long *http_code)
+char *http_post_lastpass_v_noexit(const char *server, const char *page, const struct session *session, size_t *final_len, char **argv, int *curl_ret, long *http_code)
 {
 	_cleanup_free_ char *url = NULL;
 	_cleanup_free_ char *postdata = NULL;
@@ -192,8 +192,16 @@ char *http_post_lastpass_v_noexit(const char *page, const char *session, size_t 
 	size_t len, new_len;
 	int ret;
 	struct mem_chunk result;
+	const char *login_server;
 
-	xasprintf(&url, "https://lastpass.com/%s", page);
+	/* if we have a session, use that server, otherwise use whatever was passed */
+	login_server = session ? session->server : server;
+
+	/* if nothing passed, use lastpass */
+	if (!login_server)
+		login_server = LASTPASS_SERVER;
+
+	xasprintf(&url, "https://%s/%s", login_server, page);
 
 	curl = curl_easy_init();
 	if (!curl)
@@ -235,7 +243,7 @@ char *http_post_lastpass_v_noexit(const char *page, const char *session, size_t 
 	if (postdata)
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata);
 	if (session) {
-		xasprintf(&cookie, "PHPSESSID=%s", session);
+		xasprintf(&cookie, "PHPSESSID=%s", session->sessionid);
 		curl_easy_setopt(curl, CURLOPT_COOKIE, cookie);
 	}
 
@@ -259,13 +267,13 @@ char *http_post_lastpass_v_noexit(const char *page, const char *session, size_t 
 	return result.ptr;
 }
 
-char *http_post_lastpass_v(const char *page, const char *session, size_t *final_len, char **argv)
+char *http_post_lastpass_v(const char *server, const char *page, const struct session *session, size_t *final_len, char **argv)
 {
 	char *result;
 	int ret;
 	long http_code;
 
-	result = http_post_lastpass_v_noexit(page, session, final_len,
+	result = http_post_lastpass_v_noexit(server, page, session, final_len,
 					     argv, &ret, &http_code);
 
 	if (ret != CURLE_OK && ret != CURLE_ABORTED_BY_CALLBACK)
@@ -275,6 +283,6 @@ char *http_post_lastpass_v(const char *page, const char *session, size_t *final_
 }
 
 
-char *http_post_lastpass_param_set(const char *page, const char *session, size_t *final_len, struct http_param_set *param_set) {
-	return http_post_lastpass_v(page, session, final_len, param_set->argv);
+char *http_post_lastpass_param_set(const char *page, const struct session *session, size_t *final_len, struct http_param_set *param_set) {
+	return http_post_lastpass_v(NULL, page, session, final_len, param_set->argv);
 }

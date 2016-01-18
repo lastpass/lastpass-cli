@@ -60,14 +60,14 @@ unsigned int lastpass_iterations(const char *username)
 
 void lastpass_logout(const struct session *session)
 {
-	free(http_post_lastpass("logout.php", session->sessionid, NULL, "method", "cli", "noredirect", "1", "token", session->token, NULL));
+	free(http_post_lastpass("logout.php", session, NULL, "method", "cli", "noredirect", "1", "token", session->token, NULL));
 }
 
 struct blob *lastpass_get_blob(const struct session *session, const unsigned char key[KDF_HASH_LEN])
 {
 	size_t len;
 
-	_cleanup_free_ char *blob = http_post_lastpass("getaccts.php", session->sessionid, &len, "mobile", "1", "requestsrc", "cli", "hasplugin", LASTPASS_CLI_VERSION, NULL);
+	_cleanup_free_ char *blob = http_post_lastpass("getaccts.php", session, &len, "mobile", "1", "requestsrc", "cli", "hasplugin", LASTPASS_CLI_VERSION, NULL);
 	if (!blob || !len)
 		return NULL;
 	config_write_encrypted_buffer("blob", blob, len, key);
@@ -168,7 +168,7 @@ unsigned long long lastpass_get_blob_version(struct session *session, unsigned c
 	_cleanup_free_ char *reply = NULL;
 	unsigned long long version;
 
-	reply = http_post_lastpass("login_check.php", session->sessionid, NULL, "method", "cli", NULL);
+	reply = http_post_lastpass("login_check.php", session, NULL, "method", "cli", NULL);
 	if (!reply)
 		return 0;
 	version = xml_login_check(reply, session);
@@ -192,7 +192,7 @@ int lastpass_pwchange_start(const struct session *session, const char *username,
 {
 	_cleanup_free_ char *reply = NULL;
 
-	reply = http_post_lastpass("lastpass/api.php", session->sessionid, NULL,
+	reply = http_post_lastpass("lastpass/api.php", session, NULL,
 				   "cmd", "getacctschangepw",
 				   "username", username,
 				   "hash", hash,
@@ -278,7 +278,7 @@ int lastpass_pwchange_complete(const struct session *session,
 	http_post_add_params(&params, xstrdup("sukeycnt"), sukeycnt_str, NULL);
 
 	reply = http_post_lastpass_param_set("lastpass/api.php",
-					     session->sessionid, NULL,
+					     session, NULL,
 					     &params);
 
 	for (i=0; i < params.n_alloced && params.argv[i]; i++) {

@@ -16,6 +16,7 @@ struct session {
 	char *uid;
 	char *sessionid;
 	char *token;
+	char *server;
 	struct private_key private_key;
 };
 

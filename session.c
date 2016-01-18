@@ -54,6 +54,7 @@ void session_free(struct session *session)
 	free(session->sessionid);
 	free(session->token);
 	free(session->private_key.key);
+	free(session->server);
 	free(session);
 }
 bool session_is_valid(struct session *session)
@@ -72,6 +73,13 @@ void session_save(struct session *session, unsigned const char key[KDF_HASH_LEN]
 	config_write_encrypted_string("session_sessionid", session->sessionid, key);
 	config_write_encrypted_string("session_token", session->token, key);
 	config_write_encrypted_buffer("session_privatekey", (char *)session->private_key.key, session->private_key.len, key);
+
+	/*
+	 * existing sessions may not have a server yet; they will fall back
+	 * to lastpass.com.
+	 */
+	if (session->server)
+		config_write_string("session_server", session->server);
 }
 struct session *sesssion_load(unsigned const char key[KDF_HASH_LEN])
 {
@@ -79,6 +87,7 @@ struct session *sesssion_load(unsigned const char key[KDF_HASH_LEN])
 	session->uid = config_read_encrypted_string("session_uid", key);
 	session->sessionid = config_read_encrypted_string("session_sessionid", key);
 	session->token = config_read_encrypted_string("session_token", key);
+	session->server = config_read_string("session_server");
 	session->private_key.len = config_read_encrypted_buffer("session_privatekey", &session->private_key.key, key);
 	mlock(session->private_key.key, session->private_key.len);
 
@@ -98,6 +107,7 @@ void session_kill()
 	config_unlink("session_token");
 	config_unlink("session_uid");
 	config_unlink("session_privatekey");
+	config_unlink("session_server");
 	config_unlink("plaintext_key");
 	agent_kill();
 	upload_queue_kill();

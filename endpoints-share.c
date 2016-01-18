@@ -50,7 +50,7 @@ int lastpass_share_getinfo(const struct session *session, const char *shareid,
 	_cleanup_free_ char *reply = NULL;
 	size_t len;
 
-	reply = http_post_lastpass("share.php", session->sessionid, &len,
+	reply = http_post_lastpass("share.php", session, &len,
 				   "sharejs", "1", "getinfo", "1",
 				   "id", shareid, "xmlr", "1", NULL);
 	if (!reply)
@@ -69,7 +69,7 @@ int lastpass_share_get_user_by_uid(const struct session *session,
 	size_t len;
 
 	/* get the pubkey for the user/group */
-	reply = http_post_lastpass("share.php", session->sessionid, &len,
+	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "getpubkey", "1",
 				   "uid", uid,
@@ -90,7 +90,7 @@ int lastpass_share_get_users_by_username(const struct session *session,
 	xasprintf(&uid_param, "{\"%s\":{}}", username);
 
 	/* get the pubkey for the user/group */
-	reply = http_post_lastpass("share.php", session->sessionid, &len,
+	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "getpubkey", "1",
 				   "uid", uid_param,
@@ -141,7 +141,7 @@ int lastpass_share_user_add(const struct session *session,
 		bytes_to_hex(enc_share_key, &hex_enc_share_key,
 			     enc_share_key_len);
 
-		reply = http_post_lastpass("share.php", session->sessionid, &len,
+		reply = http_post_lastpass("share.php", session, &len,
 					   "token", session->token,
 					   "id", share->id,
 					   "update", "1",
@@ -172,7 +172,7 @@ int lastpass_share_user_mod(const struct session *session,
 	_cleanup_free_ char *reply = NULL;
 	size_t len;
 
-	reply = http_post_lastpass("share.php", session->sessionid, &len,
+	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "id", share->id,
 				   "up", "1",
@@ -195,7 +195,7 @@ int lastpass_share_user_del(const struct session *session, const char *shareid,
 	_cleanup_free_ char *reply = NULL;
 	size_t len;
 
-	reply = http_post_lastpass("share.php", session->sessionid, &len,
+	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "id", shareid,
 				   "update", "1",
@@ -211,7 +211,6 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 	_cleanup_free_ char *sf_username;
 	_cleanup_free_ char *enc_share_name = NULL;
 	_cleanup_free_ char *hex_share_key = NULL;
-	_cleanup_free_ char *hex_hash = NULL;
 	_cleanup_free_ unsigned char *enc_share_key = NULL;
 	_cleanup_free_ char *sf_fullname = NULL;
 	_cleanup_free_ char *hex_enc_share_key = NULL;
@@ -268,7 +267,7 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 	xasprintf(&sf_fullname, "Shared-%s", sharename);
 	enc_share_name = encrypt_and_base64(sf_fullname, key);
 
-	reply = http_post_lastpass("share.php", session->sessionid, &len,
+	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "id", "0",
 				   "update", "1",
@@ -290,7 +289,7 @@ int lastpass_share_delete(const struct session *session, struct share *share)
 	_cleanup_free_ char *reply = NULL;
 	size_t len;
 
-	reply = http_post_lastpass("share.php", session->sessionid, &len,
+	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "id", share->id,
 				   "delete", "1",
@@ -348,7 +347,7 @@ int lastpass_share_move(const struct session *session,
 	}
 
 	reply = http_post_lastpass_param_set("lastpass/api.php",
-					     session->sessionid, NULL,
+					     session, NULL,
 					     &params);
 
 	free(params.argv);

@@ -279,8 +279,8 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 				backoff *= 8;
 			}
 
-			result = http_post_lastpass_v_noexit(argv[0],
-				session->sessionid, NULL, &argv[1],
+			result = http_post_lastpass_v_noexit(session->server, argv[0],
+				session, NULL, &argv[1],
 				&curl_ret, &http_code);
 
 			http_failed_all &=

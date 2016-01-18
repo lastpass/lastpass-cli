@@ -155,21 +155,32 @@ static bool error_message(char **message, struct session **session, const char *
 	return true;
 }
 
-static bool ordinary_login(const unsigned char key[KDF_HASH_LEN], char **args, char **cause, char **message, char **reply, struct session **session)
+static bool ordinary_login(const char *login_server, const unsigned char key[KDF_HASH_LEN], char **args, char **cause, char **message, char **reply, struct session **session,
+			   char **ret_login_server)
 {
+	char *server;
+
 	free(*reply);
-	*reply = http_post_lastpass_v("login.php", NULL, NULL, args);
+	*reply = http_post_lastpass_v(login_server, "login.php", NULL, NULL, args);
 	if (!*reply)
 		return error_post(message, session);
 
 	*session = xml_ok_session(*reply, key);
-	if (*session)
+	if (*session) {
+		(*session)->server = xstrdup(login_server);
 		return true;
+	}
+
+	/* handle server redirection if requested for lastpass.eu */
+	server = xml_error_cause(*reply, "server");
+	if (server && strcmp(server, "lastpass.eu") == 0)
+		return ordinary_login(server, key, args, cause, message, reply, session, ret_login_server);
 
 	*cause = xml_error_cause(*reply, "cause");
 	if (!*cause)
 		return error_other(message, session, "Unable to determine login failure cause.");
 
+	*ret_login_server = xstrdup(login_server);
 	return false;
 }
 
@@ -186,7 +197,7 @@ static inline bool has_capabilities(const char *capabilities, const char *capabi
 	return false;
 }
 
-static bool oob_login(const unsigned char key[KDF_HASH_LEN], char **args, char **message, char **reply, char **oob_name, struct session **session)
+static bool oob_login(const char *login_server, const unsigned char key[KDF_HASH_LEN], char **args, char **message, char **reply, char **oob_name, struct session **session)
 {
 	_cleanup_free_ char *oob_capabilities = NULL;
 	_cleanup_free_ char *cause = NULL;
@@ -208,7 +219,7 @@ static bool oob_login(const unsigned char key[KDF_HASH_LEN], char **args, char *
 	append_post(args, "outofbandrequest", "1");
 	for (;;) {
 		free(*reply);
-		*reply = http_post_lastpass_v("login.php", NULL, NULL, args);
+		*reply = http_post_lastpass_v(login_server, "login.php", NULL, NULL, args);
 		if (!*reply) {
 			if (can_do_passcode) {
 				append_post(args, "outofbandrequest", "0");
@@ -250,7 +261,7 @@ out:
 	return ret;
 }
 
-static bool otp_login(const unsigned char key[KDF_HASH_LEN], char **args, char **message, char **reply, const char *otp_name, const char *cause, const char *username, struct session **session)
+static bool otp_login(const char *login_server, const unsigned char key[KDF_HASH_LEN], char **args, char **message, char **reply, const char *otp_name, const char *cause, const char *username, struct session **session)
 {
 	struct multifactor_type *replied_multifactor = NULL;
 	_cleanup_free_ char *multifactor = NULL;
@@ -274,7 +285,7 @@ static bool otp_login(const unsigned char key[KDF_HASH_LEN], char **args, char *
 		append_post(args, replied_multifactor->post_var, multifactor);
 
 		free(*reply);
-		*reply = http_post_lastpass_v("login.php", NULL, NULL, args);
+		*reply = http_post_lastpass_v(login_server, "login.php", NULL, NULL, args);
 		if (!*reply)
 			return error_post(message, session);
 
@@ -301,6 +312,7 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 	_cleanup_free_ char *cause = NULL;
 	_cleanup_free_ char *reply = NULL;
 	_cleanup_free_ char *otp_name = NULL;
+	_cleanup_free_ char *login_server = NULL;
 	struct session *session = NULL;
 
 	iters = xultostr(iterations);
@@ -318,7 +330,7 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 	if (trusted_id)
 		append_post(args, "uuid", trusted_id);
 
-	if (ordinary_login(key, args, &cause, error_message, &reply, &session))
+	if (ordinary_login(LASTPASS_SERVER, key, args, &cause, error_message, &reply, &session, &login_server))
 		return session;
 
 	if (trust) {
@@ -326,13 +338,13 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 		append_post(args, "trustlabel", trusted_label);
 	}
 
-	if (!strcmp(cause, "outofbandrequired") && oob_login(key, args, error_message, &reply, &otp_name, &session)) {
+	if (!strcmp(cause, "outofbandrequired") && oob_login(login_server, key, args, error_message, &reply, &otp_name, &session)) {
 		if (trust)
-			http_post_lastpass("trust.php", session->sessionid, NULL, "uuid", trusted_id, "trustlabel", trusted_label, NULL);
+			http_post_lastpass("trust.php", session, NULL, "uuid", trusted_id, "trustlabel", trusted_label, NULL);
 		return session;
 	}
 
-	if (otp_login(key, args, error_message, &reply, otp_name, cause, user_lower, &session))
+	if (otp_login(login_server, key, args, error_message, &reply, otp_name, cause, user_lower, &session))
 		return session;
 
 	error_other(error_message, &session, "An unspecified error occured.");
