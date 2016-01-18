@@ -113,7 +113,7 @@ static CURLcode pin_certificate(CURL *curl, void *sslctx, void *parm)
 	if (!store)
 		goto out;
 
-	bio = BIO_new_mem_buf(CERTIFICATE_THAWTE, -1);
+	bio = BIO_new_mem_buf(CERTIFICATE_STORE, -1);
 	while ((cert = PEM_read_bio_X509(bio, NULL, 0, NULL))) {
 		if (!X509_STORE_add_cert(store, cert)) {
 			X509_free(cert);
