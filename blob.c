@@ -300,7 +300,7 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	entry_crypt(group);
 	entry_hex(url);
 	entry_crypt(note);
-	skip(fav);
+	entry_boolean(fav);
 	skip(sharedfromaid);
 	entry_crypt(username);
 	entry_crypt(password);
@@ -454,6 +454,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 				xasprintf(&account->fullname, "%s/%s",
 					  last_share->name, tmp);
 				free(tmp);
+				account->group = xstrdup(last_share->name);
 			}
 
 			list_add(&account->list, &parsed->account_head);
