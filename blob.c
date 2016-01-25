@@ -782,6 +782,24 @@ void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH
 	}
 }
 
+/*
+ * Set just group and name, assuming we've stripped off any leading
+ * shared folder from fullname.
+ */
+static void account_set_group_name(struct account *account,
+				   const char *groupname,
+				   unsigned const char key[KDF_HASH_LEN])
+{
+	char *slash = strrchr(groupname, '/');
+	if (!slash) {
+		account_set_name(account, xstrdup(groupname), key);
+		account_set_group(account, xstrdup(""), key);
+	} else {
+		account_set_name(account, xstrdup(slash + 1), key);
+		account_set_group(account, xstrndup(groupname, slash - groupname), key);
+	}
+}
+
 void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN])
 {
 	char *groupname = fullname;
@@ -792,15 +810,7 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
 		if (tmp)
 			groupname = tmp + 1;
 	}
-
-	char *slash = strrchr(groupname, '/');
-	if (!slash) {
-		account_set_name(account, xstrdup(groupname), key);
-		account_set_group(account, xstrdup(""), key);
-	} else {
-		account_set_name(account, xstrdup(slash + 1), key);
-		account_set_group(account, xstrndup(groupname, slash - groupname), key);
-	}
+	account_set_group_name(account, groupname, key);
 	free(account->fullname);
 	account->fullname = fullname;
 }
@@ -835,13 +845,6 @@ void account_assign_share(struct blob *blob, struct account *account,
 
 	old_share = account->share;
 
-	if (!is_shared_folder_name(name)) {
-		account->share = NULL;
-		if (old_share)
-			account_reencrypt(account, key);
-		return;
-	}
-
 	/* strip off shared groupname */
 	char *slash = strchr(name, '/');
 	if (!slash)
@@ -851,10 +854,17 @@ void account_assign_share(struct blob *blob, struct account *account,
 
 	/* find a share matching group name */
 	share = find_unique_share(blob, shared_name);
-	if (!share)
+
+	if (!share && is_shared_folder_name(name)) {
+		/* don't allow normal folders named like SFs */
 		die("Unable to find shared folder for %s in blob\n", name);
+	}
 
 	account->share = share;
+
+	/* update group name to not include new share, if needed */
+	if (share)
+		account_set_group_name(account, slash + 1, key);
 
 	if (old_share != account->share)
 		account_reencrypt(account, key);
