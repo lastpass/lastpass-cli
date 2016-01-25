@@ -55,6 +55,7 @@ struct account {
 	char *note, *note_encrypted;
 	char *last_touch, *last_modified_gmt;
 	bool pwprotect;
+	bool fav;
 
 	struct list_head field_head;
 	struct share *share;

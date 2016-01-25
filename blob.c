@@ -300,7 +300,7 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	entry_crypt(group);
 	entry_hex(url);
 	entry_crypt(note);
-	skip(fav);
+	entry_boolean(fav);
 	skip(sharedfromaid);
 	entry_crypt(username);
 	entry_crypt(password);
