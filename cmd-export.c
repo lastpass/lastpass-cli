@@ -122,20 +122,27 @@ int cmd_export(int argc, char **argv)
 		}
 	}
 
-	printf("url,username,password,hostname,name,grouping\r\n");
+	printf("url,username,password,extra,name,grouping,fav\r\n");
+
 	list_for_each_entry(account, &blob->account_head, list) {
 
-		/* skip shared notes */
-		if (!strcmp(account->url, "http://sn"))
+		/* skip groups */
+		if (!strcmp(account->url, "http://group"))
 			continue;
 
 		lastpass_log_access(sync, session, key, account);
 		print_csv_cell(account->url, false);
 		print_csv_cell(account->username, false);
 		print_csv_cell(account->password, false);
-		print_csv_cell(account->fullname, false);
+		print_csv_cell(account->note, false);
 		print_csv_cell(account->name, false);
-		print_csv_cell(account->group, true);
+		print_csv_cell(account->group, false);
+		if(account->fav) {
+			print_csv_cell("1", true);
+		} else {
+			print_csv_cell("0", true);
+		}
+
 	}
 
 	session_free(session);
