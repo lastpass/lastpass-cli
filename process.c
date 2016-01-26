@@ -60,7 +60,7 @@
 #define PR_SET_DUMPABLE 0
 #define PR_SET_NAME 0
 static void prctl(__attribute__((unused)) int x,
-		  __attribute__((unused)) int y) {}
+		  __attribute__((unused)) unsigned long y) {}
 #endif
 
 #ifndef USE_PTRACE
@@ -126,7 +126,7 @@ out:
 void process_set_name(const char *name)
 {
 	size_t argslen = 0;
-	prctl(PR_SET_NAME, name);
+	prctl(PR_SET_NAME, (unsigned long) name);
 
 	if (!ARGC || !ARGV)
 		return;
