@@ -126,9 +126,23 @@ int cmd_export(int argc, char **argv)
 
 	list_for_each_entry(account, &blob->account_head, list) {
 
+		_cleanup_free_ char *share_group = NULL;
+		char *groupname = account->group;
+
 		/* skip groups */
 		if (!strcmp(account->url, "http://group"))
 			continue;
+
+		if (account->share) {
+			xasprintf(&share_group, "%s\\%s",
+				  account->share->name, account->group);
+
+			/* trim trailing backslash if no subfolder */
+			if (!strlen(account->group))
+				share_group[strlen(share_group)-1] = '\0';
+
+			groupname = share_group;
+		}
 
 		lastpass_log_access(sync, session, key, account);
 		print_csv_cell(account->url, false);
@@ -136,7 +150,7 @@ int cmd_export(int argc, char **argv)
 		print_csv_cell(account->password, false);
 		print_csv_cell(account->note, false);
 		print_csv_cell(account->name, false);
-		print_csv_cell(account->group, false);
+		print_csv_cell(groupname, false);
 		print_csv_cell(bool_str(account->fav), true);
 	}
 
