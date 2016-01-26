@@ -73,7 +73,6 @@ static void reencrypt(struct session *session,
 {
 	struct pwchange_field *field;
 	struct pwchange_su_key *su_key;
-	_cleanup_free_ char *privkey = NULL;
 	struct private_key tmp;
 	unsigned int n_fields = 0;
 	unsigned int i = 0;
