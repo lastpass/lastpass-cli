@@ -414,17 +414,28 @@ void cipher_decrypt_private_key(const char *key_hex,
 	memset(out_key, 0, sizeof(*out_key));
 
 	len = strlen(key_hex);
-	if (len % 2 != 0)
-		die("Key hex in wrong format.");
-	len /= 2;
+	if (!len)
+		return;
 
-	len += 16 /* IV */ + 1 /* pound symbol */;
-	encrypted_key = xcalloc(len + 1, 1);
-	encrypted_key[0] = '!';
-	memcpy(&encrypted_key[1], key, 16);
-	encrypted_key_start = &encrypted_key[17];
-	hex_to_bytes(key_hex, &encrypted_key_start);
-	decrypted_key = cipher_aes_decrypt(encrypted_key, len, key);
+	if (key_hex[0] == '!') {
+		/* v2 format */
+		decrypted_key = cipher_aes_decrypt_base64(
+			key_hex, key);
+	} else {
+		if (len % 2 != 0)
+			die("Key hex in wrong format.");
+		len /= 2;
+
+		/* v1 format */
+		len += 16 /* IV */ + 1 /* bang symbol */;
+		encrypted_key = xcalloc(len + 1, 1);
+		encrypted_key[0] = '!';
+		memcpy(&encrypted_key[1], key, 16);
+		encrypted_key_start = &encrypted_key[17];
+		hex_to_bytes(key_hex, &encrypted_key_start);
+		decrypted_key = cipher_aes_decrypt(encrypted_key, len, key);
+	}
+
 	if (!decrypted_key) {
 		warn("Could not decrypt private key.");
 		return;
