@@ -299,3 +299,35 @@ char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
 	free(intermediate);
 	return base64;
 }
+
+/*
+ * Get hex-encoded sha256() of a buffer.
+ */
+char *cipher_sha256_hex(unsigned char *bytes, size_t len)
+{
+	char *tmp = NULL;
+	SHA256_CTX sha256;
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+
+	if (!SHA256_Init(&sha256))
+		goto die;
+	if (!SHA256_Update(&sha256, bytes, len))
+		goto die;
+	if (!SHA256_Final(hash, &sha256))
+		goto die;
+
+	bytes_to_hex(hash, &tmp, sizeof(hash));
+	return tmp;
+die:
+	die("SHA-256 hash failed");
+}
+
+char *cipher_sha256_b64(unsigned char *bytes, size_t len)
+{
+	_cleanup_free_ unsigned char *hash_raw = NULL;
+	_cleanup_free_ char *hash_hex = NULL;
+
+	hash_hex = cipher_sha256_hex(bytes, len);
+	hex_to_bytes(hash_hex, &hash_raw);
+	return base64((char *) hash_raw, strlen(hash_hex) / 2);
+}
