@@ -37,10 +37,6 @@ lpass: $(patsubst %.c,%.o,$(wildcard *.c))
 %.1.html: %.1.txt
 	asciidoc -b html5 -a data-uri -a icons -a toc2 $<
 
-http.c: certificate.h
-certificate.h: thawte.pem
-	awk 'BEGIN {printf "#define CERTIFICATE_THAWTE \""} {printf "%s\\n", $$0} END {printf "\"\n"}' thawte.pem > certificate.h || rm -f certificate.h
-
 install-doc: doc-man
 	@install -v -d "$(DESTDIR)$(MANDIR)/man1" && install -m 0644 -v lpass.1 "$(DESTDIR)$(MANDIR)/man1/lpass.1"
 
