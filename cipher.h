@@ -9,5 +9,6 @@ char *cipher_aes_decrypt(const char *ciphertext, size_t len, const unsigned char
 char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[KDF_HASH_LEN]);
 size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HASH_LEN], char **ciphertext);
 char *cipher_base64(const char *bytes, size_t len);
-
+char *cipher_sha256_hex(unsigned char *bytes, size_t len);
+char *cipher_sha256_b64(unsigned char *bytes, size_t len);
 #endif
