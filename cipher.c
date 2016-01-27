@@ -505,3 +505,13 @@ char *cipher_sha256_hex(unsigned char *bytes, size_t len)
 die:
 	die("SHA-256 hash failed");
 }
+
+char *cipher_sha256_b64(unsigned char *bytes, size_t len)
+{
+	_cleanup_free_ unsigned char *hash_raw = NULL;
+	_cleanup_free_ char *hash_hex = NULL;
+
+	hash_hex = cipher_sha256_hex(bytes, len);
+	hex_to_bytes(hash_hex, &hash_raw);
+	return base64((char *) hash_raw, strlen(hash_hex) / 2);
+}
