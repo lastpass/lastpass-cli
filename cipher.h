@@ -22,4 +22,5 @@ void cipher_decrypt_private_key(const char *key_hex, unsigned const char key[KDF
 char *cipher_encrypt_private_key(struct private_key *private_key,
 				 unsigned const char key[KDF_HASH_LEN]);
 char *cipher_sha256_hex(unsigned char *bytes, size_t len);
+char *cipher_sha256_b64(unsigned char *bytes, size_t len);
 #endif
