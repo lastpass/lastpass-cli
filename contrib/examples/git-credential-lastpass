@@ -1,0 +1,59 @@
+#!/bin/bash
+
+# A credential helper for git to retrieve usernames and passwords from lastpass.
+# For general usage, see https://git-scm.com/docs/gitcredentials.
+# Here's a quick version:
+# 1. Put this somewhere in your path.
+# 2. git config --global credential.helper lastpass
+
+declare -A params
+
+if [ "x$1" == "x-l" ]; then
+	shift
+	lpassuser=$1
+	shift
+fi
+
+if [ "x$1" == "xget" ]; then
+	read line
+	while [ -n "$line" ]; do
+		key=${line%%=*}
+		value=${line#*=}
+		params[$key]=$value
+		read line
+	done
+
+	if [ "x${params['protocol']}" != "xhttps" ]; then
+		exit
+	fi
+
+	if [ -z "${params["host"]}" ]; then
+		exit
+	fi
+
+	lpass ls > /dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		if [ -z "$lpassuser" ]; then
+			read -p "Lastpass username: " lpassuser < /dev/tty > /dev/tty
+		fi
+		if [ -z "$lpassuser" ]; then
+			exit
+		fi
+		lpass login $lpassuser > /dev/null
+		if [ $? -ne 0 ]; then
+			echo "Failed to login to lastpass" > /dev/stderr
+			exit
+		fi
+	fi
+
+	user=`lpass show --username ${params["host"]}`
+	pass=`lpass show --password ${params["host"]}`
+
+	if [ "x$user" == "x" ] || [ "x$pass" == "x" ]; then
+		echo "Couldn't find host in lastpass DB." > /dev/stderr
+		exit
+	fi
+
+	echo username=$user
+	echo password=$pass
+fi
