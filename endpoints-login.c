@@ -233,8 +233,10 @@ static bool oob_login(const char *login_server, const unsigned char key[KDF_HASH
 			}
 		}
 		*session = xml_ok_session(*reply, key);
-		if (*session)
+		if (*session) {
+			(*session)->server = xstrdup(login_server);
 			goto success;
+		}
 
 		free(cause);
 		cause = xml_error_cause(*reply, "cause");
@@ -290,8 +292,10 @@ static bool otp_login(const char *login_server, const unsigned char key[KDF_HASH
 			return error_post(message, session);
 
 		*session = xml_ok_session(*reply, key);
-		if (*session)
+		if (*session) {
+			(*session)->server = xstrdup(login_server);
 			return true;
+		}
 
 		free(next_cause);
 		next_cause = xml_error_cause(*reply, "cause");
