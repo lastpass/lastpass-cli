@@ -221,9 +221,11 @@ error:
 
 }
 
-size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HASH_LEN], char **out)
+size_t cipher_aes_encrypt(const char *plaintext,
+			  const unsigned char key[KDF_HASH_LEN],
+			  unsigned char **out)
 {
-	char *ciphertext;
+	unsigned char *ciphertext;
 	unsigned char *tmp;
 	unsigned char iv[AES_BLOCK_SIZE];
 	int in_len;
@@ -241,7 +243,7 @@ size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HAS
 	memcpy(ciphertext + len, iv, AES_BLOCK_SIZE);
 	len += AES_BLOCK_SIZE;
 
-	tmp = (unsigned char *) ciphertext + len;
+	tmp = ciphertext + len;
 	len += cipher_aes_encrypt_bytes((unsigned char *)plaintext, in_len,
 					key, iv, &tmp);
 
@@ -249,7 +251,7 @@ size_t cipher_aes_encrypt(const char *plaintext, const unsigned char key[KDF_HAS
 	return len;
 }
 
-static char *base64(const char *bytes, size_t len)
+static char *base64(const unsigned char *bytes, size_t len)
 {
 	BIO *memory, *b64;
 	BUF_MEM *buffer;
@@ -278,7 +280,7 @@ error:
 	die("Could not base64 the given bytes.");
 }
 
-char *cipher_base64(const char *bytes, size_t len)
+char *cipher_base64(const unsigned char *bytes, size_t len)
 {
 	_cleanup_free_ char *iv = NULL;
 	_cleanup_free_ char *data = NULL;
@@ -370,7 +372,7 @@ char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[
 
 char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
 {
-	char *intermediate = NULL;
+	unsigned char *intermediate = NULL;
 	char *base64 = NULL;
 	size_t len;
 
@@ -513,5 +515,5 @@ char *cipher_sha256_b64(unsigned char *bytes, size_t len)
 
 	hash_hex = cipher_sha256_hex(bytes, len);
 	hex_to_bytes(hash_hex, &hash_raw);
-	return base64((char *) hash_raw, strlen(hash_hex) / 2);
+	return base64(hash_raw, strlen(hash_hex) / 2);
 }

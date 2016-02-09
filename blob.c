@@ -236,7 +236,7 @@ static char *read_crypt_string(struct chunk *chunk, const unsigned char key[KDF_
 	if (!read_item(chunk, &item))
 		return NULL;
 	if (stored_base64)
-		*stored_base64 = cipher_base64((char *) item.data, item.len);
+		*stored_base64 = cipher_base64(item.data, item.len);
 
 	if (item.len == 0)
 		return xstrdup("");
