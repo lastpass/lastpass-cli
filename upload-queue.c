@@ -58,6 +58,49 @@
 /* keep around failed updates for a couple of weeks */
 #define FAIL_MAX_AGE	86400 * 14
 
+enum log_level
+{
+	LOG_NONE = -1,
+	LOG_ERROR = 3,
+	LOG_WARNING = 4,
+	LOG_INFO = 6,
+	LOG_DEBUG = 7,
+};
+
+#define TIME_FMT "%lld.%06lld"
+#define TIME_ARGS(tv) ((long long)(tv)->tv_sec), ((long long)(tv)->tv_usec)
+
+static int lpass_log_level()
+{
+	char *log_level_str;
+	int level;
+
+	log_level_str = getenv("LPASS_LOG_LEVEL");
+	if (!log_level_str)
+		return LOG_NONE;
+
+	level = strtoul(log_level_str, NULL, 10);
+	return (enum log_level) level;
+}
+
+static void lpass_log(enum log_level level, char *fmt, ...)
+{
+	struct timeval tv;
+	struct timezone tz;
+	va_list ap;
+
+	int req_level = lpass_log_level();
+
+	if (req_level < level)
+		return;
+
+	gettimeofday(&tv, &tz);
+	printf("<%d> [" TIME_FMT "] ", level, TIME_ARGS(&tv));
+	va_start(ap, fmt);
+	vprintf(fmt, ap);
+	va_end(ap);
+}
+
 static void make_upload_dir(const char *path)
 {
 	_cleanup_free_ char *base_path = NULL;
@@ -137,6 +180,9 @@ static void upload_queue_drop(const char *name)
 	_cleanup_free_ char *old_full = NULL;
 	_cleanup_free_ char *new_full = NULL;
 	char *basename;
+	int ret;
+
+	lpass_log(LOG_DEBUG, "UQ: dropping %s\n", name);
 
 	make_upload_dir("upload-fail");
 
@@ -150,7 +196,9 @@ static void upload_queue_drop(const char *name)
 
 	old_full = config_path(name);
 	new_full = config_path(newname);
-	rename(old_full, new_full);
+	ret = rename(old_full, new_full);
+
+	lpass_log(LOG_DEBUG, "UQ: rename returned %d (errno=%d)\n", ret, errno);
 
 	upload_queue_cleanup_failures();
 }
@@ -217,6 +265,7 @@ static char *upload_queue_next_entry(unsigned const char key[KDF_HASH_LEN], char
 	result = config_read_encrypted_string(*name, key);
 	if (!result) {
 		/* could not decrypt: drop this file */
+		lpass_log(LOG_DEBUG, "UQ: unable to decrypt job %s\n", *name);
 		upload_queue_drop(*name);
 		config_unlink(*lock);
 		return NULL;
@@ -245,6 +294,9 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 	int backoff;
 
 	while ((entry = upload_queue_next_entry(key, &name, &lock))) {
+
+		lpass_log(LOG_DEBUG, "UQ: processing job %s\n", name);
+
 		size = 0;
 		for (p = entry; *p; ++p) {
 			if (*p == '\n')
@@ -275,9 +327,12 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 		backoff = 1;
 		for (int i = 0; i < 5; ++i) {
 			if (i) {
+				lpass_log(LOG_DEBUG, "UQ: attempt %d, sleeping %d seconds\n", i+1, backoff);
 				sleep(backoff);
 				backoff *= 8;
 			}
+
+			lpass_log(LOG_DEBUG, "UQ: posting to %s\n", argv[0]);
 
 			result = http_post_lastpass_v_noexit(session->server, argv[0],
 				session, NULL, &argv[1],
@@ -287,6 +342,8 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 				(curl_ret == HTTP_ERROR_CODE ||
 				 curl_ret == HTTP_ERROR_CONNECT);
 
+			lpass_log(LOG_DEBUG, "UQ: result %d (http_code=%ld)\n", curl_ret, http_code);
+
 			if (result && strlen(result))
 				should_fetch_new_blob_after = true;
 			free(result);
@@ -294,12 +351,15 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 				break;
 		}
 		if (!result) {
+			lpass_log(LOG_DEBUG, "UQ: failed, http_failed_all: %d\n", http_failed_all);
+
 			/* server failed response 5 times, remove it */
 			if (http_failed_all)
 				upload_queue_drop(name);
 
 			config_unlink(lock);
 		} else {
+			lpass_log(LOG_DEBUG, "UQ: succeeded\n");
 			config_unlink(name);
 			config_unlink(lock);
 		}
@@ -324,12 +384,22 @@ static void upload_queue_run(const struct session *session, unsigned const char 
 	if (child < 0)
 		die_errno("fork(agent)");
 	if (child == 0) {
+		_cleanup_free_ char *upload_log_path = NULL;
+
 		int null = open("/dev/null", 0);
+		int upload_log = null;
+
+		if (lpass_log_level() >= 0) {
+			upload_log_path = config_path("lpass.log");
+			upload_log = open(upload_log_path,
+					  O_WRONLY | O_CREAT | O_APPEND, 0600);
+		}
 		if (null >= 0) {
 			dup2(null, 0);
-			dup2(null, 1);
+			dup2(upload_log, 1);
 			dup2(null, 2);
 			close(null);
+			close(upload_log);
 		}
 		setsid();
 		IGNORE_RESULT(chdir("/"));
@@ -339,7 +409,10 @@ static void upload_queue_run(const struct session *session, unsigned const char 
 		signal(SIGQUIT, upload_queue_cleanup);
 		signal(SIGTERM, upload_queue_cleanup);
 		signal(SIGALRM, upload_queue_cleanup);
+		setvbuf(stdout, NULL, _IOLBF, 0);
+		lpass_log(LOG_DEBUG, "UQ: starting queue run\n");
 		upload_queue_upload_all(session, key);
+		lpass_log(LOG_DEBUG, "UQ: queue run complete\n");
 		upload_queue_cleanup(0);
 		_exit(EXIT_SUCCESS);
 	}
