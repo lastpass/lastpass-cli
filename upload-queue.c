@@ -153,8 +153,9 @@ static void upload_queue_cleanup_failures()
 	while ((entry = readdir(dir))) {
 		_cleanup_free_ char *fn = NULL;
 
-		if (entry->d_type != DT_REG)
+		if (entry->d_type != DT_REG && entry->d_type != DT_UNKNOWN)
 			continue;
+
 		for (p = entry->d_name; *p; ++p) {
 			if (!isdigit(*p))
 				break;
