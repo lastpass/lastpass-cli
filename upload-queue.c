@@ -218,8 +218,9 @@ static char *upload_queue_next_entry(unsigned const char key[KDF_HASH_LEN], char
 	if (!dir)
 		return NULL;
 	while ((entry = readdir(dir))) {
-		if (entry->d_type != DT_REG)
+		if (entry->d_type != DT_REG && entry->d_type != DT_UNKNOWN)
 			continue;
+
 		for (p = entry->d_name; *p; ++p) {
 			if (!isdigit(*p))
 				break;
