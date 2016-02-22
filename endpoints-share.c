@@ -152,9 +152,9 @@ int lastpass_share_user_add(const struct session *session,
 					   "sharekey0", hex_enc_share_key,
 					   "sharename", enc_share_name,
 					   "name", share->name,
-					   "readonly", bool_str(share_user->read_only),
-					   "give", bool_str(!share_user->hide_passwords),
-					   "canadminister", bool_str(share_user->admin),
+					   "readonly", bool_str(user->read_only),
+					   "give", bool_str(!user->hide_passwords),
+					   "canadminister", bool_str(user->admin),
 					   "xmlr", "1", NULL);
 		free(share_user);
 	}
