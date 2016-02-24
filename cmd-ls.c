@@ -236,6 +236,13 @@ static char *get_display_fullname(struct account *account)
 	return fullname;
 }
 
+static int compare_account(const void *a, const void *b)
+{
+	struct account * const *acct_a = a;
+	struct account * const *acct_b = b;
+	return strcmp((*acct_a)->fullname, (*acct_b)->fullname);
+}
+
 int cmd_ls(int argc, char **argv)
 {
 	unsigned char key[KDF_HASH_LEN];
@@ -258,6 +265,8 @@ int cmd_ls(int argc, char **argv)
 	enum color_mode cmode = COLOR_MODE_AUTO;
 	bool print_tree;
 	struct account *account;
+	_cleanup_free_ struct account **account_array = NULL;
+	int i, num_accounts;
 
 	while ((option = getopt_long(argc, argv, "lmu", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -305,7 +314,22 @@ int cmd_ls(int argc, char **argv)
 	if (group && !strcmp(group, "(none)"))
 		group = "";
 
+	num_accounts = 0;
 	list_for_each_entry(account, &blob->account_head, list) {
+		num_accounts++;
+	}
+	i=0;
+	account_array = xcalloc(num_accounts, sizeof(struct account *));
+	list_for_each_entry(account, &blob->account_head, list) {
+		account_array[i++] = account;
+	}
+	qsort(account_array, num_accounts, sizeof(struct account *),
+	      compare_account);
+
+	for (i=0; i < num_accounts; i++)
+	{
+		struct account *account = account_array[i];
+
 		if (group) {
 			sub = strstr(account->fullname, group);
 			if (!sub || sub != account->fullname)
