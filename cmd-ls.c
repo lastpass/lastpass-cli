@@ -52,8 +52,8 @@ struct node {
 	struct account *account;
 	bool shared;
 
-	struct node *first_child;
-	struct node *next_sibling;
+	struct list_head children;
+	struct list_head list;
 };
 
 static char *format_timestamp(char *timestamp, bool utc)
@@ -105,20 +105,23 @@ static void __insert_node(struct node *head,
 			  struct account *account)
 {
 	struct path_component *pc;
-	struct node *child;
+	struct node *child, *tmp;
 
 	/* iteratively build a tree from all the path components */
 	list_for_each_entry(pc, components, list) {
-		for (child = head->first_child; child; child = child->next_sibling) {
-			if (!strcmp(child->name, pc->component))
+		child = NULL;
+		list_for_each_entry(tmp, &head->children, list) {
+			if (!strcmp(tmp->name, pc->component)) {
+				child = tmp;
 				break;
+			}
 		}
 		if (!child) {
 			child = new0(struct node, 1);
 			child->shared= !!account->share;
 			child->name = xstrdup(pc->component);
-			child->next_sibling = head->first_child;
-			head->first_child = child;
+			INIT_LIST_HEAD(&child->children);
+			list_add_tail(&child->list, &head->children);
 		}
 		head = child;
 	}
@@ -128,9 +131,8 @@ static void __insert_node(struct node *head,
 	child->account = account;
 	child->shared= !!account->share;
 	child->name = xstrdup(account->name);
-	child->next_sibling = head->first_child;
-	head->first_child = child;
-
+	INIT_LIST_HEAD(&child->children);
+	list_add_tail(&child->list, &head->children);
 }
 
 static void insert_node(struct node *head, const char *path, struct account *account)
@@ -184,21 +186,23 @@ static void insert_node(struct node *head, const char *path, struct account *acc
 
 static void free_node(struct node *head)
 {
+	struct node *node, *tmp;
+
 	if (!head)
 		return;
-	for (struct node *node = head, *next_node = NULL; node; node = next_node) {
-		next_node = node->next_sibling;
-		free_node(node->first_child);
-		free(node->name);
-		free(node);
+
+	list_for_each_entry_safe(node, tmp, &head->children, list) {
+		free_node(node);
 	}
+	free(head->name);
+	free(head);
 }
 
 static void print_node(struct node *head, int level)
 {
 	struct node *node;
 
-	for (node = head; node; node = node->next_sibling) {
+	list_for_each_entry(node, &head->children, list) {
 		if (node->name) {
 			for (int i = 0; i < level; ++i)
 				printf("    ");
@@ -216,7 +220,7 @@ static void print_node(struct node *head, int level)
 			else
 				terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
 		}
-		print_node(node->first_child, level + 1);
+		print_node(node, level + 1);
 	}
 }
 
@@ -295,6 +299,7 @@ int cmd_ls(int argc, char **argv)
 
 	init_all(sync, key, &session, &blob);
 	root = new0(struct node, 1);
+	INIT_LIST_HEAD(&root->children);
 
 	/* '(none)' group -> search for any without group */
 	if (group && !strcmp(group, "(none)"))
@@ -328,7 +333,7 @@ int cmd_ls(int argc, char **argv)
 		free(fullname);
 	}
 	if (print_tree)
-		print_node(root, -1);
+		print_node(root, 0);
 
 	free_node(root);
 	session_free(session);
