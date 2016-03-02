@@ -126,6 +126,10 @@ static void __insert_node(struct node *head,
 		head = child;
 	}
 
+	/* skip group display -- we already added the hierarchy for them */
+	if (account_is_group(account))
+		return;
+
 	/* and add the site at the lowest level */
 	child = new0(struct node, 1);
 	child->account = account;

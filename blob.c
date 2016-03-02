@@ -85,6 +85,11 @@ void field_free(struct field *field)
 	free(field);
 }
 
+bool account_is_group(struct account *account)
+{
+	return !strcmp(account->url, "http://group");
+}
+
 struct account *new_account()
 {
 	struct account *account = new0(struct account, 1);
@@ -336,7 +341,10 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 		parsed->name[0] = '\0';
 	if (parsed->group[0] == 16)
 		parsed->group[0] = '\0';
-	if (strlen(parsed->name) && strlen(parsed->group))
+
+	/* use name as 'fullname' only if there's no assigned group */
+	if (strlen(parsed->group) &&
+	    (strlen(parsed->name) || account_is_group(parsed)))
 		xasprintf(&parsed->fullname, "%s/%s", parsed->group, parsed->name);
 	else
 		parsed->fullname = xstrdup(parsed->name);

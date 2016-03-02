@@ -129,6 +129,7 @@ void account_set_url(struct account *account, char *url, unsigned const char key
 void account_set_note(struct account *account, char *note, unsigned const char key[KDF_HASH_LEN]);
 void account_assign_share(struct blob *blob, struct account *account, unsigned const char key[KDF_HASH_LEN]);
 void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN]);
+bool account_is_group(struct account *account);
 void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN]);
 struct account *notes_expand(struct account *acc);
 struct account *notes_collapse(struct account *acc);
