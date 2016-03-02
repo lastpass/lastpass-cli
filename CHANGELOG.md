@@ -1,3 +1,19 @@
+# Version 0.9.0
+ * Add support for accounts in the EU datacenter (lastpass.eu)
+ * ```lpass ls``` now sorts its output and properly displays group folder
+   account entries
+ * ```lpass export``` output has been reworked to match that of the website,
+   from Justen Walker
+ * ```lpass share limit``` subcommand was added which allows displaying and
+   modifying user-specific restrictions for shared folders
+ * The new ```LPASS_LOG_LEVEL``` environment variable can be set to cause
+   the lpass uploader process to log its actions, useful for debugging syncing
+   issues.  Set it to 7 to get all debug logs; the logfile will be
+   ~/.lpass/lpass.log.
+ * Bugfix: syncing is fixed on systems that use XFS or other filesystems which
+   do not support setting d_type in readdir()
+ * Bugfix: ```lpass mv``` now works properly with linked accounts
+
 # Version 0.8.1, 0.7.2, 0.6.1, 0.5.1
  * This update to all recent versions switches to the platform certificate
    store and adds pinning of LastPass public keys, in preparation for
