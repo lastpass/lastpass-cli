@@ -1,5 +1,7 @@
 # fish-shell completion for lastpass-cli
-# for single-user installation, copy this file to ~/.config/fish/completions/lpass.fish
+#
+# for single-user installation, copy this file to
+# ~/.config/fish/completions/lpass.fish
 function __lpass_subcommands
     lpass --help \
         | grep lpass \
@@ -19,7 +21,7 @@ function __lpass_entries
         else
             # Strip '(none)/' from output since it's printed by `lpass ls`, but
             # not accepted by `lpass show`
-            set -l out (string replace -r '\(none\)/(.*) '$id_re '$1' $entry)
+            set -l out (string replace -r '(\(none\)/)?(.*) '$id_re '$2' $entry)
             echo $out
         end
     end
@@ -88,6 +90,12 @@ complete -f -c lpass \
     -r -l color \
     -d 'Color: auto | never | always'
 
+# --non-interactive
+complete -f -c lpass \
+    -n '__lpass_using_command add edit' \
+    -l non-interactive \
+    -d 'Use stardard input instead of $EDITOR'
+
 # --clip
 complete -f -c lpass -n '__lpass_using_command show generate' \
     -s c -l clip \
@@ -104,36 +112,41 @@ complete -f -c lpass -n '__lpass_using_command show' \
     -d 'All fields'
 
 # --url
-complete -f -c lpass -n '__lpass_using_command show add' \
+complete -f -c lpass -n '__lpass_using_command show add edit' \
     -l url \
     -d 'URL'
+
+# --field=FIELD
+complete -f -c lpass -n '__lpass_using_command show add edit' \
+    -r -l field \
+    -d 'Custom field'
+
+# --name
+complete -f -c lpass -n '__lpass_using_command edit' \
+    -l name \
+    -d 'Name'
+
+# --notes
+complete -f -c lpass -n '__lpass_using_command show add edit' \
+    -l notes \
+    -d 'Notes'
+
+# --username
+complete -f -c lpass -n '__lpass_using_command show add edit' \
+    -l username \
+    -d 'Username'
+
+# --password
+complete -f -c lpass -n '__lpass_using_command show add edit' \
+    -l password \
+    -d 'Password'
 
 # --url=URL
 complete -f -c lpass -n '__lpass_using_command generate' \
     -r -l url \
     -d 'URL'
 
-# --field=FIELD
-complete -f -c lpass -n '__lpass_using_command show add' \
-    -r -l field \
-    -d 'Field'
-
-# --notes
-complete -f -c lpass -n '__lpass_using_command show add' \
-    -l notes \
-    -d 'Notes'
-
-# --username
-complete -f -c lpass -n '__lpass_using_command show add' \
-    -l username \
-    -d 'Username'
-
 # --username=USERNAME
 complete -f -c lpass -n '__lpass_using_command generate' \
     -r -l username \
     -d 'Username'
-
-# --password
-complete -f -c lpass -n '__lpass_using_command show' \
-    -l password \
-    -d 'Password'
