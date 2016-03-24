@@ -266,12 +266,13 @@ static int read_boolean(struct chunk *chunk)
 	return item.data[0] == '1';
 }
 
-#define entry_plain(var) do { \
+#define entry_plain_at(base, var) do { \
 	char *__entry_val__ = read_plain_string(chunk); \
 	if (!__entry_val__) \
 		goto error; \
-	parsed->var = __entry_val__; \
+	base->var = __entry_val__; \
 	} while (0)
+#define entry_plain(var) entry_plain_at(parsed, var)
 #define entry_hex(var) do { \
 	char *__entry_val__ = read_hex_string(chunk); \
 	if (!__entry_val__) \
@@ -284,12 +285,13 @@ static int read_boolean(struct chunk *chunk)
 		goto error; \
 	parsed->var = __entry_val__; \
 	} while (0)
-#define entry_crypt(var) do { \
-	char *__entry_val__ = read_crypt_string(chunk, key, &parsed->var##_encrypted); \
+#define entry_crypt_at(base, var) do { \
+	char *__entry_val__ = read_crypt_string(chunk, key, &base->var##_encrypted); \
 	if (!__entry_val__) \
 		goto error; \
-	parsed->var = __entry_val__; \
+	base->var = __entry_val__; \
 	} while (0)
+#define entry_crypt(var) entry_crypt_at(parsed, var)
 #define skip(placeholder) do { \
 	struct item skip_item; \
 	if (!read_item(chunk, &skip_item)) \
@@ -427,9 +429,11 @@ error:
 }
 
 #undef entry_plain
+#undef entry_plain_at
 #undef entry_hex
 #undef entry_boolean
 #undef entry_crypt
+#undef entry_crypt_at
 #undef skip
 
 struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key)
