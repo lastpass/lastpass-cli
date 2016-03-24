@@ -62,6 +62,11 @@
 # endif
 #endif
 
+struct app *account_to_app(struct account *account)
+{
+	return container_of(account, struct app, account);
+}
+
 void share_free(struct share *share)
 {
 	if (!share)
@@ -85,23 +90,9 @@ void field_free(struct field *field)
 	free(field);
 }
 
-bool account_is_group(struct account *account)
-{
-	return !strcmp(account->url, "http://group");
-}
-
-struct account *new_account()
-{
-	struct account *account = new0(struct account, 1);
-	INIT_LIST_HEAD(&account->field_head);
-	return account;
-}
-
-void account_free(struct account *account)
+void account_free_contents(struct account *account)
 {
 	struct field *field, *tmp;
-	if (!account)
-		return;
 
 	free(account->id);
 	free(account->name);
@@ -120,6 +111,44 @@ void account_free(struct account *account)
 	list_for_each_entry_safe(field, tmp, &account->field_head, list) {
 		field_free(field);
 	}
+}
+
+void app_free(struct app *app)
+{
+	account_free_contents(&app->account);
+	free(app->appname);
+	free(app->extra);
+	free(app->extra_encrypted);
+	free(app->wintitle);
+	free(app->wininfo);
+	free(app->exeversion);
+	free(app->warnversion);
+	free(app->exehash);
+}
+
+bool account_is_group(struct account *account)
+{
+	return !strcmp(account->url, "http://group");
+}
+
+struct account *new_account()
+{
+	struct account *account = new0(struct account, 1);
+	INIT_LIST_HEAD(&account->field_head);
+	return account;
+}
+
+void account_free(struct account *account)
+{
+	if (!account)
+		return;
+
+	if (account->is_app) {
+		app_free(account_to_app(account));
+		return;
+	}
+
+	account_free_contents(account);
 	free(account);
 }
 
@@ -428,6 +457,47 @@ error:
 	return NULL;
 }
 
+static struct app *app_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN])
+{
+	struct app *app = new0(struct app, 1);
+	struct account *parsed = &app->account;
+
+	INIT_LIST_HEAD(&parsed->field_head);
+	parsed->is_app = true;
+
+	entry_plain(id);
+	entry_plain_at(app, appname);
+	entry_crypt_at(app, extra);
+	entry_crypt(name);
+	entry_crypt(group);
+	entry_plain(last_touch);
+	skip(fiid);
+	entry_boolean(pwprotect);
+	entry_boolean(fav);
+	entry_plain_at(app, wintitle);
+	entry_plain_at(app, wininfo);
+	entry_plain_at(app, exeversion);
+	skip(autologin);
+	entry_plain_at(app, warnversion);
+	entry_plain_at(app, exehash);
+
+	parsed->username = xstrdup("");
+	parsed->password = xstrdup("");
+	parsed->note = xstrdup("");
+	parsed->url = xstrdup("");
+
+	if (strlen(parsed->group) &&
+	    (strlen(parsed->name) || account_is_group(parsed)))
+		xasprintf(&parsed->fullname, "%s/%s", parsed->group, parsed->name);
+	else
+		parsed->fullname = xstrdup(parsed->name);
+
+	return app;
+error:
+	app_free(app);
+	return NULL;
+}
+
 #undef entry_plain
 #undef entry_plain_at
 #undef entry_hex
@@ -443,6 +513,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 	struct account *account = NULL;
 	struct field *field;
 	struct share *share, *last_share = NULL;
+	struct app *app;
 	struct blob *parsed;
 	_cleanup_free_ char *versionstr = NULL;
 
@@ -479,13 +550,18 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 				goto error;
 
 			list_add_tail(&field->list, &account->field_head);
-		} else if (!strcmp(chunk.name, "LOCL"))
+		} else if (!strcmp(chunk.name, "LOCL")) {
 			parsed->local_version = true;
-		else if (!strcmp(chunk.name, "SHAR")) {
+		} else if (!strcmp(chunk.name, "SHAR")) {
 			share = share_parse(&chunk, private_key);
 			last_share = share;
 			if (share)
 				list_add_tail(&share->list, &parsed->share_head);
+		} else if (!strcmp(chunk.name, "AACT")) {
+			app = app_parse(&chunk, last_share ? last_share->key : key);
+			account = &app->account;
+			if (app)
+				list_add_tail(&app->account.list, &parsed->account_head);
 		}
 	}
 
@@ -563,6 +639,9 @@ static void write_account_chunk(struct buffer *buffer, struct account *account)
 {
 	struct buffer accbuf, fieldbuf;
 	struct field *field;
+
+	if (account->is_app)
+		return;
 
 	memset(&accbuf, 0, sizeof(accbuf));
 	write_plain_string(&accbuf, account->id);

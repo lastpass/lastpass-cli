@@ -65,12 +65,25 @@ struct account {
 	char *last_touch, *last_modified_gmt;
 	bool pwprotect;
 	bool fav;
+	bool is_app;
 
 	struct list_head field_head;
 	struct share *share;
 
 	struct list_head list;
 	struct list_head match_list;
+};
+
+struct app {
+	struct account account;
+
+	char *appname;
+	char *extra, *extra_encrypted;
+	char *wintitle;
+	char *wininfo;
+	char *exeversion;
+	char *warnversion;
+	char *exehash;
 };
 
 struct blob {
