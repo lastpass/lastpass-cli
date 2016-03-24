@@ -406,6 +406,20 @@ error:
 	return NULL;
 }
 
+static struct field *app_field_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN])
+{
+	struct field *parsed = new0(struct field, 1);
+
+	entry_plain(name);
+	entry_crypt(value);
+	entry_plain(type);
+
+	return parsed;
+error:
+	field_free(parsed);
+	return NULL;
+}
+
 static struct share *share_parse(struct chunk *chunk, const struct private_key *private_key)
 {
 	struct share *parsed = new0(struct share, 1);
@@ -559,9 +573,15 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 				list_add_tail(&share->list, &parsed->share_head);
 		} else if (!strcmp(chunk.name, "AACT")) {
 			app = app_parse(&chunk, last_share ? last_share->key : key);
-			account = &app->account;
 			if (app)
 				list_add_tail(&app->account.list, &parsed->account_head);
+		} else if (!strcmp(chunk.name, "AACF")) {
+			if (!app)
+				goto error;
+			field = app_field_parse(&chunk, last_share ? last_share->key : key);
+			if (!field)
+				goto error;
+			list_add_tail(&field->list, &app->account.field_head);
 		}
 	}
 
