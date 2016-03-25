@@ -128,7 +128,7 @@ int cmd_edit(int argc, char **argv)
 	editable = find_unique_account(blob, name);
 	if (!editable)
 		return edit_new_account(session, blob, sync, name, choice,
-					field, non_interactive, key);
+					field, non_interactive, false, key);
 
 	if (editable->share && editable->share->readonly)
 		die("%s is a readonly shared entry from %s. It cannot be edited.",

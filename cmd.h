@@ -64,6 +64,7 @@ int edit_new_account(struct session *session,
 		     enum edit_choice choice,
 		     const char *field,
 		     bool non_interactive,
+		     bool is_app,
 		     unsigned char key[KDF_HASH_LEN]);
 
 #define color_usage "[--color=auto|never|always]"

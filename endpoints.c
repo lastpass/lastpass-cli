@@ -197,13 +197,13 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 
 		http_post_add_params(&params,
 				     "ajax", "1",
-				     "appaid", account->id,
 				     "cmd", "updatelpaa",
 				     "appname", app->appname,
 				     "extra", app->extra_encrypted,
 				     NULL);
-
 		add_app_fields(account, &params);
+		if (strcmp(account->id, "0"))
+			http_post_add_params(&params, "appaid", account->id, NULL);
 
 		upload_queue_enqueue(sync, key, session, "addapp.php", &params);
 

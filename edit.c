@@ -148,6 +148,7 @@ static void assign_account_value(struct account *account,
 	assign_if("URL", url);
 	assign_if("Username", username);
 	assign_if("Password", password);
+	assign_if("Application", appname);
 
 	/* if we got here maybe it's a secure note field */
 	list_for_each_entry(editable_field, &account->field_head, list) {
@@ -249,9 +250,16 @@ static int write_account_file(FILE *fp, struct account *account)
 	} while (0)
 
 	write_field("Name", account->fullname);
-	write_field("URL", account->url);
-	write_field("Username", account->username);
-	write_field("Password", account->password);
+
+	if (account->is_app) {
+		struct app *app = account_to_app(account);
+
+		write_field("Application", app->appname);
+	} else {
+		write_field("URL", account->url);
+		write_field("Username", account->username);
+		write_field("Password", account->password);
+	}
 
 	list_for_each_entry(editable_field, &account->field_head, list) {
 		write_field(editable_field->name, editable_field->value);
@@ -445,11 +453,18 @@ int edit_new_account(struct session *session,
 		     enum edit_choice choice,
 		     const char *field,
 		     bool non_interactive,
+		     bool is_app,
 		     unsigned char key[KDF_HASH_LEN])
 {
+	struct app *app;
 	struct account *account;
 
-	account = new_account();
+	if (is_app) {
+		app = new_app();
+		account = &app->account;
+	} else {
+		account = new_account();
+	}
 
 	account->id = xstrdup("0");
 	account_set_password(account, xstrdup(""), key);

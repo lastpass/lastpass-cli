@@ -131,6 +131,19 @@ bool account_is_group(struct account *account)
 	return !strcmp(account->url, "http://group");
 }
 
+struct app *new_app()
+{
+	struct app *app = new0(struct app, 1);
+	struct account *account = &app->account;
+
+	app->appname = xstrdup("");
+
+	INIT_LIST_HEAD(&account->field_head);
+	account->is_app = true;
+
+	return app;
+}
+
 struct account *new_account()
 {
 	struct account *account = new0(struct account, 1);
@@ -473,11 +486,8 @@ error:
 
 static struct app *app_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN])
 {
-	struct app *app = new0(struct app, 1);
+	struct app *app = new_app();
 	struct account *parsed = &app->account;
-
-	INIT_LIST_HEAD(&parsed->field_head);
-	parsed->is_app = true;
 
 	entry_plain(id);
 	entry_plain_at(app, appname);
@@ -864,6 +874,16 @@ void account_set_url(struct account *account, char *url, unsigned const char key
 {
 	UNUSED(key);
 	set_field(account, url);
+}
+void account_set_appname(struct account *account, char *appname, unsigned const char key[KDF_HASH_LEN])
+{
+	UNUSED(key);
+	struct app *app;
+	if (!account->is_app)
+		return;
+
+	app = account_to_app(account);
+	set_field(app, appname);
 }
 void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN])
 {
