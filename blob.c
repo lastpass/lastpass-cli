@@ -62,7 +62,7 @@
 # endif
 #endif
 
-struct app *account_to_app(struct account *account)
+struct app *account_to_app(const struct account *account)
 {
 	return container_of(account, struct app, account);
 }

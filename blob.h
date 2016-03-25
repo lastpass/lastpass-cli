@@ -131,6 +131,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 struct blob *blob_load(enum blobsync sync, struct session *session, const unsigned char key[KDF_HASH_LEN]);
 void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]);
 void field_free(struct field *field);
+struct app *account_to_app(const struct account *account);
 struct account *new_account();
 void account_free(struct account *account);
 void account_set_username(struct account *account, char *username, unsigned const char key[KDF_HASH_LEN]);
