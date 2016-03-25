@@ -142,6 +142,28 @@ static char *stringify_fields(const struct list_head *field_head)
 	return field_str;
 }
 
+static void add_app_fields(const struct account *account,
+			   struct http_param_set *params)
+{
+	int index = 0;
+	struct field *field;
+
+	list_for_each_entry(field, &account->field_head, list) {
+		char *id_name, *type_name, *value_name;
+
+		xasprintf(&id_name, "fieldid%d", index);
+		xasprintf(&type_name, "fieldtype%d", index);
+		xasprintf(&value_name, "fieldvalue%d", index);
+
+		http_post_add_params(params,
+				     id_name, field->name,
+				     type_name, field->type,
+				     value_name, field->value_encrypted,
+				     NULL);
+		index++;
+	}
+}
+
 void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HASH_LEN], const struct session *session, const struct account *account, struct blob *blob)
 {
 	struct http_param_set params = {
@@ -160,14 +182,9 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	http_post_add_params(&params,
 			     "extjs", "1",
 			     "token", session->token,
-			     "aid", account->id,
 			     "name", account->name_encrypted,
 			     "grouping", account->group_encrypted,
-			     "url", url,
-			     "username", account->username_encrypted,
-			     "password", account->password_encrypted,
 			     "pwprotect", account->pwprotect ? "on" : "off",
-			     "extra", account->note_encrypted,
 			     NULL);
 
 	if (account->share) {
@@ -175,7 +192,31 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 				     "sharedfolderid", account->share->id,
 				     NULL);
 	}
-	upload_queue_enqueue(sync, key, session, "show_website.php", &params);
+	if (account->is_app) {
+		struct app *app = account_to_app(account);
+
+		http_post_add_params(&params,
+				     "ajax", "1",
+				     "appaid", account->id,
+				     "cmd", "updatelpaa",
+				     "appname", app->appname,
+				     "extra", app->extra_encrypted,
+				     NULL);
+
+		add_app_fields(account, &params);
+
+		upload_queue_enqueue(sync, key, session, "addapp.php", &params);
+
+	} else {
+		http_post_add_params(&params,
+				     "aid", account->id,
+				     "url", url,
+				     "username", account->username_encrypted,
+				     "password", account->password_encrypted,
+				     "extra", account->note_encrypted,
+				     NULL);
+		upload_queue_enqueue(sync, key, session, "show_website.php", &params);
+	}
 }
 
 unsigned long long lastpass_get_blob_version(struct session *session, unsigned const char key[KDF_HASH_LEN])
