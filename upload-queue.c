@@ -450,23 +450,21 @@ bool upload_queue_is_running(void)
 	return process_is_same_executable(pid);
 }
 
-void upload_queue_enqueue(enum blobsync sync, unsigned const char key[KDF_HASH_LEN], const struct session *session, const char *page, ...)
+void upload_queue_enqueue(enum blobsync sync, unsigned const char key[KDF_HASH_LEN], const struct session *session, const char *page, struct http_param_set *params)
 {
 	_cleanup_free_ char *sum = xstrdup(page);
 	char *next = NULL;
 	char *escaped = NULL;
-	va_list params;
 	char *param;
+	char **argv = params->argv;
 
-	va_start(params, page);
-	while ((param = va_arg(params, char *))) {
+	while ((param = *argv++)) {
 		escaped = pinentry_escape(param);
 		xasprintf(&next, "%s\n%s", sum, escaped);
 		free(escaped);
 		free(sum);
 		sum = next;
 	}
-	va_end(params);
 
 	upload_queue_write_entry(sum, key);
 
