@@ -139,6 +139,7 @@ int cmd_show(int argc, char **argv)
 	struct field *found_field;
 	char *name, *pretty_field;
 	struct account *found, *last_found, *account;
+	struct app *app;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
 	bool expand_multi = false;
@@ -302,6 +303,11 @@ int cmd_show(int argc, char **argv)
 				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Password", found->password);
 			if (strlen(found->url) && strcmp(found->url, "http://"))
 				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "URL", found->url);
+			if (found->is_app) {
+				app = account_to_app(found);
+				if (strlen(app->appname))
+					terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Application", app->appname);
+			}
 
 			list_for_each_entry(found_field, &found->field_head, list) {
 				pretty_field = pretty_field_value(found_field);
