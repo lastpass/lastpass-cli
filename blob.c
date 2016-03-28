@@ -665,13 +665,52 @@ static void write_chunk(struct buffer *dstbuffer, struct buffer *srcbuffer, char
 	write_item(dstbuffer, srcbuffer->bytes, srcbuffer->len);
 }
 
+static void write_app_chunk(struct buffer *buffer, struct account *account)
+{
+	struct buffer accbuf, fieldbuf;
+	struct field *field;
+	struct app *app = account_to_app(account);
+
+	memset(&accbuf, 0, sizeof(accbuf));
+	write_plain_string(&accbuf, account->id);
+	write_plain_string(&accbuf, app->appname);
+	write_crypt_string(&accbuf, app->extra);
+	write_crypt_string(&accbuf, account->name_encrypted);
+	write_crypt_string(&accbuf, account->group_encrypted);
+	write_plain_string(&accbuf, "skipped");
+	write_plain_string(&accbuf, "skipped");
+	write_boolean(&accbuf, account->pwprotect);
+	write_boolean(&accbuf, account->fav);
+	write_plain_string(&accbuf, "skipped");
+	write_plain_string(&accbuf, "skipped");
+	write_plain_string(&accbuf, "skipped");
+	write_plain_string(&accbuf, "skipped");
+	write_plain_string(&accbuf, "skipped");
+	write_plain_string(&accbuf, "skipped");
+	write_chunk(buffer, &accbuf, "AACT");
+	free(accbuf.bytes);
+	list_for_each_entry(field, &account->field_head, list) {
+		memset(&fieldbuf, 0, sizeof(fieldbuf));
+		write_plain_string(&fieldbuf, field->name);
+		if (!strcmp(field->type, "email") || !strcmp(field->type, "tel") || !strcmp(field->type, "text") || !strcmp(field->type, "password") || !strcmp(field->type, "textarea"))
+			write_crypt_string(&fieldbuf, field->value_encrypted);
+		else
+			write_plain_string(&fieldbuf, field->value);
+		write_plain_string(&fieldbuf, field->type);
+		write_chunk(buffer, &fieldbuf, "AACF");
+		free(fieldbuf.bytes);
+	}
+}
+
 static void write_account_chunk(struct buffer *buffer, struct account *account)
 {
 	struct buffer accbuf, fieldbuf;
 	struct field *field;
 
-	if (account->is_app)
+	if (account->is_app) {
+		write_app_chunk(buffer, account);
 		return;
+	}
 
 	memset(&accbuf, 0, sizeof(accbuf));
 	write_plain_string(&accbuf, account->id);
