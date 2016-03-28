@@ -137,6 +137,7 @@ struct app *new_app()
 	struct account *account = &app->account;
 
 	app->appname = xstrdup("");
+	app->extra = xstrdup("");
 
 	INIT_LIST_HEAD(&account->field_head);
 	account->is_app = true;
