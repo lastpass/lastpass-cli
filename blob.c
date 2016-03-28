@@ -316,12 +316,13 @@ static int read_boolean(struct chunk *chunk)
 	base->var = __entry_val__; \
 	} while (0)
 #define entry_plain(var) entry_plain_at(parsed, var)
-#define entry_hex(var) do { \
+#define entry_hex_at(base, var) do { \
 	char *__entry_val__ = read_hex_string(chunk); \
 	if (!__entry_val__) \
 		goto error; \
-	parsed->var = __entry_val__; \
+	base->var = __entry_val__; \
 	} while (0)
+#define entry_hex(var) entry_hex_at(parsed, var)
 #define entry_boolean(var) do { \
 	int __entry_val__ = read_boolean(chunk); \
 	if (__entry_val__ < 0) \
@@ -491,7 +492,7 @@ static struct app *app_parse(struct chunk *chunk, const unsigned char key[KDF_HA
 	struct account *parsed = &app->account;
 
 	entry_plain(id);
-	entry_plain_at(app, appname);
+	entry_hex_at(app, appname);
 	entry_crypt_at(app, extra);
 	entry_crypt(name);
 	entry_crypt(group);
@@ -674,7 +675,7 @@ static void write_app_chunk(struct buffer *buffer, struct account *account)
 
 	memset(&accbuf, 0, sizeof(accbuf));
 	write_plain_string(&accbuf, account->id);
-	write_plain_string(&accbuf, app->appname);
+	write_hex_string(&accbuf, app->appname);
 	write_crypt_string(&accbuf, app->extra);
 	write_crypt_string(&accbuf, account->name_encrypted);
 	write_crypt_string(&accbuf, account->group_encrypted);
