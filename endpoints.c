@@ -199,7 +199,6 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 				     "ajax", "1",
 				     "cmd", "updatelpaa",
 				     "appname", app->appname,
-				     "extra", app->extra_encrypted,
 				     NULL);
 		add_app_fields(account, &params);
 		if (strcmp(account->id, "0"))
