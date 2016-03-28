@@ -154,9 +154,16 @@ static void assign_account_value(struct account *account,
 	list_for_each_entry(editable_field, &account->field_head, list) {
 		if (!strcmp(label, editable_field->name)) {
 			field_set_value(account, editable_field, value, key);
-			break;
+			return;
 		}
 	}
+
+	/* Some other name: value pair -- treat like a new field */
+	editable_field = new0(struct field, 1);
+	editable_field->name = xstrdup(label);
+	editable_field->type = xstrdup("password");
+	field_set_value(account, editable_field, value, key);
+	list_add_tail(&editable_field->list, &account->field_head);
 
 #undef assign_if
 }
