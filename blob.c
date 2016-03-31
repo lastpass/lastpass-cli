@@ -1019,8 +1019,10 @@ void account_assign_share(struct blob *blob, struct account *account,
 
 	/* strip off shared groupname */
 	char *slash = strchr(name, '/');
-	if (!slash)
-		die("Shared folder name has improper format");
+	if (!slash) {
+		account->share = NULL;
+		goto reencrypt;
+	}
 
 	shared_name = xstrndup(name, slash - name);
 
@@ -1038,6 +1040,7 @@ void account_assign_share(struct blob *blob, struct account *account,
 	if (share)
 		account_set_group_name(account, slash + 1, key);
 
+reencrypt:
 	if (old_share != account->share)
 		account_reencrypt(account, key);
 }
