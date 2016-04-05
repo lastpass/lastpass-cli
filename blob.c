@@ -539,7 +539,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 	struct account *account = NULL;
 	struct field *field;
 	struct share *share, *last_share = NULL;
-	struct app *app;
+	struct app *app = NULL;
 	struct blob *parsed;
 	_cleanup_free_ char *versionstr = NULL;
 
