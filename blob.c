@@ -676,7 +676,7 @@ static void write_app_chunk(struct buffer *buffer, struct account *account)
 	memset(&accbuf, 0, sizeof(accbuf));
 	write_plain_string(&accbuf, account->id);
 	write_hex_string(&accbuf, app->appname);
-	write_crypt_string(&accbuf, app->extra);
+	write_crypt_string(&accbuf, app->extra_encrypted);
 	write_crypt_string(&accbuf, account->name_encrypted);
 	write_crypt_string(&accbuf, account->group_encrypted);
 	write_plain_string(&accbuf, "skipped");
