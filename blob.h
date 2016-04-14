@@ -4,6 +4,7 @@
 #include "kdf.h"
 #include "session.h"
 #include "list.h"
+#include "notes.h"
 #include <stdbool.h>
 #include <stddef.h>
 

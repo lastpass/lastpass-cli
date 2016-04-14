@@ -51,6 +51,7 @@ static inline void freep(void *p) {
 #define IGNORE_RESULT(x) do { int z = x; (void)sizeof(z); } while (0)
 
 #define MUL_NO_OVERFLOW (1UL << (sizeof(size_t) * 4))
+#define BUILD_BUG_ON(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
 
 void warn(const char *err, ...) _printf_(1, 2);
 void warn_errno(const char *err, ...) _printf_(1, 2);
