@@ -247,6 +247,31 @@ static void parse_account_file(FILE *input, struct account *account,
 	account_set_note(account, value, key);
 }
 
+static
+struct field *add_default_field(struct account *account,
+			        const char *field_name,
+			        unsigned char key[KDF_HASH_LEN])
+{
+	struct field *editable_field = NULL;
+	bool found = false;
+
+	list_for_each_entry(editable_field, &account->field_head, list) {
+		if (!strcmp(editable_field->name, field_name)) {
+			found = true;
+			break;
+		}
+	}
+	if (found)
+		return editable_field;
+
+	editable_field = new0(struct field, 1);
+	editable_field->type = xstrdup("text");
+	editable_field->name = xstrdup(field_name);
+	field_set_value(account, editable_field, xstrdup(""), key);
+
+	list_add_tail(&editable_field->list, &account->field_head);
+	return editable_field;
+}
 static int write_account_file(FILE *fp, struct account *account)
 {
 	struct field *editable_field = NULL;
@@ -323,18 +348,7 @@ int edit_account(struct session *session,
 		value = editable->fullname;
 		break;
 	case EDIT_FIELD:
-		list_for_each_entry(editable_field, &editable->field_head, list) {
-			if (!strcmp(editable_field->name, field))
-				break;
-		}
-		if (!editable_field) {
-			editable_field = new0(struct field, 1);
-			editable_field->type = xstrdup("text");
-			editable_field->name = xstrdup(field);
-			field_set_value(editable, editable_field, xstrdup(""), key);
-
-			list_add(&editable_field->list, &editable->field_head);
-		}
+		editable_field = add_default_field(editable, field, key);
 		value = editable_field->value;
 		break;
 	case EDIT_NOTES:
