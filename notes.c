@@ -111,7 +111,7 @@ enum note_type notes_get_type_by_name(const char *type_str)
 char *note_type_usage()
 {
 	int i;
-	char *start = "--note_type=TYPE\n\nValid values for TYPE:\n";
+	char *start = "--note-type=TYPE\n\nValid values for TYPE:\n";
 	size_t alloc_len = strlen(start) + 1;
 	char *usage_str;
 
