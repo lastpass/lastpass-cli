@@ -273,12 +273,14 @@ int cmd_show(int argc, char **argv)
 			found = notes_expansion;
 
 		if (choice == FIELD) {
-			struct field *found_field;
+			bool has_field = false;
 			list_for_each_entry(found_field, &found->field_head, list) {
-				if (!strcmp(found_field->name, field))
+				if (!strcmp(found_field->name, field)) {
+					has_field = true;
 					break;
+				}
 			}
-			if (!found_field)
+			if (!has_field)
 				die("Could not find specified field '%s'.", field);
 			value = pretty_field_value(found_field);
 		} else if (choice == USERNAME)
