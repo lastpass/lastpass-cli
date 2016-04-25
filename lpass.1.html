@@ -797,8 +797,10 @@ several subcommands:</p></div>
 <div class="verseblock">
 <pre class="content">lpass <strong>login</strong> [--trust] [--plaintext-key [--force, -f]] [--color=auto|never|always] USERNAME
 lpass <strong>logout</strong> [--force, -f] [--color=auto|never|always]
-lpass <strong>show</strong> [--sync=auto|now|no] [--clip, -c] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}
-lpass <strong>ls</strong> [--sync=auto|now|no] [--color=auto|never|always] [GROUP]
+lpass <strong>passwd</strong>
+lpass <strong>show</strong> [--sync=auto|now|no] [--clip, -c] [--expand-multi, -x] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
+lpass <strong>ls</strong> [--sync=auto|now|no] [--long, -l] [-m] [-u] [--color=auto|never|always] [GROUP]
+lpass <strong>mv</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID} GROUP
 lpass <strong>edit</strong> [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} [--color=auto|never|always] {NAME|UNIQUEID}
 lpass <strong>generate</strong> [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
 lpass <strong>duplicate</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
@@ -806,11 +808,12 @@ lpass <strong>rm</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQ
 lpass <strong>sync</strong> [--background, -b] [--color=auto|never|always]
 lpass <strong>export</strong> [--sync=auto|now|no] [--color=auto|never|always]
 lpass <strong>share</strong> <strong>userls</strong> SHARE
-lpass <strong>share</strong> <strong>useradd</strong> [--read_only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
-lpass <strong>share</strong> <strong>usermod</strong> [--read_only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+lpass <strong>share</strong> <strong>useradd</strong> [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+lpass <strong>share</strong> <strong>usermod</strong> [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
 lpass <strong>share</strong> <strong>userdel</strong> SHARE USERNAME
 lpass <strong>share</strong> <strong>create</strong> SHARE
-lpass <strong>share</strong> <strong>rm</strong> SHARE</pre>
+lpass <strong>share</strong> <strong>rm</strong> SHARE
+lpass <strong>share</strong> <strong>limit</strong> [--deny|--allow] [--add|--rm|--clear] SHARE USERNAME [sites]</pre>
 <div class="attribution">
 </div></div>
 <div class="sect2">
@@ -849,6 +852,20 @@ variable <em>LPASS_AGENT_DISABLE</em> is set to 1, the agent will not be used.</
 passwords if it is installed. If unavailable, or if the <em>LPASS_DISABLE_PINENTRY</em>
 environment variable is set to 1, passwords will be read from standard input and a
 prompt will be displayed on standard error.</p></div>
+<div class="paragraph"><p>The program used for inputting passwords may also be configured by setting the
+<em>LPASS_ASKPASS</em> environment variable. <em>LPASS_ASKPASS</em> is expected to be a
+binary that produces a prompt using its first command-line argument, and
+outputs the entered password to standard out.  ssh-askpass implements this
+protocol, as does the following shell script:</p></div>
+<div class="verseblock">
+<pre class="content">#!/bin/bash
+echo -n "$*: " &gt;/dev/stderr
+stty -echo
+read answer
+stty echo
+echo $answer</pre>
+<div class="attribution">
+</div></div>
 </div>
 <div class="sect2">
 <h3 id="_entry_specification">Entry Specification</h3>
@@ -877,7 +894,10 @@ keys. It will prompt the user to confirm, unless <em>--force</em> is specified.<
 <div class="sect2">
 <h3 id="_viewing">Viewing</h3>
 <div class="paragraph"><p>The <em>show</em> subcommand will display a password or selected field.</p></div>
-<div class="paragraph"><p>The <em>ls</em> subcommand will list names in groups in a tree structure.</p></div>
+<div class="paragraph"><p>The <em>ls</em> subcommand will list names in groups in a tree structure. If
+the <em>--long</em> or <em>-l</em> option is set, then also list the last modification
+time.  The <em>-u</em> option may be passed to show the last use (last touch) time
+instead, if available. Both times are in GMT.</p></div>
 <div class="paragraph"><p>The <em>export</em> subcommand will dump all account information including
 passwords to stdout (unencrypted).</p></div>
 </div>
@@ -904,12 +924,18 @@ query and modify membership of the shared folder, while the <em>create</em> and 
 share subcommands may be used to add new, or delete existing shared folders.
 The normal <em>generate</em> and <em>edit</em> commands may be used to edit accounts within
 the shared folder.</p></div>
+<div class="paragraph"><p>The <em>share limit</em> command may be used to manipulate account access lists on the
+share for a specific user.  Running with no arguments will display the
+current access levels for a user.  The <em>--add</em>, <em>--rm</em>, and <em>--clear</em> options
+may be used to add to, remove from, or reset the list.  Passing <em>--allow</em> or
+<em>--deny</em> will make the list a whitelist or blacklist, respectively.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_clipboard">Clipboard</h3>
 <div class="paragraph"><p>Commands that take a <em>-c</em> or <em>--clip</em> option will copy the output to the
 clipboard, using <strong>xclip</strong>(1) or <strong>xsel</strong>(1) on X11-based systems, <strong>pbcopy</strong>(1)
-on OSX, or <strong>putclip</strong> on Cygwin.</p></div>
+on OSX, or <strong>putclip</strong> on Cygwin. The command to be used can be overridden by
+specifying the <span class="monospaced">LPASS_CLIPBOARD_COMMAND</span> environment variable.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_color_output">Color Output</h3>
@@ -964,6 +990,16 @@ in the section above:</p></div>
 <em>LPASS_DISABLE_PINENTRY</em>
 </p>
 </li>
+<li>
+<p>
+<em>LPASS_ASKPASS</em>
+</p>
+</li>
+<li>
+<p>
+<em>LPASS_CLIPBOARD_COMMAND</em>
+</p>
+</li>
 </ul></div>
 </div>
 </div>
@@ -972,7 +1008,7 @@ in the section above:</p></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2015-08-11 16:00:11 EDT
+ 2016-04-25 14:02:56 EDT
 </div>
 </div>
 </body>
