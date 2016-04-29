@@ -3,7 +3,7 @@ DESTDIR ?=
 BINDIR ?= $(PREFIX)/bin
 LIBDIR ?= $(PREFIX)/lib
 MANDIR ?= $(PREFIX)/share/man
-COMPDIR ?= $(shell pkg-config --variable=completionsdir bash-completion || echo /usr/share/bash-completion/completions)
+COMPDIR ?= $(shell pkg-config --variable=completionsdir bash-completion 2>/dev/null || echo $(PREFIX)/share/bash-completion/completions)
 
 CFLAGS ?= -O3 -march=native -fomit-frame-pointer -pipe
 CFLAGS += -std=gnu99 -D_GNU_SOURCE
