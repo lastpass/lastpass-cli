@@ -93,7 +93,10 @@ int cmd_show(int argc, char **argv);
                        color_usage " {UNIQUENAME|UNIQUEID}"
 
 int cmd_ls(int argc, char **argv);
-#define cmd_ls_usage "ls        [--sync=auto|now|no] [--long, -l] " color_usage " [GROUP]"
+#define cmd_ls_usage "ls        [--sync=auto|now|no] [--long, -l] " \
+                       cmd_usage_indent \
+                       color_usage " [GROUP]"
+
 
 int cmd_add(int argc, char **argv);
 #define cmd_add_usage "add       [--sync=auto|now|no] [--non-interactive]" \
@@ -103,12 +106,11 @@ int cmd_add(int argc, char **argv);
                        "{--username|--password|--url|--notes|--field=FIELD} NAME"
 
 int cmd_edit(int argc, char **argv);
-#define cmd_edit_usage "edit      [--sync=auto|now|no] [--non-interactive]" \
-                       color_usage \
-                       cmd_usage_indent \
+#define cmd_edit_usage "edit      [--sync=auto|now|no]"\
+                       cmd_usage_indent "[--non-interactive]" \
+                       color_usage cmd_usage_indent \
                        "{--name|--username|--password|--url|--notes|--field=FIELD}" \
-                       cmd_usage_indent \
-                       "{NAME|UNIQUEID}"
+                       cmd_usage_indent "{NAME|UNIQUEID}"
 
 int cmd_generate(int argc, char **argv);
 #define cmd_generate_usage "generate  [--sync=auto|now|no] [--clip, -c]" \
