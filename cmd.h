@@ -69,75 +69,75 @@ int edit_new_account(struct session *session,
 		     enum note_type note_type,
 		     unsigned char key[KDF_HASH_LEN]);
 
-#define color_usage "[--color=auto|never|always]"
-#define cmd_usage_indent "\n                  "
+#define opt_color        "[--color=auto|never|always] "
+#define opt_sync         "[--sync=auto|now|no] "
+#define opt_force        "[--force, -f] "
+#define opt_clip         "[--clip, -c] "
+#define opt_non_interact "[--non-interactive] "
+#define opt_uid          "{NAME|ID} "
+#define opt_selector     "--username|--password|--url|--notes|--field=FIELD"
+#define cmd_indent    "\n                  "
 
 int cmd_login(int argc, char **argv);
-#define cmd_login_usage "login     [--trust] [--plaintext-key [--force, -f]]" \
-                        cmd_usage_indent \
-                        color_usage " USERNAME"
+#define cmd_login_usage \
+  "login     [--trust] [ --plaintext-key " opt_force "]" cmd_indent opt_color \
+  "USERNAME"
 
 int cmd_logout(int argc, char **argv);
-#define cmd_logout_usage "logout    [--force, -f] " color_usage
+#define cmd_logout_usage "logout    " opt_force opt_color
 
 int cmd_passwd(int argc, char **argv);
 #define cmd_passwd_usage "passwd"
 
 int cmd_show(int argc, char **argv);
-#define cmd_show_usage "show      [--sync=auto|now|no] [--clip, -c] [--expand-multi, -x]" \
-                       cmd_usage_indent \
-                       "[--all|--username|--password|--url|--notes|--field=FIELD|--id|--name]" \
-                       cmd_usage_indent \
-                       "[--basic-regexp, -G|--fixed-strings, -F]" \
-                       cmd_usage_indent \
-                       color_usage " {UNIQUENAME|UNIQUEID}"
+
+#define cmd_show_usage \
+  "show      " opt_sync opt_clip "[--expand-multi, -x]" cmd_indent \
+  "[--all|" opt_selector "|--id|--name]" \
+  cmd_indent "[--basic-regexp, -G|--fixed-strings, -F]" \
+  cmd_indent opt_color opt_uid
 
 int cmd_ls(int argc, char **argv);
-#define cmd_ls_usage "ls        [--sync=auto|now|no] [--long, -l] " \
-                       cmd_usage_indent \
-                       color_usage " [GROUP]"
+#define cmd_ls_usage \
+  "ls        " opt_sync "[--long, -l] " cmd_indent opt_color " [GROUP]"
 
 
 int cmd_add(int argc, char **argv);
-#define cmd_add_usage "add       [--sync=auto|now|no] [--non-interactive]" \
-                       cmd_usage_indent \
-                       color_usage \
-                       cmd_usage_indent \
-                       "{--username|--password|--url|--notes|--field=FIELD} NAME"
+#define cmd_add_usage \
+  "add       " opt_sync opt_non_interact cmd_indent opt_color cmd_indent \
+  "{" opt_selector "} NAME"
 
 int cmd_edit(int argc, char **argv);
-#define cmd_edit_usage "edit      [--sync=auto|now|no]"\
-                       cmd_usage_indent "[--non-interactive]" \
-                       color_usage cmd_usage_indent \
-                       "{--name|--username|--password|--url|--notes|--field=FIELD}" \
-                       cmd_usage_indent "{NAME|UNIQUEID}"
+
+#define cmd_edit_usage "edit      " opt_sync \
+                       cmd_indent opt_non_interact color_usage \
+                       cmd_indent "{" opt_selector "}" \
+                       cmd_indent opt_uid
 
 int cmd_generate(int argc, char **argv);
-#define cmd_generate_usage "generate  [--sync=auto|now|no] [--clip, -c]" \
-                      cmd_usage_indent \
-                      "[--username=USERNAME] [--url=URL] [--no-symbols]" \
-                      cmd_usage_indent \
-                      "{NAME|UNIQUEID} LENGTH"
+#define cmd_generate_usage \
+  "generate  " opt_sync opt_clip cmd_indent \
+  "[--username=USERNAME] [--url=URL] [--no-symbols]" \
+  cmd_indent opt_uid "LENGTH"
 
 int cmd_duplicate(int argc, char **argv);
-#define cmd_duplicate_usage "duplicate [--sync=auto|now|no] " color_usage \
-                       cmd_usage_indent \
-                       "{UNIQUENAME|UNIQUEID}"
+#define cmd_duplicate_usage \
+  "duplicate " opt_sync opt_color cmd_indent opt_uid
 
 int cmd_rm(int argc, char **argv);
-#define cmd_rm_usage "rm        [--sync=auto|now|no] " color_usage \
-                      cmd_usage_indent \
-                      "{UNIQUENAME|UNIQUEID}"
+#define cmd_rm_usage \
+  "rm        " opt_sync opt_color cmd_indent opt_uid
 
 int cmd_sync(int argc, char **argv);
-#define cmd_sync_usage "sync      [--background, -b] " color_usage
+#define cmd_sync_usage "sync      [--background, -b] " opt_color
 
 int cmd_export(int argc, char **argv);
-#define cmd_export_usage "export    [--sync=auto|now|no] " color_usage
+#define cmd_export_usage "export    " opt_sync opt_color
 
 int cmd_share(int argc, char **argv);
 #define cmd_share_usage "share subcommand sharename ..."
-#endif
 
 int cmd_mv(int argc, char **argv);
-#define cmd_mv_usage "mv        " color_usage " {UNIQUENAME|UNIQUEID} GROUP"
+#define cmd_mv_usage "mv        " opt_color opt_uid "GROUP"
+
+#endif /* #ifndef CMD_H */
