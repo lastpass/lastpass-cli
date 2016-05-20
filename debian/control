@@ -3,7 +3,7 @@ Section: misc
 Priority: extra
 Maintainer: Igor Partola <igor@igorpartola.com>
 Build-Depends: debhelper (>= 8.0.0), libssl-dev, libcurl4-openssl-dev, libxml2-dev, asciidoc, libxml2-utils, xsltproc, docbook-xsl
-Standards-Version: 3.9.3
+Standards-Version: 3.9.8
 Homepage: https://github.com/lastpass/lastpass-cli
 
 Package: lastpass-cli
