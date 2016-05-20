@@ -39,6 +39,7 @@
 #include "util.h"
 #include "config.h"
 #include "kdf.h"
+#include "log.h"
 #include "process.h"
 #include "password.h"
 #include "endpoints.h"
@@ -57,49 +58,6 @@
 
 /* keep around failed updates for a couple of weeks */
 #define FAIL_MAX_AGE	86400 * 14
-
-enum log_level
-{
-	LOG_NONE = -1,
-	LOG_ERROR = 3,
-	LOG_WARNING = 4,
-	LOG_INFO = 6,
-	LOG_DEBUG = 7,
-};
-
-#define TIME_FMT "%lld.%06lld"
-#define TIME_ARGS(tv) ((long long)(tv)->tv_sec), ((long long)(tv)->tv_usec)
-
-static int lpass_log_level()
-{
-	char *log_level_str;
-	int level;
-
-	log_level_str = getenv("LPASS_LOG_LEVEL");
-	if (!log_level_str)
-		return LOG_NONE;
-
-	level = strtoul(log_level_str, NULL, 10);
-	return (enum log_level) level;
-}
-
-static void lpass_log(enum log_level level, char *fmt, ...)
-{
-	struct timeval tv;
-	struct timezone tz;
-	va_list ap;
-
-	int req_level = lpass_log_level();
-
-	if (req_level < level)
-		return;
-
-	gettimeofday(&tv, &tz);
-	printf("<%d> [" TIME_FMT "] ", level, TIME_ARGS(&tv));
-	va_start(ap, fmt);
-	vprintf(fmt, ap);
-	va_end(ap);
-}
 
 static void make_upload_dir(const char *path)
 {
@@ -385,20 +343,14 @@ static void upload_queue_run(const struct session *session, unsigned const char 
 	pid_t child = fork();
 	if (child < 0)
 		die_errno("fork(agent)");
-	if (child == 0) {
-		_cleanup_free_ char *upload_log_path = NULL;
 
+	if (child == 0) {
 		int null = open("/dev/null", 0);
 		int upload_log = null;
 
-		if (lpass_log_level() >= 0) {
-			upload_log_path = config_path("lpass.log");
-			upload_log = open(upload_log_path,
-					  O_WRONLY | O_CREAT | O_APPEND, 0600);
-		}
 		if (null >= 0) {
 			dup2(null, 0);
-			dup2(upload_log, 1);
+			dup2(null, 1);
 			dup2(null, 2);
 			close(null);
 			close(upload_log);

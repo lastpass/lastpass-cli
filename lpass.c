@@ -37,11 +37,14 @@
 #include "cmd.h"
 #include "string.h"
 #include "util.h"
+#include "http.h"
 #include "config.h"
 #include "terminal.h"
 #include "version.h"
+#include "log.h"
 #include <sys/stat.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #define CMD(name) { #name, cmd_##name##_usage, cmd_##name }
 static struct {
