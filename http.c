@@ -196,6 +196,12 @@ void vhttp_post_add_params(struct http_param_set *param_set, va_list args)
 	*argv_ptr = 0;
 }
 
+int http_init()
+{
+	curl_global_cleanup();
+	return curl_global_init(CURL_GLOBAL_DEFAULT);
+}
+
 void http_post_add_params(struct http_param_set *param_set, ...)
 {
 	va_list args;
