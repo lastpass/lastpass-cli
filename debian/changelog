@@ -1,3 +1,11 @@
+lastpass-cli (0.3.0+nmu2) UNRELEASED; urgency=medium
+
+  * Non-maintainer upload.
+  * merge master
+  * sign commit
+
+ -- C.J. Collier <cjcollier@linuxfoundation.org>  Sun, 22 May 2016 21:37:28 -0700
+
 lastpass-cli (0.3.0+nmu1) UNRELEASED; urgency=medium
 
   * Non-maintainer upload.

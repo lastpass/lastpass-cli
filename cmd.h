@@ -76,6 +76,7 @@ int edit_new_account(struct session *session,
 #define opt_non_interact "[--non-interactive] "
 #define opt_uid          "{NAME|ID} "
 #define opt_selector     "--username|--password|--url|--notes|--field=FIELD"
+#define opt_braced_selector "{--username|--password|--url|--notes|--field=FIELD}"
 #define cmd_indent    "\n                  "
 
 int cmd_login(int argc, char **argv);
@@ -110,9 +111,8 @@ int cmd_add(int argc, char **argv);
 int cmd_edit(int argc, char **argv);
 
 #define cmd_edit_usage "edit      " opt_sync \
-                       cmd_indent opt_non_interact color_usage \
-                       cmd_indent "{" opt_selector "}" \
-                       cmd_indent opt_uid
+  cmd_indent opt_non_interact opt_color      \
+  cmd_indent opt_braced_selector cmd_indent opt_uid
 
 int cmd_generate(int argc, char **argv);
 #define cmd_generate_usage \
