@@ -118,6 +118,10 @@ situations, as it greatly decreases the security of data.
 The 'logout' subcommand will remove the local cache and stored encryption
 keys. It will prompt the user to confirm, unless '--force' is specified.
 
+The 'passwd' subcommand may be used to change your LastPass password:
+it will prompt for the old and new password and then re-encrypt all records
+with the newly derived key.
+
 Viewing
 ~~~~~~~
 The 'show' subcommand will display a password or selected field.
