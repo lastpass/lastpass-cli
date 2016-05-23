@@ -102,7 +102,6 @@ int cmd_ls(int argc, char **argv);
 #define cmd_ls_usage \
   "ls        " opt_sync "[--long, -l] " cmd_indent opt_color " [GROUP]"
 
-
 int cmd_add(int argc, char **argv);
 #define cmd_add_usage \
   "add       " opt_sync opt_non_interact cmd_indent opt_color cmd_indent \
