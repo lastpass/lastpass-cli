@@ -189,9 +189,6 @@ int main(int argc, char *argv[])
 	/* Do not remove this umask. Always keep at top. */
 	umask(0077);
 
-	if (http_init())
-		die("Unable to initialize curl");
-
 	load_saved_environment();
 
 	if (argc >= 2 && argv[1][0] != '-')

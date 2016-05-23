@@ -1,3 +1,21 @@
+lastpass-cli (0.3.0+nmu2) UNRELEASED; urgency=medium
+
+  * Non-maintainer upload.
+  * merge master
+  * sign commit
+
+ -- C.J. Collier <cjcollier@linuxfoundation.org>  Sun, 22 May 2016 21:37:28 -0700
+
+lastpass-cli (0.3.0+nmu1) UNRELEASED; urgency=medium
+
+  * Non-maintainer upload.
+  * fix some lintian issues
+    Include GPL-2.0+ with OpenSSL exception
+    Update Standards-Version
+    Removed boilerplate from debian/copyright
+
+ -- C.J. Collier <cjcollier@linuxfoundation.org>  Mon, 09 May 2016 10:23:47 -0700
+
 lastpass-cli (0.3.0) unstable; urgency=low
 
   * Initial Debian Package release.

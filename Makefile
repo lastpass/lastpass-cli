@@ -13,8 +13,7 @@ CFLAGS += -MMD
 UNAME_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 ifeq ($(UNAME_S),Darwin)
 HAS_XCODE := $(shell sh -c 'xcodebuild -version 2>/dev/null && echo 1')
-CFLAGS += -Wno-deprecated-declarations -I/usr/local/opt/openssl/include
-LDFLAGS += -L/usr/local/opt/openssl/lib
+CFLAGS += -Wno-deprecated-declarations
 endif
 
 ifeq ($(HAS_XCODE),1)
@@ -22,8 +21,8 @@ SDKROOT ?= $(shell xcodebuild -version -sdk macosx | sed -n 's/^Path: \(.*\)/\1/
 CFLAGS += -isysroot $(SDKROOT) -I$(SDKROOT)/usr/include/libxml2
 LDLIBS = -lcurl -lxml2 -lssl -lcrypto
 else
-CFLAGS += $(shell pkg-config --cflags libxml-2.0 2>/dev/null || echo -I/usr/include/libxml2) -I/usr/local/include
-LDLIBS = -lcurl $(shell pkg-config --libs libxml-2.0 2>/dev/null || echo -lxml2) -lssl -lcrypto
+CFLAGS += $(shell pkg-config --cflags libxml-2.0 2>/dev/null)
+LDLIBS = -lcurl $(shell pkg-config --libs libxml-2.0 2>/dev/null) -lssl -lcrypto
 ifeq ($(UNAME_S),OpenBSD)
 LDLIBS += -lkvm
 endif
