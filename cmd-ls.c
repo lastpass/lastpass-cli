@@ -217,7 +217,11 @@ static void print_node(struct node *head, int level)
 						format_timestamp(node->account->last_touch, false);
 					terminal_printf(TERMINAL_FG_CYAN "%s ", timestr);
 				}
-				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]" TERMINAL_RESET "\n", node->name, node->account->id);
+				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s] ", node->name, node->account->id);
+				if (long_listing) {
+					terminal_printf(TERMINAL_FG_GREEN "[username: %s] ", node->account->username);
+				}
+				terminal_printf(TERMINAL_RESET "\n");
 			}
 			else if (node->shared)
 				terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
