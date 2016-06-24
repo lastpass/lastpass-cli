@@ -6,6 +6,12 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+enum config_type {
+	CONFIG_DATA,
+	CONFIG_CONFIG,
+	CONFIG_RUNTIME,
+};
+
 char *config_path(const char *name);
 FILE *config_fopen(const char *name, const char *mode);
 bool config_exists(const char *name);

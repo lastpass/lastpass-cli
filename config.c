@@ -48,17 +48,71 @@
 #include <openssl/rand.h>
 #include <openssl/hmac.h>
 
+/*
+ * Map well-known pathnames to their configuration type.
+ */
+struct pathname_type_tuple {
+	char *name;
+	enum config_type type;
+};
 
-char *config_path(const char *name)
+struct pathname_type_tuple pathname_type_lookup[] = {
+	{ "env", CONFIG_CONFIG },
+	{ "blob", CONFIG_DATA },
+	{ "iterations", CONFIG_DATA },
+	{ "username", CONFIG_DATA },
+	{ "verify", CONFIG_DATA },
+	{ "plaintext_key", CONFIG_DATA },
+	{ "trusted_id", CONFIG_DATA },
+	{ "session_uid", CONFIG_DATA },
+	{ "session_sessionid", CONFIG_DATA },
+	{ "session_token", CONFIG_DATA },
+	{ "session_privatekey", CONFIG_DATA },
+	{ "session_server", CONFIG_DATA },
+	{ "lpass.log", CONFIG_DATA },
+	{ "agent.sock", CONFIG_RUNTIME },
+	{ "uploader.pid", CONFIG_RUNTIME },
+};
+
+char *config_type_to_xdg[] = {
+	[CONFIG_DATA] = "XDG_DATA_HOME",
+	[CONFIG_CONFIG] = "XDG_CONFIG_HOME",
+	[CONFIG_RUNTIME] = "XDG_RUNTIME_HOME",
+};
+
+/*
+ * Get the path to a config file given its name and the type of file.
+ *
+ * lpass looks for files in the following directories:
+ *
+ * First, if $LPASS_HOME is set, everything goes there.
+ *
+ * After that, if it is a persistent, user-specific data file,
+ * it goes in $XDG_DATA_HOME/lpass.
+ *
+ * If a configuration item, it goes in $XDG_CONFIG_HOME.
+ *
+ * If a purely runtime item (socket, pidfile, etc) it goes in
+ * $XDG_RUNTIME_HOME.
+ *
+ * If none of the $XDG environment variables are set, fall-back
+ * to ~/.lpass.
+ */
+static
+char *config_path_for_type(enum config_type type, const char *name)
 {
-	char *home, *path;
+	char *home, *path, *xdg_env;
 	_cleanup_free_ char *config = NULL;
 	struct stat sbuf;
 	int ret;
 
+	xdg_env = config_type_to_xdg[type];
+
 	home = getenv("LPASS_HOME");
 	if (home)
 		config = xstrdup(home);
+	else if (getenv(xdg_env))
+		xasprintf(&config, "%s/lpass", getenv(xdg_env));
 	else {
 		home = getenv("HOME");
 		if (!home)
@@ -79,6 +133,38 @@ char *config_path(const char *name)
 
 	return path;
 }
+
+
+enum config_type config_path_type(const char *name)
+{
+	unsigned int i;
+
+	/* aliases are config files */
+	if (!strncmp(name, "alias", 5)) {
+		return CONFIG_CONFIG;
+	}
+
+	/* lock files are runtime */
+	if (strlen(name) >= 5 && !strcmp(name-5, ".lock")) {
+		return CONFIG_RUNTIME;
+	}
+
+	/* categorized this configuration file by name? */
+	for (i=0; i < ARRAY_SIZE(pathname_type_lookup); i++) {
+		if (!strcmp(name, pathname_type_lookup[i].name)) {
+			return pathname_type_lookup[i].type;
+		}
+	}
+
+	/* everything else is config_data */
+	return CONFIG_DATA;
+}
+
+char *config_path(const char *name)
+{
+	return config_path_for_type(config_path_type(name), name);
+}
+
 
 FILE *config_fopen(const char *name, const char *mode)
 {
