@@ -76,6 +76,7 @@ void lpass_log(enum log_level level, char *fmt, ...)
 	va_start(ap, fmt);
 	vfprintf(fp, fmt, ap);
 	va_end(ap);
+	fflush(fp);
 }
 
 FILE *lpass_log_open()
