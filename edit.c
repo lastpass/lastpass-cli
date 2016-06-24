@@ -323,7 +323,7 @@ static int write_account_file(FILE *fp, struct account *account,
 		struct app *app = account_to_app(account);
 
 		write_field("Application", app->appname);
-	} else if (note_type) {
+	} else if (note_type != NOTE_TYPE_NONE) {
 		add_default_fields(account, note_type, key);
 	} else {
 		write_field("URL", account->url);
