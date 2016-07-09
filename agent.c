@@ -231,7 +231,7 @@ out:
 	close(fd);
 }
 
-static bool agent_ask(unsigned char key[KDF_HASH_LEN])
+bool agent_ask(unsigned char key[KDF_HASH_LEN])
 {
 	struct sockaddr_un sa;
 	int fd;

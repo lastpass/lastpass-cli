@@ -31,6 +31,7 @@ several subcommands:
  lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
  lpass *duplicate* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
  lpass *rm* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
+ lpass *status* [--quiet, -q] [--color=auto|never|always]
  lpass *sync* [--background, -b] [--color=auto|never|always]
  lpass *export* [--sync=auto|now|no] [--color=auto|never|always]
  lpass *share* *userls* SHARE

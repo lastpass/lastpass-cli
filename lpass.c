@@ -63,6 +63,7 @@ static struct {
 	CMD(generate),
 	CMD(duplicate),
 	CMD(rm),
+	CMD(status),
 	CMD(sync),
 	CMD(export),
 	CMD(share)
