@@ -217,9 +217,9 @@ static void print_node(struct node *head, int level)
 						format_timestamp(node->account->last_touch, false);
 					terminal_printf(TERMINAL_FG_CYAN "%s ", timestr);
 				}
-				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s] ", node->name, node->account->id);
+				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]", node->name, node->account->id);
 				if (long_listing) {
-					terminal_printf(TERMINAL_FG_GREEN "[username: %s] ", node->account->username);
+					terminal_printf(TERMINAL_FG_GREEN " [username: %s]", node->account->username);
 				}
 				terminal_printf(TERMINAL_RESET "\n");
 			}
@@ -359,7 +359,11 @@ int cmd_ls(int argc, char **argv)
 					format_timestamp(account->last_touch, false);
 				printf("%s ", timestr);
 			}
-			printf("%s [id: %s]\n", fullname, account->id);
+			printf("%s [id: %s]", fullname, account->id);
+			if (long_listing) {
+				printf(" [username: %s]", account->username);
+			}
+			printf("\n");
 		}
 
 		free(fullname);
