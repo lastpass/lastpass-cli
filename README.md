@@ -136,7 +136,7 @@ sudo make -C /usr/ports/security/lastpass-cli all install clean
   instructions in the 'Building' section.
 
 ```
-apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel cygutils-extra
+apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel cygutils-extra libiconv-devel
 ```
 
 ## Building
