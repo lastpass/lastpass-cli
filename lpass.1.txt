@@ -205,3 +205,20 @@ in the section above:
 * 'LPASS_DISABLE_PINENTRY'
 * 'LPASS_ASKPASS'
 * 'LPASS_CLIPBOARD_COMMAND'
+
+EXAMPLES
+--------
+
+----
+$ lpass login user@example.com
+$ lpass generate work/email 20
+G</Czo4*c;A+g;KIHkO-
+$ lpass ls work
+work
+    email [id: 140613939481239829]
+$ lpass show -p email
+G</Czo4*c;A+g;KIHkO-
+$ lpass add --note-type=ssn work/my-ssn
+----
+
+
