@@ -87,7 +87,7 @@ int cmd_ls(int argc, char **argv);
 #define cmd_ls_usage "ls [--sync=auto|now|no] [--long, -l] [-m] [-u] " color_usage " [GROUP]"
 
 int cmd_add(int argc, char **argv);
-#define cmd_add_usage "add [--sync=auto|now|no] [--non-interactive] " color_usage " {--username|--password|--url|--notes|--field=FIELD} NAME"
+#define cmd_add_usage "add [--sync=auto|now|no] [--non-interactive] " color_usage " {--username|--password|--url|--notes|--field=FIELD|--note-type=NOTETYPE} NAME"
 
 int cmd_edit(int argc, char **argv);
 #define cmd_edit_usage "edit [--sync=auto|now|no] [--non-interactive] " color_usage " {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}"

@@ -124,7 +124,7 @@ int cmd_add(int argc, char **argv)
 	if (argc - optind != 1)
 		die_usage(cmd_add_usage);
 	if (choice == EDIT_NONE)
-		choice_die: die_usage("add ... {--username|--password|--url|--notes|--field=FIELD}");
+		choice_die: die_usage("add ... {--username|--password|--url|--notes|--field=FIELD|--note-type=NOTE_TYPE}");
 	name = argv[optind];
 
 	init_all(sync, key, &session, &blob);
