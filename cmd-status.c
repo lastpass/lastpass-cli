@@ -56,6 +56,7 @@ int cmd_status(int argc, char **argv)
 	int option;
 	int option_index;
 	bool quiet = false;
+	_cleanup_free_ char *username = NULL;
 
 	while ((option = getopt_long(argc, argv, "q", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -79,7 +80,8 @@ int cmd_status(int argc, char **argv)
 		return 1;
 	} else {
 		if(!quiet) {
-			terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "Logged in" TERMINAL_RESET ".\n");
+			username = config_read_string("username");
+			terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "Logged in" TERMINAL_RESET " as " TERMINAL_UNDERLINE "%s" TERMINAL_RESET ".\n", username);
 		}
 		return 0;
 	}
