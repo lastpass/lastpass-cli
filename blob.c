@@ -599,8 +599,6 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 
 	if (!versionstr)
 		goto error;
-	if (list_empty(&parsed->account_head))
-		goto error;
 	return parsed;
 
 error:
