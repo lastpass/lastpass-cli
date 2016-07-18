@@ -202,14 +202,14 @@ void *xstrdup(const char *str)
 	void *ret = strdup(str);
 	if (likely(ret))
 		return ret;
-	die_errno("strdup(%p)", str);
+	die_errno("strdup(%p)", (void *) str);
 }
 void *xstrndup(const char *str, size_t maxlen)
 {
 	void *ret = strndup(str, maxlen);
 	if (likely(ret))
 		return ret;
-	die_errno("strndup(%p, %zu)", str, maxlen);
+	die_errno("strndup(%p, %zu)", (void *) str, maxlen);
 }
 int xasprintf(char **strp, const char *fmt, ...)
 {
