@@ -60,7 +60,7 @@ void lpass_log(enum log_level level, char *fmt, ...)
 	struct timeval tv;
 	struct timezone tz;
 	va_list ap;
-	_cleanup_fclose_ FILE *fp;
+	_cleanup_fclose_ FILE *fp = NULL;
 
 	int req_level = lpass_log_level();
 
