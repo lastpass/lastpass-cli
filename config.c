@@ -136,7 +136,7 @@ void config_write_buffer(const char *name, const char *buffer, size_t len)
 	xasprintf(&tempname, "%s.XXXXXX", finalpath);
 	tempfd = mkstemp(tempname);
 	if (tempfd < 0)
-		die_errno("mkstemp");
+		die_errno("mkstemp(%s)", tempname);
 	tempfile = fdopen(tempfd, "w");
 	if (!tempfile)
 		goto error;
