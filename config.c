@@ -77,8 +77,37 @@ struct pathname_type_tuple pathname_type_lookup[] = {
 char *config_type_to_xdg[] = {
 	[CONFIG_DATA] = "XDG_DATA_HOME",
 	[CONFIG_CONFIG] = "XDG_CONFIG_HOME",
-	[CONFIG_RUNTIME] = "XDG_RUNTIME_HOME",
+	[CONFIG_RUNTIME] = "XDG_RUNTIME_DIR",
 };
+
+static
+char *get_xdg_dir(const char *xdg_var)
+{
+	char *home;
+	char *retstr = NULL;
+
+	if (getenv(xdg_var))
+		return xstrdup(getenv(xdg_var));
+
+	/*
+	 * $XDG var not set in environment; decide whether
+	 * to use backups locations based on existence of
+	 * $XDG_RUNTIME_DIR.
+	 */
+	if (!getenv("XDG_RUNTIME_DIR"))
+		return NULL;
+
+	home = getenv("HOME");
+	if (!home)
+		return NULL;
+
+	if (!strcmp(xdg_var, "XDG_DATA_HOME"))
+		xasprintf(&retstr, "%s/.local/share", home);
+	else if (!strcmp(xdg_var, "XDG_CONFIG_HOME"))
+		xasprintf(&retstr, "%s/.config", home);
+
+	return retstr;
+}
 
 /*
  * Get the path to a config file given its name and the type of file.
@@ -103,6 +132,7 @@ char *config_path_for_type(enum config_type type, const char *name)
 {
 	char *home, *path, *xdg_env;
 	_cleanup_free_ char *config = NULL;
+	_cleanup_free_ char *xdg_dir = NULL;
 	struct stat sbuf;
 	int ret;
 
@@ -111,9 +141,9 @@ char *config_path_for_type(enum config_type type, const char *name)
 	home = getenv("LPASS_HOME");
 	if (home)
 		config = xstrdup(home);
-	else if (getenv(xdg_env))
-		xasprintf(&config, "%s/lpass", getenv(xdg_env));
-	else {
+	else if ((xdg_dir = get_xdg_dir(xdg_env))) {
+		xasprintf(&config, "%s/lpass", xdg_dir);
+	} else {
 		home = getenv("HOME");
 		if (!home)
 			die("HOME is not set");

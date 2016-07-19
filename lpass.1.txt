@@ -106,16 +106,14 @@ new entry if a 'NAME' is specified and otherwise overwrite an existing entry if
 
 Logging In
 ~~~~~~~~~~
-The 'login' subcommand will initialize a cache and configuration folder inside
-the current user's home directory – '~/.lpass' – or in the directory specified
-by the environment variable 'LPASS_HOME'. It will then attempt to
-authenticate itself with the LastPass servers, using the provided command line
-credentials or by interactively prompting (in the case of multifactor or an
-unprovided password). The '--trust' option will cause subsequent logins to not
-require multifactor authentication. If the '--plaintext-key' option is
-specified, the decryption key will be saved to the hard disk in plaintext.
-Please note that use of this option is discouraged except in limited
-situations, as it greatly decreases the security of data.
+The 'login' subcommand will initialize a local cache and configuration folder,
+then attempt to authenticate itself with the LastPass servers, using the
+provided command line credentials or by interactively prompting (in the case of
+multifactor or an unprovided password). The '--trust' option will cause
+subsequent logins to not require multifactor authentication. If the
+'--plaintext-key' option is specified, the decryption key will be saved to the
+hard disk in plaintext.  Please note that use of this option is discouraged
+except in limited situations, as it greatly decreases the security of data.
 
 The 'logout' subcommand will remove the local cache and stored encryption
 keys. It will prompt the user to confirm, unless '--force' is specified.
@@ -185,8 +183,17 @@ is used, no color escape sequences are emitted.
 
 Configuration
 ~~~~~~~~~~~~~
+'lpass' stores configuration in the following locations, in descending
+order of precedence:
+
+* The directory '$LPASS_HOME', if set
+* '$XDG_CONFIG_HOME/lpass', '$XDG_DATA_HOME/lpass', and
+  '$XDG_RUNTIME_DIR/lpass' (or equivalent defaults), if at least
+  '$XDG_RUNTIME_DIR' is set
+* '$HOME/.lpass'
+
 All configuration may be specified via environment variables. Alternatively, a
-set of environment variable overrides may be specified in '~/.lpass/env' in
+set of environment variable overrides may be specified in '$LPASS_HOME/env' in
 the form of:
 
 [verse]
