@@ -801,10 +801,12 @@ lpass <strong>passwd</strong>
 lpass <strong>show</strong> [--sync=auto|now|no] [--clip, -c] [--expand-multi, -x] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
 lpass <strong>ls</strong> [--sync=auto|now|no] [--long, -l] [-m] [-u] [--color=auto|never|always] [GROUP]
 lpass <strong>mv</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID} GROUP
+lpass <strong>add</strong> [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD|--note-type=NOTETYPE} [--color=auto|never|always] {NAME|UNIQUEID}
 lpass <strong>edit</strong> [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} [--color=auto|never|always] {NAME|UNIQUEID}
 lpass <strong>generate</strong> [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
 lpass <strong>duplicate</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
 lpass <strong>rm</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
+lpass <strong>status</strong> [--quiet, -q] [--color=auto|never|always]
 lpass <strong>sync</strong> [--background, -b] [--color=auto|never|always]
 lpass <strong>export</strong> [--sync=auto|now|no] [--color=auto|never|always]
 lpass <strong>share</strong> <strong>userls</strong> SHARE
@@ -878,18 +880,19 @@ new entry if a <em>NAME</em> is specified and otherwise overwrite an existing en
 </div>
 <div class="sect2">
 <h3 id="_logging_in">Logging In</h3>
-<div class="paragraph"><p>The <em>login</em> subcommand will initialize a cache and configuration folder inside
-the current user&#8217;s home directory – <em>~/.lpass</em> – or in the directory specified
-by the environment variable <em>LPASS_HOME</em>. It will then attempt to
-authenticate itself with the LastPass servers, using the provided command line
-credentials or by interactively prompting (in the case of multifactor or an
-unprovided password). The <em>--trust</em> option will cause subsequent logins to not
-require multifactor authentication. If the <em>--plaintext-key</em> option is
-specified, the decryption key will be saved to the hard disk in plaintext.
-Please note that use of this option is discouraged except in limited
-situations, as it greatly decreases the security of data.</p></div>
+<div class="paragraph"><p>The <em>login</em> subcommand will initialize a local cache and configuration folder,
+then attempt to authenticate itself with the LastPass servers, using the
+provided command line credentials or by interactively prompting (in the case of
+multifactor or an unprovided password). The <em>--trust</em> option will cause
+subsequent logins to not require multifactor authentication. If the
+<em>--plaintext-key</em> option is specified, the decryption key will be saved to the
+hard disk in plaintext.  Please note that use of this option is discouraged
+except in limited situations, as it greatly decreases the security of data.</p></div>
 <div class="paragraph"><p>The <em>logout</em> subcommand will remove the local cache and stored encryption
 keys. It will prompt the user to confirm, unless <em>--force</em> is specified.</p></div>
+<div class="paragraph"><p>The <em>passwd</em> subcommand may be used to change your LastPass password:
+it will prompt for the old and new password and then re-encrypt all records
+with the newly derived key.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_viewing">Viewing</h3>
@@ -947,8 +950,29 @@ is used, no color escape sequences are emitted.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_configuration">Configuration</h3>
+<div class="paragraph"><p><em>lpass</em> stores configuration in the following locations, in descending
+order of precedence:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+The directory <em>$LPASS_HOME</em>, if set
+</p>
+</li>
+<li>
+<p>
+<em>$XDG_CONFIG_HOME/lpass</em>, <em>$XDG_DATA_HOME/lpass</em>, and
+  <em>$XDG_RUNTIME_DIR/lpass</em> (or equivalent defaults), if at least
+  <em>$XDG_RUNTIME_DIR</em> is set
+</p>
+</li>
+<li>
+<p>
+<em>$HOME/.lpass</em>
+</p>
+</li>
+</ul></div>
 <div class="paragraph"><p>All configuration may be specified via environment variables. Alternatively, a
-set of environment variable overrides may be specified in <em>~/.lpass/env</em> in
+set of environment variable overrides may be specified in <em>$LPASS_HOME/env</em> in
 the form of:</p></div>
 <div class="verseblock">
 <pre class="content">VARIABLE1=VALUE1
@@ -1003,12 +1027,29 @@ in the section above:</p></div>
 </ul></div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_examples">EXAMPLES</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content monospaced">
+<pre>$ lpass login user@example.com
+$ lpass generate work/email 20
+G&lt;/Czo4*c;A+g;KIHkO-
+$ lpass ls work
+work
+    email [id: 140613939481239829]
+$ lpass show -p email
+G&lt;/Czo4*c;A+g;KIHkO-
+$ lpass add --note-type=ssn work/my-ssn</pre>
+</div></div>
+</div>
+</div>
 </div>
 <div id="footnotes"><hr></div>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2016-04-25 14:02:56 EDT
+ 2016-07-19 16:19:48 EDT
 </div>
 </div>
 </body>
