@@ -1,3 +1,29 @@
+# Version 1.0.0
+ * New command ```lpass status``` shows whether or not the user is logged
+   in with agent, from Nick Knudson
+ * ```lpass add``` can now be passed ```--note-type=X``` in order to add
+   a secure note using a template.  Specifying an unknown note template will
+   list the available templates.
+ * ```lpass ls``` now shows username with ```--long```, from Alli Witheford
+ * Bash completions are now installed with make install, from Eli Schwartz
+ * Fish shell completions supplied by Joar Wanboarg
+ * Initial support for adding (```lpass add --app```) and editing applications
+ * Updates to manpage for ```ls```, ```passwd```, ```add```, and basic
+   usage examples
+ * lpass now follows XDG base directory specifications for its files on
+   platforms that use it.  Set ```LP_HOME``` to ~/.lpass to keep the previous
+   location
+ * Bugfix: resolved syncing problems on some platforms (notably RHEL/CentOS)
+   related to improper multiprocess usage of libcurl (github #166)
+ * Bugfix: ```lpass show``` no longer crashes when a searched-for field is
+   not found (github #167)
+ * Bugfix: ```lpass``` no longer exits with an error if the blob is empty
+   but otherwise without parsing errors.  This fixes the case where a new
+   user could not use the application without first adding a site elsewhere.
+ * ```LPASS_LOG_LEVEL``` learned level=8 with which lpass will also dump
+   libcurl verbose logs showing all traffic for debugging (not recommended
+   for general use due to potentially sensitive headers being logged).
+
 # Version 0.9.0
  * Add support for accounts in the EU datacenter (lastpass.eu)
  * ```lpass ls``` now sorts its output and properly displays group folder
