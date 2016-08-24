@@ -44,9 +44,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#define ALL_CHARS_LEN 94
+static char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?";
+#define ALL_CHARS_LEN (sizeof(chars) - 1)
 #define NICE_CHARS_LEN 62
-static char *chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?";
 
 int cmd_generate(int argc, char **argv)
 {
