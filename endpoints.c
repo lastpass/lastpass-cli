@@ -359,3 +359,86 @@ int lastpass_pwchange_complete(const struct session *session,
 
 	return 0;
 }
+
+/*
+ * Upload a set of accounts, used for import.
+ */
+int lastpass_upload(const struct session *session,
+		    struct list_head *accounts)
+{
+	_cleanup_free_ char *reply = NULL;
+	struct account *account;
+	int index;
+	unsigned int i;
+
+	struct http_param_set params = {
+		.argv = NULL,
+		.n_alloced = 0
+	};
+
+	if (list_empty(accounts))
+		return 0;
+
+	http_post_add_params(&params,
+			     "token", session->token,
+			     "cmd", "uploadaccounts",
+			     NULL);
+
+	index = 0;
+	list_for_each_entry(account, accounts, list) {
+		char *name_param, *grouping_param;
+		char *url_param, *username_param, *password_param;
+		char *fav_param, *extra_param;
+		char *url = NULL;
+		bytes_to_hex((unsigned char *) account->url, &url,
+			     strlen(account->url));
+
+		xasprintf(&name_param, "name%d", index);
+		xasprintf(&grouping_param, "grouping%d", index);
+		xasprintf(&url_param, "url%d", index);
+		xasprintf(&username_param, "username%d", index);
+		xasprintf(&password_param, "password%d", index);
+		xasprintf(&fav_param, "fav%d", index);
+		xasprintf(&extra_param, "extra%d", index);
+
+		http_post_add_params(&params,
+				     name_param, account->name_encrypted,
+				     grouping_param, account->group_encrypted,
+				     url_param, url,
+				     username_param, account->username_encrypted,
+				     password_param, account->password_encrypted,
+				     fav_param, account->fav ? "1" : "0",
+				     extra_param, account->note_encrypted,
+				     NULL);
+		index++;
+	}
+
+	reply = http_post_lastpass_param_set("lastpass/api.php",
+					     session, NULL,
+					     &params);
+
+	for (i=0; i < params.n_alloced && params.argv[i]; i++) {
+		if (starts_with(params.argv[i], "name") ||
+		    starts_with(params.argv[i], "grouping") ||
+		    starts_with(params.argv[i], "username") ||
+		    starts_with(params.argv[i], "password") ||
+		    starts_with(params.argv[i], "fav") ||
+		    starts_with(params.argv[i], "extra")) {
+			free(params.argv[i]);
+		}
+		if (starts_with(params.argv[i], "url")) {
+			free(params.argv[i]);
+			if (i < params.n_alloced) {
+				free(params.argv[i+1]);
+				i++;
+			}
+		}
+	}
+
+	free(params.argv);
+
+	if (!reply)
+		return -EINVAL;
+
+	return xml_api_err(reply);
+}

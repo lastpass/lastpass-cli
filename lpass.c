@@ -66,6 +66,7 @@ static struct {
 	CMD(status),
 	CMD(sync),
 	CMD(export),
+	CMD(import),
 	CMD(share)
 };
 #undef CMD
