@@ -1,5 +1,5 @@
 # LastPass CLI
-#### (c) 2014-2015 LastPass.
+#### (c) 2014-2016 LastPass.
 
 Command line interface to [LastPass.com](https://lastpass.com/).
 
@@ -136,7 +136,7 @@ sudo make -C /usr/ports/security/lastpass-cli all install clean
   instructions in the 'Building' section.
 
 ```
-apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel cygutils-extra
+apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel libiconv-devel cygutils-extra
 ```
 
 ## Building
