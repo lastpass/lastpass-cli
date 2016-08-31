@@ -60,12 +60,36 @@ function __lpass_using_command
 end
 
 complete -f -c lpass -l help -d "Print usage"
-complete -f -c lpass -n '__lpass_needs_command' -a login -d 'Login to LastPass'
-complete -f -c lpass -n '__lpass_needs_command' -a show -d 'Show entry details'
-complete -f -c lpass -n '__lpass_needs_command' -a generate -d 'Generate password'
-complete -f -c lpass -n '__lpass_needs_command' -a add -d 'Add entry'
-complete -f -c lpass -n '__lpass_needs_command' -a edit -d 'Edit entry'
-complete -f -c lpass -n '__lpass_needs_command' -a sync -d 'Synchronize local cache with server'
+
+# Commands
+complete -f -c lpass -n '__lpass_needs_command' -a login \
+    -d 'Login to LastPass'
+complete -f -c lpass -n '__lpass_needs_command' -a logout \
+    -d 'Logout from LastPass'
+complete -f -c lpass -n '__lpass_needs_command' -a passwd \
+    -d 'Change your LastPass master password'
+complete -f -c lpass -n '__lpass_needs_command' -a show \
+    -d 'Show entry details'
+complete -f -c lpass -n '__lpass_needs_command' -a ls \
+    -d 'List entries'
+complete -f -c lpass -n '__lpass_needs_command' -a mv \
+    -d 'Move entry to group'
+complete -f -c lpass -n '__lpass_needs_command' -a add \
+    -d 'Add entry'
+complete -f -c lpass -n '__lpass_needs_command' -a edit \
+    -d 'Edit entry'
+complete -f -c lpass -n '__lpass_needs_command' -a generate \
+    -d 'Create a new entry with a generated password'
+complete -f -c lpass -n '__lpass_needs_command' -a duplicate \
+    -d 'Duplicate password'
+complete -f -c lpass -n '__lpass_needs_command' -a rm \
+    -d 'Remove entry'
+complete -f -c lpass -n '__lpass_needs_command' -a sync \
+    -d 'Synchronize local cache with server'
+complete -f -c lpass -n '__lpass_needs_command' -a export \
+    -d 'Export passwords as CSV'
+complete -f -c lpass -n '__lpass_needs_command' -a share \
+    -d 'Perform operations on a share'
 
 # {UNIQUENAME|UNIQUEID}
 complete -f -c lpass \
