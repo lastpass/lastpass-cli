@@ -31,6 +31,7 @@ make install-doc DESTDIR=%{?buildroot}
 %files
 /usr/bin/lpass
 /usr/share/man/man1/lpass.1.gz
+/usr/share/bash-completion/completions/lpass
 %doc
 
 
