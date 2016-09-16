@@ -88,6 +88,8 @@ complete -f -c lpass -n '__lpass_needs_command' -a sync \
     -d 'Synchronize local cache with server'
 complete -f -c lpass -n '__lpass_needs_command' -a export \
     -d 'Export passwords as CSV'
+complete -f -c lpass -n '__lpass_needs_command' -a import \
+    -d 'Import CSV as passwords'
 complete -f -c lpass -n '__lpass_needs_command' -a share \
     -d 'Perform operations on a share'
 
@@ -104,7 +106,7 @@ complete -f -c lpass \
 
 # --sync=SYNC
 complete -f -c lpass \
-    -n '__lpass_using_command show ls add edit generate dubplicate rm export' \
+    -n '__lpass_using_command show ls add edit generate dubplicate rm export import' \
     -r -l sync \
     -d 'Synchronize local cache with server: auto | now | no'
 

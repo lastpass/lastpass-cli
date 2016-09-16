@@ -48,7 +48,7 @@ __lpass_complete_opt()
         ls)
             opts="--sync --long --color"
             ;;
-        mv|duplicate|rm|export)
+        mv|duplicate|rm|export|import)
             opts="--sync --color"
             ;;
         edit)
@@ -80,7 +80,7 @@ _lpass()
 
     local all_cmds="
         login logout passwd show ls mv add edit generate
-        duplicate rm sync export share
+        duplicate rm sync export import share
     "
     local share_cmds="
         userls useradd usermod userdel create rm
