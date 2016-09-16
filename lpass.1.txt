@@ -226,7 +226,11 @@ in the section above:
 EXAMPLES
 --------
 
+In the following examples, "$" indicates a shell prompt while "#"
+indicates a comment.
+
 ----
+# login, generate and retrieve a new password
 $ lpass login user@example.com
 $ lpass generate work/email 20
 G</Czo4*c;A+g;KIHkO-
@@ -235,7 +239,33 @@ work
     email [id: 140613939481239829]
 $ lpass show -p email
 G</Czo4*c;A+g;KIHkO-
-$ lpass add --note-type=ssn work/my-ssn
+
+# Copy password to clipboard
+$ lpass show -cp email
+
+# Add a new secure note
+$ lpass add --note-type=ssn info/my-ssn
+# (editor shows a template file; fill in and save)
+Name: info/my-ssn
+NoteType: Social Security
+Name: My Name Goes Here
+Number: 123-45-6789
+Notes:    # Add notes below this line
+Any notes I want to save go here.
+~
+~
+
+$ lpass show my-ssn
+info/my-ssn [id: 0]
+Number: 123-45-6789
+Name: My Name Goes Here
+NoteType: Social Security
+Notes:
+Any notes I want to save go here.
+
+# Add an account non-interactively by creating the proper template
+printf "Username: wizard97\nPassword: vJwhFfBBtn8hj4" | \
+    lpass add Facebook --non-interactive
 ----
 
 
