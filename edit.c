@@ -131,20 +131,25 @@ _noreturn_ static inline void die_unlink_errno(const char *str, const char *file
 static void assign_account_value(struct account *account,
 				 const char *label,
 				 char *value,
+				 int lineno,
 				 unsigned char key[KDF_HASH_LEN])
 {
 	struct field *editable_field = NULL;
 
 #define assign_if(title, field) do { \
 	if (!strcmp(label, title)) { \
-		account_set_##field(account, value, key); \
+		account_set_##field(account, xstrdup(trim(value)), key); \
 		return; \
 	} \
 	} while (0)
 
-	value = xstrdup(trim(value));
-
-	assign_if("Name", fullname);
+	/*
+	 * "Name" may be used in note templates; only assign fullname
+	 * in the first line.
+	 */
+	if (lineno == 1) {
+		assign_if("Name", fullname);
+	}
 	assign_if("URL", url);
 	assign_if("Username", username);
 	assign_if("Password", password);
@@ -153,7 +158,8 @@ static void assign_account_value(struct account *account,
 	/* if we got here maybe it's a secure note field */
 	list_for_each_entry(editable_field, &account->field_head, list) {
 		if (!strcmp(label, editable_field->name)) {
-			field_set_value(account, editable_field, value, key);
+			field_set_value(account, editable_field,
+					xstrdup(trim(value)), key);
 			return;
 		}
 	}
@@ -162,7 +168,7 @@ static void assign_account_value(struct account *account,
 	editable_field = new0(struct field, 1);
 	editable_field->name = xstrdup(label);
 	editable_field->type = xstrdup("password");
-	field_set_value(account, editable_field, value, key);
+	field_set_value(account, editable_field, xstrdup(trim(value)), key);
 	list_add_tail(&editable_field->list, &account->field_head);
 
 #undef assign_if
@@ -217,9 +223,11 @@ static void parse_account_file(FILE *input, struct account *account,
 	char *label, *delim, *value;
 	bool parsing_notes = false;
 	int ret;
+	int lineno = 0;
 
 	/* parse label: [value] */
 	while ((read = getline(&line, &len, input)) != -1) {
+		lineno++;
 		delim = strchr(line, ':');
 		if (!delim)
 			continue;
@@ -231,7 +239,7 @@ static void parse_account_file(FILE *input, struct account *account,
 			parsing_notes = true;
 			break;
 		}
-		assign_account_value(account, label, value, key);
+		assign_account_value(account, label, value, lineno, key);
 	}
 
 	if (!parsing_notes)
