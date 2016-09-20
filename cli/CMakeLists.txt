@@ -9,3 +9,5 @@ set_target_properties(lpass PROPERTIES
   COMPILE_DEFINITIONS "_GNU_SOURCE"
 )
 target_link_libraries(lpass lastpass)
+
+install(TARGETS lpass RUNTIME DESTINATION bin)
