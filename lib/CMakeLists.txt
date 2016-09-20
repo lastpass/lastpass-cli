@@ -18,3 +18,6 @@ set_target_properties(lastpass PROPERTIES
   COMPILE_DEFINITIONS "_GNU_SOURCE"
 )
 target_link_libraries(lastpass ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+
+install(FILES ${PROJECT_HEADERS} DESTINATION include/lastpass)
+install(TARGETS lastpass ARCHIVE DESTINATION lib)
