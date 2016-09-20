@@ -33,15 +33,15 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "process.h"
-#include "cmd.h"
-#include "string.h"
-#include "util.h"
-#include "http.h"
-#include "config.h"
-#include "terminal.h"
-#include "version.h"
-#include "log.h"
+#include "lastpass/process.h"
+#include "lastpass/cmd.h"
+#include "lastpass/util.h"
+#include "lastpass/http.h"
+#include "lastpass/config.h"
+#include "lastpass/terminal.h"
+#include "lastpass/version.h"
+#include "lastpass/log.h"
+#include <string.h>
 #include <sys/stat.h>
 #include <getopt.h>
 #include <unistd.h>

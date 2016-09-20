@@ -1,10 +1,10 @@
 #ifndef XML_H
 #define XML_H
 
-#include "session.h"
-#include "cipher.h"
-#include "list.h"
-#include "blob.h"
+#include "lastpass/session.h"
+#include "lastpass/cipher.h"
+#include "lastpass/list.h"
+#include "lastpass/blob.h"
 
 struct session *xml_ok_session(const char *buf, unsigned const char key[KDF_HASH_LEN]);
 char *xml_error_cause(const char *buf, const char *what);

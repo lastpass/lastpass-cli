@@ -1,7 +1,7 @@
 #ifndef SESSION_H
 #define SESSION_H
 
-#include "kdf.h"
+#include "lastpass/kdf.h"
 #include <stdbool.h>
 
 struct public_key {

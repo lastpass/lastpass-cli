@@ -34,15 +34,16 @@
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
 
-#include "cmd.h"
-#include "endpoints.h"
-#include "blob.h"
-#include "agent.h"
+#include "lastpass/cmd.h"
+#include "lastpass/endpoints.h"
+#include "lastpass/blob.h"
+#include "lastpass/agent.h"
+#include "lastpass/util.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include "util.h"
+
 
 #if defined(__linux__) || defined(__CYGWIN__)
 static char *shared_memory_dir(void)

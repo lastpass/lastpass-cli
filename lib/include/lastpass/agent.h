@@ -1,7 +1,7 @@
 #ifndef AGENT_H
 #define AGENT_H
 
-#include "kdf.h"
+#include "lastpass/kdf.h"
 #include <stdbool.h>
 
 bool agent_get_decryption_key(unsigned char key[KDF_HASH_LEN]);

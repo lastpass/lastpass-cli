@@ -1,8 +1,8 @@
 #ifndef CIPHER_H
 #define CIPHER_H
 
-#include "kdf.h"
-#include "session.h"
+#include "lastpass/kdf.h"
+#include "lastpass/session.h"
 
 char *cipher_rsa_decrypt(const unsigned char *ciphertext, size_t len, const struct private_key *private_key);
 int cipher_rsa_encrypt_bytes(const unsigned char *plaintext,

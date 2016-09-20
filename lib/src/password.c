@@ -33,9 +33,9 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "password.h"
-#include "util.h"
-#include "terminal.h"
+#include "lastpass/password.h"
+#include "lastpass/util.h"
+#include "lastpass/terminal.h"
 #include <sys/types.h>
 #include <fcntl.h>
 #include <stdio.h>

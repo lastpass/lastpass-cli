@@ -33,9 +33,9 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "xml.h"
-#include "util.h"
-#include "blob.h"
+#include "lastpass/xml.h"
+#include "lastpass/util.h"
+#include "lastpass/blob.h"
 #include <string.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>

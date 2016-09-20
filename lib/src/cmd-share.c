@@ -24,16 +24,16 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "cmd.h"
-#include "util.h"
-#include "config.h"
-#include "terminal.h"
-#include "agent.h"
-#include "kdf.h"
-#include "endpoints.h"
-#include "clipboard.h"
-#include "upload-queue.h"
-#include "process.h"
+#include "lastpass/cmd.h"
+#include "lastpass/util.h"
+#include "lastpass/config.h"
+#include "lastpass/terminal.h"
+#include "lastpass/agent.h"
+#include "lastpass/kdf.h"
+#include "lastpass/endpoints.h"
+#include "lastpass/clipboard.h"
+#include "lastpass/upload-queue.h"
+#include "lastpass/process.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>

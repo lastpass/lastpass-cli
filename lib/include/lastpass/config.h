@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#include "kdf.h"
+#include "lastpass/kdf.h"
 #include <stdio.h>
 #include <stdbool.h>
 #include <sys/types.h>

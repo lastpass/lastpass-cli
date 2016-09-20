@@ -1,10 +1,10 @@
 #ifndef CMD_H
 #define CMD_H
 
-#include "blob.h"
-#include "session.h"
-#include "terminal.h"
-#include "kdf.h"
+#include "lastpass/blob.h"
+#include "lastpass/session.h"
+#include "lastpass/terminal.h"
+#include "lastpass/kdf.h"
 
 enum search_type
 {

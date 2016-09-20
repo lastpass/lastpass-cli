@@ -1,10 +1,10 @@
 #ifndef HTTP_H
 #define HTTP_H
 
+#include "lastpass/session.h"
 #include <stddef.h>
 #include <stdarg.h>
 #include <curl/curl.h>
-#include "session.h"
 
 struct http_param_set
 {

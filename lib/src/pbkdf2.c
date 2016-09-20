@@ -20,7 +20,7 @@
  * THE SOFTWARE.
  */
 
-#include "pbkdf2.h"
+#include "lastpass/pbkdf2.h"
 #include <string.h>
 #include <openssl/hmac.h>
 

@@ -34,12 +34,12 @@
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
 
-#include "agent.h"
-#include "config.h"
-#include "util.h"
-#include "password.h"
-#include "terminal.h"
-#include "process.h"
+#include "lastpass/agent.h"
+#include "lastpass/config.h"
+#include "lastpass/util.h"
+#include "lastpass/password.h"
+#include "lastpass/terminal.h"
+#include "lastpass/process.h"
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>

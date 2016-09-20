@@ -1,7 +1,7 @@
 #ifndef TERMINAL_H
 #define TERMINAL_H
 
-#include "util.h"
+#include "lastpass/util.h"
 
 #define TERMINAL_FG_BLACK	"\x1b[30m"
 #define TERMINAL_FG_RED		"\x1b[31m"

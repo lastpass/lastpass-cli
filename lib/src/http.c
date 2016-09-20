@@ -33,12 +33,12 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "http.h"
-#include "log.h"
-#include "util.h"
-#include "version.h"
-#include "pins.h"
-#include "cipher.h"
+#include "lastpass/http.h"
+#include "lastpass/log.h"
+#include "lastpass/util.h"
+#include "lastpass/version.h"
+#include "lastpass/pins.h"
+#include "lastpass/cipher.h"
 #include <stdarg.h>
 #include <stdint.h>
 #include <errno.h>

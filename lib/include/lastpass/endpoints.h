@@ -1,9 +1,9 @@
 #ifndef ENDPOINTS_H
 #define ENDPOINTS_H
 
-#include "session.h"
-#include "blob.h"
-#include "kdf.h"
+#include "lastpass/session.h"
+#include "lastpass/blob.h"
+#include "lastpass/kdf.h"
 #include <stddef.h>
 
 unsigned int lastpass_iterations(const char *username);

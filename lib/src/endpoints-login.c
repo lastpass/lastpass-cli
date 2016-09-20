@@ -33,15 +33,15 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "endpoints.h"
-#include "http.h"
-#include "xml.h"
-#include "password.h"
-#include "config.h"
-#include "util.h"
-#include "upload-queue.h"
-#include "version.h"
-#include "terminal.h"
+#include "lastpass/endpoints.h"
+#include "lastpass/http.h"
+#include "lastpass/xml.h"
+#include "lastpass/password.h"
+#include "lastpass/config.h"
+#include "lastpass/util.h"
+#include "lastpass/upload-queue.h"
+#include "lastpass/version.h"
+#include "lastpass/terminal.h"
 #include <sys/utsname.h>
 #include <string.h>
 

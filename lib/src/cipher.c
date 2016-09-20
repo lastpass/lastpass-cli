@@ -33,8 +33,8 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "cipher.h"
-#include "util.h"
+#include "lastpass/cipher.h"
+#include "lastpass/util.h"
 #include <sys/mman.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>

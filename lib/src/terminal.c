@@ -33,8 +33,8 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "terminal.h"
-#include "util.h"
+#include "lastpass/terminal.h"
+#include "lastpass/util.h"
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>

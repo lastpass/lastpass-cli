@@ -49,9 +49,9 @@
  *     ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  *     OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include "util.h"
-#include "process.h"
-#include "terminal.h"
+#include "lastpass/util.h"
+#include "lastpass/process.h"
+#include "lastpass/terminal.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>

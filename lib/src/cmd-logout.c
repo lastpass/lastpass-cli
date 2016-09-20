@@ -33,13 +33,13 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "cmd.h"
-#include "util.h"
-#include "config.h"
-#include "terminal.h"
-#include "agent.h"
-#include "upload-queue.h"
-#include "endpoints.h"
+#include "lastpass/cmd.h"
+#include "lastpass/util.h"
+#include "lastpass/config.h"
+#include "lastpass/terminal.h"
+#include "lastpass/agent.h"
+#include "lastpass/upload-queue.h"
+#include "lastpass/endpoints.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <stdbool.h>

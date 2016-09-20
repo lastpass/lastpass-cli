@@ -10,7 +10,7 @@ include_directories(${CURL_INCLUDE_DIR})
 file(GLOB_RECURSE PROJECT_HEADERS *.h)
 file(GLOB_RECURSE PROJECT_SOURCES *.c)
 
-include_directories(include/lastpass)
+include_directories(include)
 add_library(lastpass STATIC ${PROJECT_HEADERS} ${PROJECT_SOURCES})
 set_target_properties(lastpass PROPERTIES
   C_STANDARD 99

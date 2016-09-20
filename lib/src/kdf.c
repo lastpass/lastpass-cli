@@ -33,8 +33,8 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "kdf.h"
-#include "util.h"
+#include "lastpass/kdf.h"
+#include "lastpass/util.h"
 #include <string.h>
 #include <sys/mman.h>
 #include <openssl/evp.h>
@@ -50,7 +50,7 @@ static void pbkdf2_hash(const char *username, size_t username_len, const char *p
 		die("Failed to compute PBKDF2 for %s", username);
 }
 #else
-#include "pbkdf2.h"
+#include "lastpass/pbkdf2.h"
 
 static void pbkdf2_hash(const char *username, size_t username_len, const char *password, size_t password_len, int iterations, unsigned char hash[KDF_HASH_LEN])
 {

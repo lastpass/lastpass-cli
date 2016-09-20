@@ -1,10 +1,10 @@
 #ifndef BLOB_H
 #define BLOB_H
 
-#include "kdf.h"
-#include "session.h"
-#include "list.h"
-#include "notes.h"
+#include "lastpass/kdf.h"
+#include "lastpass/session.h"
+#include "lastpass/list.h"
+#include "lastpass/notes.h"
 #include <stdbool.h>
 #include <stddef.h>
 

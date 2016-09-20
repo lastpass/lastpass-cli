@@ -34,14 +34,14 @@
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
 
-#include "clipboard.h"
-#include "util.h"
+#include "lastpass/clipboard.h"
+#include "lastpass/util.h"
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
 
 static pid_t clipboard_process = 0;
-static int saved_stdout = -1; 
+static int saved_stdout = -1;
 static bool registered_closer = false;
 
 void clipboard_close(void)

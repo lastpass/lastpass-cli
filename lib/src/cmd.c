@@ -33,12 +33,12 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "cmd.h"
-#include "agent.h"
-#include "blob.h"
-#include "session.h"
-#include "util.h"
-#include "process.h"
+#include "lastpass/cmd.h"
+#include "lastpass/agent.h"
+#include "lastpass/blob.h"
+#include "lastpass/session.h"
+#include "lastpass/util.h"
+#include "lastpass/process.h"
 #include <strings.h>
 #include <string.h>
 #include <regex.h>

@@ -34,16 +34,16 @@
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
 
-#include "cmd.h"
-#include "kdf.h"
-#include "password.h"
-#include "session.h"
-#include "util.h"
-#include "process.h"
-#include "endpoints.h"
-#include "config.h"
-#include "agent.h"
-#include "terminal.h"
+#include "lastpass/cmd.h"
+#include "lastpass/kdf.h"
+#include "lastpass/password.h"
+#include "lastpass/session.h"
+#include "lastpass/util.h"
+#include "lastpass/process.h"
+#include "lastpass/endpoints.h"
+#include "lastpass/config.h"
+#include "lastpass/agent.h"
+#include "lastpass/terminal.h"
 #include <getopt.h>
 
 int cmd_login(int argc, char **argv)

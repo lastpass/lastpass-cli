@@ -33,13 +33,13 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "endpoints.h"
-#include "http.h"
-#include "version.h"
-#include "xml.h"
-#include "config.h"
-#include "util.h"
-#include "upload-queue.h"
+#include "lastpass/endpoints.h"
+#include "lastpass/http.h"
+#include "lastpass/version.h"
+#include "lastpass/xml.h"
+#include "lastpass/config.h"
+#include "lastpass/util.h"
+#include "lastpass/upload-queue.h"
 #include <string.h>
 #include <errno.h>
 #include <curl/curl.h>

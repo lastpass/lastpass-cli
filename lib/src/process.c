@@ -33,8 +33,8 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "process.h"
-#include "util.h"
+#include "lastpass/process.h"
+#include "lastpass/util.h"
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>

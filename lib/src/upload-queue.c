@@ -33,16 +33,16 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "upload-queue.h"
-#include "session.h"
-#include "http.h"
-#include "util.h"
-#include "config.h"
-#include "kdf.h"
-#include "log.h"
-#include "process.h"
-#include "password.h"
-#include "endpoints.h"
+#include "lastpass/upload-queue.h"
+#include "lastpass/session.h"
+#include "lastpass/http.h"
+#include "lastpass/util.h"
+#include "lastpass/config.h"
+#include "lastpass/kdf.h"
+#include "lastpass/log.h"
+#include "lastpass/process.h"
+#include "lastpass/password.h"
+#include "lastpass/endpoints.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <time.h>

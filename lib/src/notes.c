@@ -33,9 +33,9 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
+#include "lastpass/notes.h"
+#include "lastpass/util.h"
 #include <string.h>
-#include "notes.h"
-#include "util.h"
 
 /* Templates for shared note types */
 struct note_template note_templates[] = {

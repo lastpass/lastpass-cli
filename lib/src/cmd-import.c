@@ -33,15 +33,15 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "cmd.h"
-#include "util.h"
-#include "config.h"
-#include "terminal.h"
-#include "kdf.h"
-#include "blob.h"
-#include "endpoints.h"
-#include "agent.h"
-#include "list.h"
+#include "lastpass/cmd.h"
+#include "lastpass/util.h"
+#include "lastpass/config.h"
+#include "lastpass/terminal.h"
+#include "lastpass/kdf.h"
+#include "lastpass/blob.h"
+#include "lastpass/endpoints.h"
+#include "lastpass/agent.h"
+#include "lastpass/list.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <unistd.h>

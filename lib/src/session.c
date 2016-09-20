@@ -33,12 +33,12 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "xml.h"
-#include "config.h"
-#include "util.h"
-#include "cipher.h"
-#include "agent.h"
-#include "upload-queue.h"
+#include "lastpass/xml.h"
+#include "lastpass/config.h"
+#include "lastpass/util.h"
+#include "lastpass/cipher.h"
+#include "lastpass/agent.h"
+#include "lastpass/upload-queue.h"
 #include <sys/mman.h>
 #include <string.h>
 

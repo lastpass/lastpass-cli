@@ -33,16 +33,16 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
+#include "lastpass/blob.h"
+#include "lastpass/kdf.h"
+#include "lastpass/cmd.h"
+#include "lastpass/endpoints.h"
+#include "lastpass/config.h"
+#include "lastpass/password.h"
+#include "lastpass/cipher.h"
+#include "lastpass/session.h"
 #include <errno.h>
 #include <string.h>
-#include "blob.h"
-#include "kdf.h"
-#include "cmd.h"
-#include "endpoints.h"
-#include "config.h"
-#include "password.h"
-#include "cipher.h"
-#include "session.h"
 
 static void show_status_bar(const char *operation,
 			    unsigned int cur, unsigned int max)

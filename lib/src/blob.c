@@ -33,13 +33,13 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "blob.h"
-#include "config.h"
-#include "endpoints.h"
-#include "cipher.h"
-#include "util.h"
-#include "upload-queue.h"
-#include "version.h"
+#include "lastpass/blob.h"
+#include "lastpass/config.h"
+#include "lastpass/endpoints.h"
+#include "lastpass/cipher.h"
+#include "lastpass/util.h"
+#include "lastpass/upload-queue.h"
+#include "lastpass/version.h"
 #include <time.h>
 #include <stdbool.h>
 #include <stdlib.h>
