@@ -1,0 +1,25 @@
+language: cpp
+sudo: required
+dist: trusty
+osx_image: xcode7
+
+compiler:
+ - gcc
+ - clang
+
+os:
+- linux
+- osx
+
+before_install:
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install libxml2; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install cmake; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get -qq update; fi
+- if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get install -y libxml2-dev; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ls /usr/local/opt/libxml2/include; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ls /usr/local/opt/libxml2/include/libxml2; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ls /usr/include/libxml2; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ls /usr/include/libxml2; fi
+
+script: mkdir build && cd build && cmake .. && make
