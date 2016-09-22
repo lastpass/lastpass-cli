@@ -808,6 +808,7 @@ lpass <strong>duplicate</strong> [--sync=auto|now|no] [--color=auto|never|always
 lpass <strong>rm</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
 lpass <strong>status</strong> [--quiet, -q] [--color=auto|never|always]
 lpass <strong>sync</strong> [--background, -b] [--color=auto|never|always]
+lpass <strong>import</strong> [--sync=auto|now|no] [FILENAME]
 lpass <strong>export</strong> [--sync=auto|now|no] [--color=auto|never|always]
 lpass <strong>share</strong> <strong>userls</strong> SHARE
 lpass <strong>share</strong> <strong>useradd</strong> [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
@@ -901,8 +902,6 @@ with the newly derived key.</p></div>
 the <em>--long</em> or <em>-l</em> option is set, then also list the last modification
 time.  The <em>-u</em> option may be passed to show the last use (last touch) time
 instead, if available. Both times are in GMT.</p></div>
-<div class="paragraph"><p>The <em>export</em> subcommand will dump all account information including
-passwords to stdout (unencrypted).</p></div>
 </div>
 <div class="sect2">
 <h3 id="_modifying">Modifying</h3>
@@ -917,6 +916,15 @@ chosen key name, and optionally add a url and username while inserting the
 generated password.</p></div>
 <div class="paragraph"><p>The <em>rm</em> command will remove the specified entry, and the <em>duplicate</em> command
 will create a duplicate entry of the one specified, but with a different <em>ID</em>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_backup">Backup</h3>
+<div class="paragraph"><p>The <em>export</em> subcommand will dump all account information including
+passwords to stdout (unencrypted) in CSV format.</p></div>
+<div class="paragraph"><p>The <em>import</em> subcommand does the reverse: accounts from an unencrypted
+CSV file are uploaded to the server.</p></div>
+<div class="paragraph"><p>It is recommended that such backups be encrypted at rest, for example by
+piping to and from gpg.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_shared_folder_commands">Shared Folder Commands</h3>
@@ -1030,9 +1038,12 @@ in the section above:</p></div>
 <div class="sect1">
 <h2 id="_examples">EXAMPLES</h2>
 <div class="sectionbody">
+<div class="paragraph"><p>In the following examples, "$" indicates a shell prompt while "#"
+indicates a comment.</p></div>
 <div class="listingblock">
 <div class="content monospaced">
-<pre>$ lpass login user@example.com
+<pre># login, generate and retrieve a new password
+$ lpass login user@example.com
 $ lpass generate work/email 20
 G&lt;/Czo4*c;A+g;KIHkO-
 $ lpass ls work
@@ -1040,7 +1051,33 @@ work
     email [id: 140613939481239829]
 $ lpass show -p email
 G&lt;/Czo4*c;A+g;KIHkO-
-$ lpass add --note-type=ssn work/my-ssn</pre>
+
+# Copy password to clipboard
+$ lpass show -cp email
+
+# Add a new secure note
+$ lpass add --note-type=ssn info/my-ssn
+# (editor shows a template file; fill in and save)
+Name: info/my-ssn
+NoteType: Social Security
+Name: My Name Goes Here
+Number: 123-45-6789
+Notes:    # Add notes below this line
+Any notes I want to save go here.
+~
+~
+
+$ lpass show my-ssn
+info/my-ssn [id: 0]
+Number: 123-45-6789
+Name: My Name Goes Here
+NoteType: Social Security
+Notes:
+Any notes I want to save go here.
+
+# Add an account non-interactively by creating the proper template
+printf "Username: wizard97\nPassword: vJwhFfBBtn8hj4" | \
+    lpass add Facebook --non-interactive</pre>
 </div></div>
 </div>
 </div>
@@ -1049,7 +1086,7 @@ $ lpass add --note-type=ssn work/my-ssn</pre>
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2016-07-19 16:19:48 EDT
+ 2016-09-22 16:58:41 EDT
 </div>
 </div>
 </body>
