@@ -505,8 +505,7 @@ int edit_account(struct session *session,
 		notes_collapsed = notes_collapse(notes_expansion);
 		account_free(notes_expansion);
 		account_set_note(editable, xstrdup(notes_collapsed->note), key);
-		if (choice == EDIT_NAME)
-			account_set_fullname(editable, xstrdup(notes_collapsed->fullname), key);
+		account_set_fullname(editable, xstrdup(notes_collapsed->fullname), key);
 		account_free(notes_collapsed);
 	}
 
