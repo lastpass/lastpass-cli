@@ -131,6 +131,12 @@ bool account_is_group(struct account *account)
 	return !strcmp(account->url, "http://group");
 }
 
+static
+bool account_is_secure_note(const struct account *account)
+{
+	return !strcmp(account->url, "http://sn");
+}
+
 struct app *new_app()
 {
 	struct app *app = new0(struct app, 1);
@@ -1052,7 +1058,7 @@ struct account *notes_expand(struct account *acc)
 	char *line = NULL;
 	size_t len;
 
-	if (strcmp(acc->url, "http://sn"))
+	if (!account_is_secure_note(acc))
 		return NULL;
 
 	expand = new_account();
