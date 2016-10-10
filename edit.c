@@ -296,8 +296,18 @@ static void add_default_fields(struct account *account,
 	 * does not already exist in the account.
 	 */
 	tmpl = &note_templates[note_type];
-	for (i=0; tmpl->fields[i]; i++)
+	for (i=0; tmpl->fields[i]; i++) {
+		/*
+		 * ... but skip these: they are already handled by the
+		 * collapse code.
+		 */
+		if (!strcmp(tmpl->fields[i], "Username"))
+			continue;
+		if (!strcmp(tmpl->fields[i], "Password"))
+			continue;
+
 		add_default_field(account, tmpl->fields[i], key);
+	}
 }
 
 enum note_type get_note_type(struct account *account)
