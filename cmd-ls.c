@@ -61,6 +61,9 @@ static char *format_timestamp(char *timestamp, bool utc)
 	char temp[60];
 	struct tm *ts_tm;
 
+	if (!timestamp)
+		return xstrdup("");
+
 	time_t ts_time_t = (time_t) strtoul(timestamp, NULL, 10);
 
 	if (ts_time_t == 0)
