@@ -613,13 +613,7 @@ error:
 	return NULL;
 }
 
-struct buffer {
-	size_t len;
-	size_t max;
-	char *bytes;
-};
-
-static void buffer_append(struct buffer *buffer, void *bytes, size_t len)
+void buffer_append(struct buffer *buffer, void *bytes, size_t len)
 {
 	if (buffer->len + len > buffer->max) {
 		buffer->max = buffer->len + len + 512;
@@ -627,6 +621,26 @@ static void buffer_append(struct buffer *buffer, void *bytes, size_t len)
 	}
 	memcpy(buffer->bytes + buffer->len, bytes, len);
 	buffer->len += len;
+}
+
+void buffer_append_char(struct buffer *buf, char c)
+{
+	if (buf->len + 1 >= buf->max) {
+		buf->max += 80;
+		buf->bytes = xrealloc(buf->bytes, buf->max);
+	}
+	buf->bytes[buf->len++] = c;
+	buf->bytes[buf->len] = '\0';
+}
+
+void buffer_append_str(struct buffer *buf, char *str)
+{
+	/*
+	 * copy null terminator, but don't count in used len
+         * so that append of multiple strings will work
+         */
+	buffer_append(buf, str, strlen(str) + 1);
+	buf->len--;
 }
 
 static void write_item(struct buffer *buffer, char *bytes, size_t len)

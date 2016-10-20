@@ -48,12 +48,6 @@
 #include <string.h>
 #include <search.h>
 
-struct buffer {
-	size_t len;
-	size_t max;
-	char *bytes;
-};
-
 struct csv_record {
 	struct list_head field_head;
 	struct list_head list;
@@ -63,16 +57,6 @@ struct csv_field {
 	char *value;
 	struct list_head list;
 };
-
-static void buffer_append(struct buffer *buf, char c)
-{
-	if (buf->len + 1 >= buf->max) {
-		buf->max += 80;
-		buf->bytes = xrealloc(buf->bytes, buf->max);
-	}
-	buf->bytes[buf->len++] = c;
-	buf->bytes[buf->len + 1] = '\0';
-}
 
 enum csv_token {
 	CSV_NONE,
@@ -116,7 +100,7 @@ static enum csv_token csv_next_token(FILE *fp, char **retp)
 			}
 
 			/* otherwise append */
-			buffer_append(&result, ch);
+			buffer_append_char(&result, ch);
 			break;
 
 		case '"':
@@ -136,7 +120,7 @@ static enum csv_token csv_next_token(FILE *fp, char **retp)
 				 */
 				nextch = fgetc(fp);
 				if (nextch == '"') {
-					buffer_append(&result, '"');
+					buffer_append_char(&result, '"');
 					continue;
 				}
 
@@ -146,10 +130,10 @@ static enum csv_token csv_next_token(FILE *fp, char **retp)
 				continue;
 			}
 			/* quote not after a comma, treat as unescaped */
-			buffer_append(&result, ch);
+			buffer_append_char(&result, ch);
 			break;
 		default:
-			buffer_append(&result, ch);
+			buffer_append_char(&result, ch);
 		}
 	}
 
