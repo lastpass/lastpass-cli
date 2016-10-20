@@ -37,6 +37,7 @@
 #include "util.h"
 #include "config.h"
 #include "terminal.h"
+#include "format.h"
 #include "kdf.h"
 #include <getopt.h>
 #include <stdio.h>
@@ -55,29 +56,6 @@ struct node {
 	struct list_head children;
 	struct list_head list;
 };
-
-static char *format_timestamp(char *timestamp, bool utc)
-{
-	char temp[60];
-	struct tm *ts_tm;
-
-	if (!timestamp)
-		return xstrdup("");
-
-	time_t ts_time_t = (time_t) strtoul(timestamp, NULL, 10);
-
-	if (ts_time_t == 0)
-		return xstrdup("");
-
-	if (utc)
-		ts_tm = gmtime(&ts_time_t);
-	else
-		ts_tm = localtime(&ts_time_t);
-
-	strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M", ts_tm);
-
-	return xstrdup(temp);
-}
 
 struct path_component
 {
@@ -235,18 +213,6 @@ static void print_node(struct node *head, int level)
 	}
 }
 
-static char *get_display_fullname(struct account *account)
-{
-	char *fullname = NULL;
-
-	if (account->share || strcmp(account->group, ""))
-		fullname = xstrdup(account->fullname);
-	else
-		xasprintf(&fullname, "(none)/%s", account->fullname);
-
-	return fullname;
-}
-
 static int compare_account(const void *a, const void *b)
 {
 	struct account * const *acct_a = a;
@@ -356,17 +322,23 @@ int cmd_ls(int argc, char **argv)
 		if (print_tree)
 			insert_node(root, fullname, account);
 		else {
+			struct buffer buf = {0};
+			struct buffer fmt_str = {0};
+
 			if (long_listing) {
-				_cleanup_free_ char *timestr = show_mtime ?
-					format_timestamp(account->last_modified_gmt, true) :
-					format_timestamp(account->last_touch, false);
-				printf("%s ", timestr);
+				buffer_append_str(&fmt_str, show_mtime ?
+						  "%Tm " : "%Tu ");
 			}
-			printf("%s [id: %s]", fullname, account->id);
+			buffer_append_str(&fmt_str, "%Nf [id: %i]");
 			if (long_listing) {
-				printf(" [username: %s]", account->username);
+				buffer_append_str(&fmt_str, " [username: %u]");
 			}
-			printf("\n");
+
+			format_account(&buf, fmt_str.bytes, account);
+			printf("%s\n", buf.bytes);
+
+			free(buf.bytes);
+			free(fmt_str.bytes);
 		}
 
 		free(fullname);
