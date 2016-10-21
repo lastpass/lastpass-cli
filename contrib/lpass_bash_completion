@@ -1,3 +1,19 @@
+__lpass_complete_fieldname()
+{
+    local acct=$1
+    local cur=$2
+    local matches
+
+    matches=$(lpass show $acct --format='%fn' --title-format=' ' | \
+              egrep -v '^ $')
+
+    local IFS=$'\n'
+    COMPREPLY=($(compgen -W "$matches" "$cur"))
+    if [[ ! -z $COMPREPLY ]]; then
+        COMPREPLY=($(printf "%q\n" "${COMPREPLY[@]}"))
+    fi
+}
+
 __lpass_complete_name()
 {
     local cur=$1
@@ -33,6 +49,7 @@ __lpass_complete_opt()
 {
     local cmd=$1
     local cur=$2
+    local name=$3
     opts=""
 
     case "$cmd" in
@@ -69,6 +86,7 @@ _lpass()
     local cur="${COMP_WORDS[COMP_CWORD]}"
     local cmd="${COMP_WORDS[1]}"
     local subcmd="${COMP_WORDS[2]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
     local optind=1
 
     for i in `seq 2 $COMP_CWORD`; do
@@ -77,6 +95,8 @@ _lpass()
             break
         fi
     done
+
+    local name="${COMP_WORDS[$optind]}"
 
     local all_cmds="
         login logout passwd show ls mv add edit generate
@@ -102,6 +122,13 @@ _lpass()
     fi
 
     COMPREPLY=()
+
+    case "$prev" in
+        --field)
+            __lpass_complete_fieldname $name $cur
+            return
+            ;;
+    esac
 
     case "$cur" in
         -*)
