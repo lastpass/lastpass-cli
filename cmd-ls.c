@@ -306,14 +306,14 @@ int cmd_ls(int argc, char **argv)
 	if (!fmt_str) {
 		xasprintf(&fmt_str,
 			  TERMINAL_FG_CYAN "%s"
-			  TERMINAL_FG_GREEN TERMINAL_BOLD "%%N%c"
+			  TERMINAL_FG_GREEN TERMINAL_BOLD "%%a%c"
 			  TERMINAL_NO_BOLD
-			  " [id: %%i]"
+			  " [id: %%ai]"
 			  "%s" TERMINAL_RESET,
 			  (long_listing) ?
-				((show_mtime) ?  "%Tm " : "%Tu ") : "",
-			  (print_tree) ? 's' : 'f',
-			  (long_listing) ? " [username: %u]" : "");
+				((show_mtime) ?  "%am " : "%aU ") : "",
+			  (print_tree) ? 'n' : 'N',
+			  (long_listing) ? " [username: %au]" : "");
 	}
 
 	for (i=0; i < num_accounts; i++)

@@ -239,10 +239,10 @@ int cmd_show(int argc, char **argv)
 
 	if (!title_format) {
 		title_format = xstrdup(
-			TERMINAL_FG_CYAN "%/S" TERMINAL_RESET
-			TERMINAL_FG_BLUE "%/g"
-			TERMINAL_BOLD "%Nf" TERMINAL_RESET
-			TERMINAL_FG_GREEN " [id: %i]" TERMINAL_RESET);
+			TERMINAL_FG_CYAN "%/as" TERMINAL_RESET
+			TERMINAL_FG_BLUE "%/ag"
+			TERMINAL_BOLD "%an" TERMINAL_RESET
+			TERMINAL_FG_GREEN " [id: %ai]" TERMINAL_RESET);
 	}
 	if (!field_format) {
 		field_format = xstrdup(
