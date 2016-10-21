@@ -183,7 +183,7 @@ static void free_node(struct node *head)
 	free(head);
 }
 
-static void print_node(struct node *head, int level)
+static void print_node(struct node *head, char *fmt_str, int level)
 {
 	struct node *node;
 
@@ -192,24 +192,19 @@ static void print_node(struct node *head, int level)
 			for (int i = 0; i < level; ++i)
 				printf("    ");
 			if (node->account) {
-				if (long_listing) {
-					_cleanup_free_ char *timestr = show_mtime ?
-						format_timestamp(node->account->last_modified_gmt, true) :
-						format_timestamp(node->account->last_touch, false);
-					terminal_printf(TERMINAL_FG_CYAN "%s ", timestr);
-				}
-				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]", node->name, node->account->id);
-				if (long_listing) {
-					terminal_printf(TERMINAL_FG_GREEN " [username: %s]", node->account->username);
-				}
-				terminal_printf(TERMINAL_RESET "\n");
+				struct buffer buf;
+
+				memset(&buf, 0, sizeof(buf));
+				format_account(&buf, fmt_str, node->account);
+				terminal_printf("%s\n", buf.bytes);
+				free(buf.bytes);
 			}
 			else if (node->shared)
 				terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
 			else
 				terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
 		}
-		print_node(node, level + 1);
+		print_node(node, fmt_str, level + 1);
 	}
 }
 
@@ -304,8 +299,13 @@ int cmd_ls(int argc, char **argv)
 	qsort(account_array, num_accounts, sizeof(struct account *),
 	      compare_account);
 
-	xasprintf(&fmt_str, "%s%%Nf [id: %%i]%s",
+	xasprintf(&fmt_str,
+		  TERMINAL_FG_CYAN "%s"
+		  TERMINAL_FG_GREEN TERMINAL_BOLD "%%N%c" TERMINAL_NO_BOLD
+		  " [id: %%i]"
+		  "%s" TERMINAL_RESET,
 		  (long_listing) ? ((show_mtime) ?  "%Tm " : "%Tu ") : "",
+		  (print_tree) ? 's' : 'f',
 		  (long_listing) ? " [username: %u]" : "");
 
 	for (i=0; i < num_accounts; i++)
@@ -337,7 +337,7 @@ int cmd_ls(int argc, char **argv)
 		free(fullname);
 	}
 	if (print_tree)
-		print_node(root, 0);
+		print_node(root, fmt_str, 0);
 
 	free_node(root);
 	session_free(session);
