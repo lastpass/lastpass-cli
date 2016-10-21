@@ -244,6 +244,7 @@ int cmd_ls(int argc, char **argv)
 	struct account *account;
 	_cleanup_free_ struct account **account_array = NULL;
 	int i, num_accounts;
+	_cleanup_free_ char *fmt_str = NULL;
 
 	while ((option = getopt_long(argc, argv, "lmu", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -303,6 +304,10 @@ int cmd_ls(int argc, char **argv)
 	qsort(account_array, num_accounts, sizeof(struct account *),
 	      compare_account);
 
+	xasprintf(&fmt_str, "%s%%Nf [id: %%i]%s",
+		  (long_listing) ? ((show_mtime) ?  "%Tm " : "%Tu ") : "",
+		  (long_listing) ? " [username: %u]" : "");
+
 	for (i=0; i < num_accounts; i++)
 	{
 		struct account *account = account_array[i];
@@ -322,25 +327,13 @@ int cmd_ls(int argc, char **argv)
 		if (print_tree)
 			insert_node(root, fullname, account);
 		else {
-			struct buffer buf = {0};
-			struct buffer fmt_str = {0};
+			struct buffer buf;
 
-			if (long_listing) {
-				buffer_append_str(&fmt_str, show_mtime ?
-						  "%Tm " : "%Tu ");
-			}
-			buffer_append_str(&fmt_str, "%Nf [id: %i]");
-			if (long_listing) {
-				buffer_append_str(&fmt_str, " [username: %u]");
-			}
-
-			format_account(&buf, fmt_str.bytes, account);
-			printf("%s\n", buf.bytes);
-
+			memset(&buf, 0, sizeof(buf));
+			format_account(&buf, fmt_str, account);
+			terminal_printf("%s\n", buf.bytes);
 			free(buf.bytes);
-			free(fmt_str.bytes);
 		}
-
 		free(fullname);
 	}
 	if (print_tree)
