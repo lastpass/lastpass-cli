@@ -223,6 +223,7 @@ int cmd_ls(int argc, char **argv)
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
 		{"color", required_argument, NULL, 'C'},
+		{"format", required_argument, NULL, 'f'},
 		{"long", no_argument, NULL, 'l'},
 		{0, 0, 0, 0}
 	};
@@ -248,6 +249,9 @@ int cmd_ls(int argc, char **argv)
 				break;
 			case 'C':
 				cmode = parse_color_mode_string(optarg);
+				break;
+			case 'f':
+				fmt_str = xstrdup(optarg);
 				break;
 			case 'l':
 				long_listing = true;
@@ -299,14 +303,18 @@ int cmd_ls(int argc, char **argv)
 	qsort(account_array, num_accounts, sizeof(struct account *),
 	      compare_account);
 
-	xasprintf(&fmt_str,
-		  TERMINAL_FG_CYAN "%s"
-		  TERMINAL_FG_GREEN TERMINAL_BOLD "%%N%c" TERMINAL_NO_BOLD
-		  " [id: %%i]"
-		  "%s" TERMINAL_RESET,
-		  (long_listing) ? ((show_mtime) ?  "%Tm " : "%Tu ") : "",
-		  (print_tree) ? 's' : 'f',
-		  (long_listing) ? " [username: %u]" : "");
+	if (!fmt_str) {
+		xasprintf(&fmt_str,
+			  TERMINAL_FG_CYAN "%s"
+			  TERMINAL_FG_GREEN TERMINAL_BOLD "%%N%c"
+			  TERMINAL_NO_BOLD
+			  " [id: %%i]"
+			  "%s" TERMINAL_RESET,
+			  (long_listing) ?
+				((show_mtime) ?  "%Tm " : "%Tu ") : "",
+			  (print_tree) ? 's' : 'f',
+			  (long_listing) ? " [username: %u]" : "");
+	}
 
 	for (i=0; i < num_accounts; i++)
 	{
