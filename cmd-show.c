@@ -41,6 +41,7 @@
 #include "kdf.h"
 #include "endpoints.h"
 #include "clipboard.h"
+#include "format.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>
@@ -97,14 +98,24 @@ static char *pretty_field_value(struct field *field)
 	return value;
 }
 
-static void print_header(struct account *found)
+static void print_header(char *title_format, struct account *found)
 {
-	if (found->share)
-		terminal_printf(TERMINAL_FG_CYAN "%s/" TERMINAL_RESET, found->share->name);
-	if (strlen(found->group))
-		terminal_printf(TERMINAL_FG_BLUE "%s/" TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->group, found->name, found->id);
-	else
-		terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET TERMINAL_FG_GREEN " [id: %s]" TERMINAL_RESET "\n", found->name, found->id);
+	struct buffer buf;
+
+	memset(&buf, 0, sizeof(buf));
+	format_account(&buf, title_format, found);
+	terminal_printf("%s\n", buf.bytes);
+	free(buf.bytes);
+}
+
+static void print_field(char *field_format, struct account *account,
+			char *name, char *value)
+{
+	struct buffer buf;
+	memset(&buf, 0, sizeof(buf));
+	format_field(&buf, field_format, account, name, value);
+	terminal_printf("%s\n", buf.bytes);
+	free(buf.bytes);
 }
 
 int cmd_show(int argc, char **argv)
@@ -128,6 +139,8 @@ int cmd_show(int argc, char **argv)
 		{"basic-regexp", no_argument, NULL, 'G'},
 		{"fixed-strings", no_argument, NULL, 'F'},
 		{"expand-multi", no_argument, NULL, 'x'},
+		{"title-format", required_argument, NULL, 't'},
+		{"format", required_argument, NULL, 'o'},
 		{0, 0, 0, 0}
 	};
 
@@ -147,7 +160,10 @@ int cmd_show(int argc, char **argv)
 	enum search_type search = SEARCH_EXACT_MATCH;
 	int fields = ACCOUNT_NAME | ACCOUNT_ID | ACCOUNT_FULLNAME;
 
-	while ((option = getopt_long(argc, argv, "cupFGx", long_options, &option_index)) != -1) {
+	_cleanup_free_ char *title_format = NULL;
+	_cleanup_free_ char *field_format = NULL;
+
+	while ((option = getopt_long(argc, argv, "cupFGxto", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -193,6 +209,12 @@ int cmd_show(int argc, char **argv)
 			case 'x':
 				expand_multi = true;
 				break;
+			case 'o':
+				field_format = xstrdup(optarg);
+				break;
+			case 't':
+				title_format = xstrdup(optarg);
+				break;
 			case '?':
 			default:
 				die_usage(cmd_show_usage);
@@ -214,6 +236,18 @@ int cmd_show(int argc, char **argv)
 
 	INIT_LIST_HEAD(&matches);
 	INIT_LIST_HEAD(&potential_set);
+
+	if (!title_format) {
+		title_format = xstrdup(
+			TERMINAL_FG_CYAN "%/S" TERMINAL_RESET
+			TERMINAL_FG_BLUE "%/g"
+			TERMINAL_BOLD "%Nf" TERMINAL_RESET
+			TERMINAL_FG_GREEN " [id: %i]" TERMINAL_RESET);
+	}
+	if (!field_format) {
+		field_format = xstrdup(
+			TERMINAL_FG_YELLOW "%fn" TERMINAL_RESET ": %fv");
+	}
 
 	list_for_each_entry(account, &blob->account_head, list)
 		list_add(&account->match_list, &potential_set);
@@ -244,7 +278,7 @@ int cmd_show(int argc, char **argv)
 		/* Multiple matches; dump the ids and exit */
 		terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Multiple matches found.\n");
 		list_for_each_entry(found, &matches, match_list)
-			print_header(found);
+			print_header(title_format, found);
 		exit(EXIT_SUCCESS);
 	}
 
@@ -297,27 +331,27 @@ int cmd_show(int argc, char **argv)
 			value = xstrdup(found->note);
 
 		if (choice == ALL) {
-			print_header(found);
+			print_header(title_format, found);
 
 			if (strlen(found->username))
-				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Username", found->username);
+				print_field(field_format, found, "Username", found->username);
 			if (strlen(found->password))
-				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Password", found->password);
+				print_field(field_format, found, "Password", found->password);
 			if (strlen(found->url) && strcmp(found->url, "http://"))
-				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "URL", found->url);
+				print_field(field_format, found, "URL", found->url);
 			if (found->is_app) {
 				app = account_to_app(found);
 				if (strlen(app->appname))
-					terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", "Application", app->appname);
+					print_field(field_format, found, "Application", app->appname);
 			}
 
 			list_for_each_entry(found_field, &found->field_head, list) {
 				pretty_field = pretty_field_value(found_field);
-				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", found_field->name, pretty_field);
+				print_field(field_format, found, found_field->name, pretty_field);
 				free(pretty_field);
 			}
 			if (strlen(found->note))
-				terminal_printf(TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ":\n%s\n", "Notes", found->note);
+				print_field(field_format, found, "Notes", found->note);
 		} else {
 			if (!value)
 				die("Programming error.");
