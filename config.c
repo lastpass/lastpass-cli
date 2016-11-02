@@ -319,7 +319,7 @@ size_t config_read_buffer(const char *name, unsigned char **out)
 
 static size_t encrypt_buffer(const char *buffer, size_t in_len, unsigned const char key[KDF_HASH_LEN], char **out)
 {
-	EVP_CIPHER_CTX ctx;
+	EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 	char *ciphertext;
 	unsigned char iv[AES_BLOCK_SIZE];
 	int out_len;
@@ -329,22 +329,21 @@ static size_t encrypt_buffer(const char *buffer, size_t in_len, unsigned const c
 	if (!RAND_bytes(iv, AES_BLOCK_SIZE))
 		die("Could not generate random bytes for CBC IV.");
 
-	EVP_CIPHER_CTX_init(&ctx);
 	ciphertext = xcalloc(in_len + AES_BLOCK_SIZE * 2 + SHA256_DIGEST_LENGTH, 1);
 
 	len = SHA256_DIGEST_LENGTH;
 	memcpy(ciphertext + len, iv, AES_BLOCK_SIZE);
 	len += AES_BLOCK_SIZE;
 
-	if (!EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv))
+	if (!EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
 		goto error;
-	if (!EVP_EncryptUpdate(&ctx, (unsigned char *)(ciphertext + len), &out_len, (unsigned char *)buffer, in_len))
-		goto error;
-	len += out_len;
-	if (!EVP_EncryptFinal_ex(&ctx, (unsigned char *)(ciphertext + len), &out_len))
+	if (!EVP_EncryptUpdate(ctx, (unsigned char *)(ciphertext + len), &out_len, (unsigned char *)buffer, in_len))
 		goto error;
 	len += out_len;
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	if (!EVP_EncryptFinal_ex(ctx, (unsigned char *)(ciphertext + len), &out_len))
+		goto error;
+	len += out_len;
+	EVP_CIPHER_CTX_free(ctx);
 
 	if (!HMAC(EVP_sha256(), key, KDF_HASH_LEN, (unsigned char *)(ciphertext + SHA256_DIGEST_LENGTH), len - SHA256_DIGEST_LENGTH, (unsigned char *)ciphertext, &hmac_len))
 		goto error;
@@ -353,7 +352,7 @@ static size_t encrypt_buffer(const char *buffer, size_t in_len, unsigned const c
 	return len;
 
 error:
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_cleanup(ctx);
 	free(ciphertext);
 	die("Failed to encrypt data.");
 
@@ -361,14 +360,12 @@ error:
 
 static size_t decrypt_buffer(const unsigned char *buffer, size_t in_len, unsigned const char key[KDF_HASH_LEN], unsigned char **out)
 {
-	EVP_CIPHER_CTX ctx;
+	EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 	unsigned char *plaintext = NULL;
 	int out_len;
 	unsigned int hmac_len;
 	size_t len;
 	unsigned char hmac[SHA256_DIGEST_LENGTH];
-
-	EVP_CIPHER_CTX_init(&ctx);
 
 	if (in_len < (SHA256_DIGEST_LENGTH + AES_BLOCK_SIZE * 2))
 		goto error;
@@ -379,20 +376,20 @@ static size_t decrypt_buffer(const unsigned char *buffer, size_t in_len, unsigne
 		goto error;
 
 	plaintext = xcalloc(in_len + AES_BLOCK_SIZE, 1);
-	if (!EVP_DecryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, (unsigned char *)(buffer + SHA256_DIGEST_LENGTH)))
+	if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, (unsigned char *)(buffer + SHA256_DIGEST_LENGTH)))
 		goto error;
-	if (!EVP_DecryptUpdate(&ctx, (unsigned char *)plaintext, &out_len, (unsigned char *)(buffer + SHA256_DIGEST_LENGTH + AES_BLOCK_SIZE), in_len - SHA256_DIGEST_LENGTH - AES_BLOCK_SIZE))
+	if (!EVP_DecryptUpdate(ctx, (unsigned char *)plaintext, &out_len, (unsigned char *)(buffer + SHA256_DIGEST_LENGTH + AES_BLOCK_SIZE), in_len - SHA256_DIGEST_LENGTH - AES_BLOCK_SIZE))
 		goto error;
 	len = out_len;
-	if (!EVP_DecryptFinal_ex(&ctx, (unsigned char *)(plaintext + out_len), &out_len))
+	if (!EVP_DecryptFinal_ex(ctx, (unsigned char *)(plaintext + out_len), &out_len))
 		goto error;
 	len += out_len;
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_free(ctx);
 	*out = plaintext;
 	return len;
 
 error:
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_cleanup(ctx);
 	free(plaintext);
 	*out = NULL;
 	return 0;
