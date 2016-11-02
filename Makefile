@@ -34,7 +34,7 @@ doc-man: lpass.1
 doc-html: lpass.1.html
 doc: doc-man doc-html
 
-lpass: $(patsubst %.c,%.o,$(wildcard *.c))
+lpass: $(patsubst %.c,%.o,$(sort $(wildcard *.c)))
 %.1: %.1.txt
 	a2x --no-xmllint -f manpage $<
 %.1.html: %.1.txt
