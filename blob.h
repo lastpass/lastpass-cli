@@ -87,6 +87,13 @@ struct app {
 	char *exehash;
 };
 
+/* resizable string buffer */
+struct buffer {
+	size_t len;
+	size_t max;
+	char *bytes;
+};
+
 struct blob {
 	unsigned long long version;
 	bool local_version;
@@ -152,5 +159,8 @@ struct account *notes_expand(struct account *acc);
 struct account *notes_collapse(struct account *acc);
 void share_free(struct share *share);
 struct share *find_unique_share(struct blob *blob, const char *name);
+void buffer_append(struct buffer *buffer, void *bytes, size_t len);
+void buffer_append_char(struct buffer *buf, char c);
+void buffer_append_str(struct buffer *buf, char *str);
 
 #endif

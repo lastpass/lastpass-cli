@@ -37,6 +37,7 @@
 #include "util.h"
 #include "config.h"
 #include "terminal.h"
+#include "format.h"
 #include "kdf.h"
 #include <getopt.h>
 #include <stdio.h>
@@ -55,29 +56,6 @@ struct node {
 	struct list_head children;
 	struct list_head list;
 };
-
-static char *format_timestamp(char *timestamp, bool utc)
-{
-	char temp[60];
-	struct tm *ts_tm;
-
-	if (!timestamp)
-		return xstrdup("");
-
-	time_t ts_time_t = (time_t) strtoul(timestamp, NULL, 10);
-
-	if (ts_time_t == 0)
-		return xstrdup("");
-
-	if (utc)
-		ts_tm = gmtime(&ts_time_t);
-	else
-		ts_tm = localtime(&ts_time_t);
-
-	strftime(temp, sizeof(temp), "%Y-%m-%d %H:%M", ts_tm);
-
-	return xstrdup(temp);
-}
 
 struct path_component
 {
@@ -205,7 +183,7 @@ static void free_node(struct node *head)
 	free(head);
 }
 
-static void print_node(struct node *head, int level)
+static void print_node(struct node *head, char *fmt_str, int level)
 {
 	struct node *node;
 
@@ -214,37 +192,20 @@ static void print_node(struct node *head, int level)
 			for (int i = 0; i < level; ++i)
 				printf("    ");
 			if (node->account) {
-				if (long_listing) {
-					_cleanup_free_ char *timestr = show_mtime ?
-						format_timestamp(node->account->last_modified_gmt, true) :
-						format_timestamp(node->account->last_touch, false);
-					terminal_printf(TERMINAL_FG_CYAN "%s ", timestr);
-				}
-				terminal_printf(TERMINAL_FG_GREEN TERMINAL_BOLD "%s" TERMINAL_NO_BOLD " [id: %s]", node->name, node->account->id);
-				if (long_listing) {
-					terminal_printf(TERMINAL_FG_GREEN " [username: %s]", node->account->username);
-				}
-				terminal_printf(TERMINAL_RESET "\n");
+				struct buffer buf;
+
+				memset(&buf, 0, sizeof(buf));
+				format_account(&buf, fmt_str, node->account);
+				terminal_printf("%s\n", buf.bytes);
+				free(buf.bytes);
 			}
 			else if (node->shared)
 				terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
 			else
 				terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
 		}
-		print_node(node, level + 1);
+		print_node(node, fmt_str, level + 1);
 	}
-}
-
-static char *get_display_fullname(struct account *account)
-{
-	char *fullname = NULL;
-
-	if (account->share || strcmp(account->group, ""))
-		fullname = xstrdup(account->fullname);
-	else
-		xasprintf(&fullname, "(none)/%s", account->fullname);
-
-	return fullname;
 }
 
 static int compare_account(const void *a, const void *b)
@@ -262,6 +223,7 @@ int cmd_ls(int argc, char **argv)
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
 		{"color", required_argument, NULL, 'C'},
+		{"format", required_argument, NULL, 'f'},
 		{"long", no_argument, NULL, 'l'},
 		{0, 0, 0, 0}
 	};
@@ -278,6 +240,7 @@ int cmd_ls(int argc, char **argv)
 	struct account *account;
 	_cleanup_free_ struct account **account_array = NULL;
 	int i, num_accounts;
+	_cleanup_free_ char *fmt_str = NULL;
 
 	while ((option = getopt_long(argc, argv, "lmu", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -286,6 +249,9 @@ int cmd_ls(int argc, char **argv)
 				break;
 			case 'C':
 				cmode = parse_color_mode_string(optarg);
+				break;
+			case 'f':
+				fmt_str = xstrdup(optarg);
 				break;
 			case 'l':
 				long_listing = true;
@@ -337,6 +303,19 @@ int cmd_ls(int argc, char **argv)
 	qsort(account_array, num_accounts, sizeof(struct account *),
 	      compare_account);
 
+	if (!fmt_str) {
+		xasprintf(&fmt_str,
+			  TERMINAL_FG_CYAN "%s"
+			  TERMINAL_FG_GREEN TERMINAL_BOLD "%%a%c"
+			  TERMINAL_NO_BOLD
+			  " [id: %%ai]"
+			  "%s" TERMINAL_RESET,
+			  (long_listing) ?
+				((show_mtime) ?  "%am " : "%aU ") : "",
+			  (print_tree) ? 'n' : 'N',
+			  (long_listing) ? " [username: %au]" : "");
+	}
+
 	for (i=0; i < num_accounts; i++)
 	{
 		struct account *account = account_array[i];
@@ -356,23 +335,17 @@ int cmd_ls(int argc, char **argv)
 		if (print_tree)
 			insert_node(root, fullname, account);
 		else {
-			if (long_listing) {
-				_cleanup_free_ char *timestr = show_mtime ?
-					format_timestamp(account->last_modified_gmt, true) :
-					format_timestamp(account->last_touch, false);
-				printf("%s ", timestr);
-			}
-			printf("%s [id: %s]", fullname, account->id);
-			if (long_listing) {
-				printf(" [username: %s]", account->username);
-			}
-			printf("\n");
-		}
+			struct buffer buf;
 
+			memset(&buf, 0, sizeof(buf));
+			format_account(&buf, fmt_str, account);
+			terminal_printf("%s\n", buf.bytes);
+			free(buf.bytes);
+		}
 		free(fullname);
 	}
 	if (print_tree)
-		print_node(root, 0);
+		print_node(root, fmt_str, 0);
 
 	free_node(root);
 	session_free(session);
