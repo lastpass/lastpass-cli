@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 2.8)
 
 project(lpass)
 
+if((APPLE) AND (NOT DEFINED OPENSSL_ROOT_DIR))
+  set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
+endif()
+
 find_package(LibXml2 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIR})
 
