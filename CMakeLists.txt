@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(lpass)
 
+include(GNUInstallDirs)
+
 if((APPLE) AND (NOT DEFINED OPENSSL_ROOT_DIR))
   set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
 endif()
@@ -36,5 +38,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 
-add_custom_target(predoc a2x --no-xmllint -f manpage ${CMAKE_SOURCE_DIR}/lpass.1.txt)
-add_custom_target(doc asciidoc -b html5 -a data-uri -a icons -a toc2 -o lpass.1.html ${CMAKE_SOURCE_DIR}/lpass.1.txt DEPENDS predoc)
+add_custom_target(doc-man a2x --no-xmllint -f manpage ${CMAKE_SOURCE_DIR}/lpass.1.txt)
+add_custom_target(doc asciidoc -b html5 -a data-uri -a icons -a toc2 -o lpass.1.html ${CMAKE_SOURCE_DIR}/lpass.1.txt DEPENDS doc-man)
+add_custom_target(install-doc install -v -d ${CMAKE_INSTALL_FULL_MANDIR}/man1 && install -m 0644 -v lpass.1 ${CMAKE_INSTALL_FULL_MANDIR}/man1/lpass.1 DEPENDS doc)
+
