@@ -40,7 +40,7 @@ int fallback_pkcs5_pbkdf2_hmac(const char *pass, size_t pass_len,
 	const unsigned char *salt, size_t salt_len, unsigned int iterations,
 	const EVP_MD *digest, size_t key_len, unsigned char *output)
 {
-	HMAC_CTX ctx;
+	HMAC_CTX *ctx = HMAC_CTX_new();
 	unsigned char *out = output;
 	unsigned int iter = 1, count = 1;
 	unsigned int cp_len, i, ret = 0;
@@ -52,8 +52,7 @@ int fallback_pkcs5_pbkdf2_hmac(const char *pass, size_t pass_len,
 
 	unsigned char tmp_md[md_len];
 
-	HMAC_CTX_init(&ctx);
-	ERR_IFZERO(HMAC_Init_ex(&ctx, pass, pass_len, digest, NULL));
+	ERR_IFZERO(HMAC_Init_ex(ctx, pass, pass_len, digest, NULL));
 
 	while (key_left) {
 		cp_len = min(key_left, md_len);
@@ -64,16 +63,16 @@ int fallback_pkcs5_pbkdf2_hmac(const char *pass, size_t pass_len,
 		c[2] = (count >> 8) & 0xff;
 		c[3] = (count) & 0xff;
 
-		ERR_IFZERO(HMAC_Init_ex(&ctx, NULL, 0, digest, NULL));
-		ERR_IFZERO(HMAC_Update(&ctx, salt, salt_len));
-		ERR_IFZERO(HMAC_Update(&ctx, c, 4));
-		ERR_IFZERO(HMAC_Final(&ctx, tmp_md, NULL));
+		ERR_IFZERO(HMAC_Init_ex(ctx, NULL, 0, digest, NULL));
+		ERR_IFZERO(HMAC_Update(ctx, salt, salt_len));
+		ERR_IFZERO(HMAC_Update(ctx, c, 4));
+		ERR_IFZERO(HMAC_Final(ctx, tmp_md, NULL));
 		memcpy(out, tmp_md, cp_len);
 
 		for (iter=1; iter < iterations; iter++) {
-			ERR_IFZERO(HMAC_Init_ex(&ctx, NULL, 0, digest, NULL));
-			ERR_IFZERO(HMAC_Update(&ctx, tmp_md, md_len));
-			ERR_IFZERO(HMAC_Final(&ctx, tmp_md, NULL));
+			ERR_IFZERO(HMAC_Init_ex(ctx, NULL, 0, digest, NULL));
+			ERR_IFZERO(HMAC_Update(ctx, tmp_md, md_len));
+			ERR_IFZERO(HMAC_Final(ctx, tmp_md, NULL));
 
 			for (i = 0; i < cp_len; i++) {
 				out[i] ^= tmp_md[i];
@@ -87,6 +86,6 @@ int fallback_pkcs5_pbkdf2_hmac(const char *pass, size_t pass_len,
 	ret = 1;
 
 ERR_LABEL
-	HMAC_CTX_cleanup(&ctx);
+	HMAC_CTX_free(ctx);
 	return ret;
 }
