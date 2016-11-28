@@ -24,7 +24,7 @@ file(GLOB PROJECT_SOURCES *.c)
 
 set(PROJECT_DEFINITIONS "_GNU_SOURCE")
 
-set(PROJECT_FLAGS "-pedantic -Wall -Wextra -Wno-language-extension-token")
+set(PROJECT_FLAGS "-std=gnu99 -pedantic -Wall -Wextra -Wno-language-extension-token")
 if(APPLE)
   set(PROJECT_FLAGS "${PROJECT_FLAGS} -Wno-deprecated-declarations")
 endif()
