@@ -132,6 +132,27 @@ the '--long' or '-l' option is set, then also list the last modification
 time.  The '-u' option may be passed to show the last use (last touch) time
 instead, if available. Both times are in GMT.
 
+In addition to using the built-in formats, both 'show' and 'ls' subcommands
+support printf-style format strings by using the '--format' option with
+the following placeholders:
+
+* %ai: account id
+* %an: account name
+* %aN: account name including path
+* %au: account user
+* %ap: account password
+* %am: account modification time
+* %aU: account last touch time
+* %as: account share name
+* %ag: account group name
+* %fn: field name (for 'show')
+* %fv: field value (for 'show')
+
+A slash can be added between the '%' and the placeholder to indicate that a
+slash should be appended, only if the printed value is expanded to a non-empty
+string.  For example, this command will properly show the full path to
+an account: `lpass ls --format="%/as%/ag%an"`.
+
 Modifying
 ~~~~~~~~~
 The 'edit' subcommand will edit the selected field. If '--non-interactive' is not
