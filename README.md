@@ -141,7 +141,7 @@ apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel lib
 
 ## Building
 
-    $ make
+    $ cmake . && make
 
 ## Installing
 
