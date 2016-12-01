@@ -121,11 +121,12 @@ void die_usage(const char *usage)
 	exit(1);
 }
 
-bool ask_yes_no(bool default_yes, const char *prompt, ...)
+char ask_options(char *options, char def, const char *prompt, ...)
 {
 	va_list params;
 	_cleanup_free_ char *response = NULL;
 	size_t len = 0;
+	unsigned int i;
 
 	for (;;) {
 		va_start(params, prompt);
@@ -133,26 +134,45 @@ bool ask_yes_no(bool default_yes, const char *prompt, ...)
 		vfprintf(stderr, prompt, params);
 		terminal_fprintf(stderr, TERMINAL_RESET);
 		va_end(params);
-		if (default_yes)
-			terminal_fprintf(stderr, " [" TERMINAL_BOLD "Y" TERMINAL_RESET "/n] ");
-		else
-			terminal_fprintf(stderr, " [y/" TERMINAL_BOLD "N" TERMINAL_RESET "] ");
+		terminal_fprintf(stderr, " [");
+	        for (i = 0; i < strlen(options); i++) {
+			if (options[i] == def) {
+				terminal_fprintf(stderr,TERMINAL_BOLD "%c" TERMINAL_RESET, toupper(options[i]));
+			} else {
+				terminal_fprintf(stderr, "%c", options[i]);
+			}
+			if (i < strlen(options)-1)
+				terminal_fprintf(stderr, "/");
+			else
+				terminal_fprintf(stderr, "] ");
+		}
 		if (getline(&response, &len, stdin) < 0)
 			die("aborted response.");
 		strlower(response);
-		if (!strcmp("y\n", response) || !strcmp("yes\n", response))
-			return true;
-		else if (!strcmp("n\n", response) || !strcmp("no\n", response))
-			return false;
-		else if (!strcmp("\n", response))
-			return default_yes;
-		else {
-			terminal_fprintf(stderr, TERMINAL_FG_RED TERMINAL_BOLD "Error" TERMINAL_RESET ": Response not understood.\n");
-			free(response);
-			response = NULL;
-			len = 0;
-		}
+
+		if (!strcmp("\n", response))
+			return def;
+
+		if (strlen(response) && strchr(options, response[0]))
+			return response[0];
+
+		terminal_fprintf(stderr, TERMINAL_FG_RED TERMINAL_BOLD "Error" TERMINAL_RESET ": Response not understood.\n");
+		free(response);
+		response = NULL;
+		len = 0;
 	}
+}
+
+bool ask_yes_no(bool default_yes, const char *prompt, ...)
+{
+	va_list params;
+	char message[4096];
+
+	va_start(params, prompt);
+	vsnprintf(message, sizeof(message), prompt, params);
+	va_end(params);
+
+	return ask_options("yn", (default_yes) ? 'y' : 'n', message) == 'y';
 }
 
 void *xmalloc(size_t size)
