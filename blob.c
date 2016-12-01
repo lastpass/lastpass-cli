@@ -147,6 +147,7 @@ struct app *new_app()
 	app->extra_encrypted = xstrdup("");
 
 	INIT_LIST_HEAD(&account->field_head);
+	INIT_LIST_HEAD(&account->attach_head);
 	account->is_app = true;
 
 	return app;
@@ -156,6 +157,7 @@ struct account *new_account()
 {
 	struct account *account = new0(struct account, 1);
 	INIT_LIST_HEAD(&account->field_head);
+	INIT_LIST_HEAD(&account->attach_head);
 	return account;
 }
 
@@ -379,8 +381,8 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	skip(action);
 	skip(groupid);
 	skip(deleted);
-	skip(attachkey);
-	skip(attachpresent);
+	entry_plain(attachkey_encrypted);
+	entry_boolean(attachpresent);
 	skip(individualshare);
 	skip(notetype);
 	skip(noalert);
@@ -394,6 +396,11 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 		parsed->name[0] = '\0';
 	if (parsed->group[0] == 16)
 		parsed->group[0] = '\0';
+
+	if (parsed->attachkey_encrypted) {
+		parsed->attachkey = cipher_aes_decrypt_base64(
+			parsed->attachkey_encrypted, key);
+	}
 
 	/* use name as 'fullname' only if there's no assigned group */
 	if (strlen(parsed->group) &&
@@ -531,6 +538,38 @@ error:
 	return NULL;
 }
 
+static void attach_free(struct attach *attach)
+{
+	if (!attach)
+		return;
+
+	free(attach->id);
+	free(attach->parent);
+	free(attach->mimetype);
+	free(attach->storagekey);
+	free(attach->size);
+	free(attach->filename);
+	free(attach);
+}
+
+static struct attach *attach_parse(struct chunk *chunk)
+{
+	struct attach *parsed = new0(struct attach, 1);
+
+	entry_plain(id);
+	entry_plain(parent);
+	entry_plain(mimetype);
+	entry_plain(storagekey);
+	entry_plain(size);
+	entry_plain(filename);
+
+	return parsed;
+
+error:
+	attach_free(parsed);
+	return NULL;
+}
+
 #undef entry_plain
 #undef entry_plain_at
 #undef entry_hex
@@ -547,6 +586,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 	struct field *field;
 	struct share *share, *last_share = NULL;
 	struct app *app = NULL;
+	struct attach *attach;
 	struct blob *parsed;
 	_cleanup_free_ char *versionstr = NULL;
 
@@ -601,6 +641,24 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 			if (!field)
 				goto error;
 			list_add_tail(&field->list, &app->account.field_head);
+		} else if (!strcmp(chunk.name, "ATTA")) {
+			struct account *tmp;
+			bool found = false;
+
+			attach = attach_parse(&chunk);
+			if (!attach)
+				goto error;
+
+			/* add attachment to the proper account's list */
+			list_for_each_entry(tmp, &parsed->account_head, list) {
+				if (!strcmp(tmp->id, attach->parent)) {
+					found = true;
+					list_add_tail(&attach->list, &tmp->attach_head);
+					break;
+				}
+			}
+			if (!found)
+				attach_free(attach);
 		}
 	}
 
@@ -1069,6 +1127,7 @@ struct account *notes_expand(struct account *acc)
 	struct account *expand;
 	struct field *field;
 	char *start, *lf, *colon, *name, *value;
+	struct attach *attach, *tmp;
 	char *line = NULL;
 	size_t len;
 
@@ -1139,12 +1198,23 @@ skip:
 	if (!expand->password)
 		expand->password = xstrdup("");
 
+	/* move attachments to expanded account */
+	expand->attachkey = xstrdup(acc->attachkey);
+	expand->attachkey_encrypted = xstrdup(acc->attachkey_encrypted);
+	expand->attachpresent = acc->attachpresent;
+
+	list_for_each_entry_safe(attach, tmp, &acc->attach_head, list) {
+		list_del(&attach->list);
+		list_add_tail(&attach->list, &expand->attach_head);
+	}
+
 	return expand;
 }
 struct account *notes_collapse(struct account *acc)
 {
 	struct account *collapse;
 	struct field *field;
+	struct attach *attach, *tmp;
 
 	collapse = new_account();
 
@@ -1158,6 +1228,16 @@ struct account *notes_collapse(struct account *acc)
 	collapse->password = xstrdup("");
 	collapse->note = xstrdup("");
 	collapse->share = acc->share;
+
+	/* move attachments back from expanded account */
+	collapse->attachkey = xstrdup(acc->attachkey);
+	collapse->attachkey_encrypted = xstrdup(acc->attachkey_encrypted);
+	collapse->attachpresent = acc->attachpresent;
+
+	list_for_each_entry_safe(attach, tmp, &acc->attach_head, list) {
+		list_del(&attach->list);
+		list_add_tail(&attach->list, &collapse->attach_head);
+	}
 
 	list_for_each_entry(field, &acc->field_head, list) {
 		trim(field->value);

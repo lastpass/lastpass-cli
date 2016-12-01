@@ -24,7 +24,7 @@ several subcommands:
  lpass *login* [--trust] [--plaintext-key [--force, -f]] [--color=auto|never|always] USERNAME
  lpass *logout* [--force, -f] [--color=auto|never|always]
  lpass *passwd*
- lpass *show* [--sync=auto|now|no] [--clip, -c] [--expand-multi, -x] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
+ lpass *show* [--sync=auto|now|no] [--clip, -c] [--expand-multi, -x] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name|--attach=ATTACHID] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
  lpass *ls* [--sync=auto|now|no] [--long, -l] [-m] [-u] [--color=auto|never|always] [GROUP]
  lpass *mv* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID} GROUP
  lpass *add* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD|--note-type=NOTETYPE} [--color=auto|never|always] {NAME|UNIQUEID}
@@ -283,6 +283,15 @@ Name: My Name Goes Here
 NoteType: Social Security
 Notes:
 Any notes I want to save go here.
+
+# Display a secure note attachment
+$ lpass show my-secure-note
+info/my-secure-note [id: 1426405543365295118]
+URL: http://sn
+att-1426405543365295118-94690: travel-flight.pdf
+$ lpass show my-secure-note --attach att-1426405543365295118-94690
+"travel-flight.pdf" is a binary file, print it anyway (or save)?  [y/n/S] s
+Wrote 122864 bytes to "travel-flight.pdf"
 
 # Add an account non-interactively by creating the proper template
 printf "Username: wizard97\nPassword: vJwhFfBBtn8hj4" | \
