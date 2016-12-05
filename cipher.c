@@ -147,36 +147,39 @@ int cipher_rsa_encrypt(const char *plaintext,
 
 char *cipher_aes_decrypt(const unsigned char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
 {
-	EVP_CIPHER_CTX ctx;
+	EVP_CIPHER_CTX *ctx;
 	char *plaintext;
 	int out_len;
 
 	if (!len)
 		return NULL;
 
-	EVP_CIPHER_CTX_init(&ctx);
+	ctx = EVP_CIPHER_CTX_new();
+	if (!ctx)
+		return NULL;
+
 	plaintext = xcalloc(len + AES_BLOCK_SIZE + 1, 1);
 	if (len >= 33 && len % 16 == 1 && ciphertext[0] == '!') {
-		if (!EVP_DecryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, (unsigned char *)(ciphertext + 1)))
+		if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, (unsigned char *)(ciphertext + 1)))
 			goto error;
 		ciphertext += 17;
 		len -= 17;
 	} else {
-		if (!EVP_DecryptInit_ex(&ctx, EVP_aes_256_ecb(), NULL, key, NULL))
+		if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL))
 			goto error;
 	}
-	if (!EVP_DecryptUpdate(&ctx, (unsigned char *)plaintext, &out_len, (unsigned char *)ciphertext, len))
+	if (!EVP_DecryptUpdate(ctx, (unsigned char *)plaintext, &out_len, (unsigned char *)ciphertext, len))
 		goto error;
 	len = out_len;
-	if (!EVP_DecryptFinal_ex(&ctx, (unsigned char *)(plaintext + out_len), &out_len))
+	if (!EVP_DecryptFinal_ex(ctx, (unsigned char *)(plaintext + out_len), &out_len))
 		goto error;
 	len += out_len;
 	plaintext[len] = '\0';
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_free(ctx);
 	return plaintext;
 
 error:
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_free(ctx);
 	secure_clear(plaintext, len + AES_BLOCK_SIZE + 1);
 	free(plaintext);
 	return NULL;
@@ -188,7 +191,7 @@ size_t cipher_aes_encrypt_bytes(const unsigned char *bytes, size_t len,
 				const unsigned char *iv,
 				unsigned char **out)
 {
-	EVP_CIPHER_CTX ctx;
+	EVP_CIPHER_CTX *ctx;
 	int out_len;
 	size_t ret_len = 0;
 	unsigned char *ctext;
@@ -197,24 +200,27 @@ size_t cipher_aes_encrypt_bytes(const unsigned char *bytes, size_t len,
 	if (!ctext)
 		ctext = xcalloc(len + AES_BLOCK_SIZE * 2 + 1, 1);
 
-	EVP_CIPHER_CTX_init(&ctx);
-	if (!EVP_EncryptInit_ex(&ctx, EVP_aes_256_cbc(), NULL, key, iv))
+	ctx = EVP_CIPHER_CTX_new();
+	if (!ctx)
 		goto error;
 
-	if (!EVP_EncryptUpdate(&ctx, ctext, &out_len, bytes, len))
+	if (!EVP_EncryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv))
+		goto error;
+
+	if (!EVP_EncryptUpdate(ctx, ctext, &out_len, bytes, len))
 		goto error;
 
 	ret_len += out_len;
-	if (!EVP_EncryptFinal_ex(&ctx, ctext + ret_len, &out_len))
+	if (!EVP_EncryptFinal_ex(ctx, ctext + ret_len, &out_len))
 		goto error;
 	ret_len += out_len;
 
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_free(ctx);
 	*out = ctext;
 	return ret_len;
 
 error:
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_free(ctx);
 	if (!*out)
 		free(ctext);
 	die("Failed to encrypt data.");
