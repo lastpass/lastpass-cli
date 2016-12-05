@@ -70,8 +70,6 @@ char *cipher_rsa_decrypt(const unsigned char *ciphertext, size_t len, const stru
 	pkey = EVP_PKCS82PKEY(p8inf);
 	if (!pkey)
 		goto out;
-	if (p8inf->broken)
-		goto out;
 	rsa = EVP_PKEY_get1_RSA(pkey);
 	if (!rsa)
 		goto out;
