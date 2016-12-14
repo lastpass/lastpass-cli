@@ -60,6 +60,8 @@ struct share_args {
 	bool add;
 	bool remove;
 	bool clear;
+
+	bool confirm_keys;
 };
 
 struct share_command {
@@ -70,7 +72,7 @@ struct share_command {
 };
 
 #define share_userls_usage "userls SHARE"
-#define share_useradd_usage "useradd [--read-only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
+#define share_useradd_usage "useradd [--read-only=[true|false] --hidden=[true|false] --admin=[true|false] [--confirm-keys, -k] SHARE USERNAME"
 #define share_usermod_usage "usermod [--read-only=[true|false] --hidden=[true|false] --admin=[true|false] SHARE USERNAME"
 #define share_userdel_usage "userdel SHARE USERNAME"
 #define share_create_usage "create SHARE"
@@ -165,7 +167,7 @@ static int share_useradd(struct share_command *cmd, int argc, char **argv,
 		die_share_usage(cmd);
 
 	new_user.username = argv[0];
-	lastpass_share_user_add(args->session, args->share, &new_user);
+	lastpass_share_user_add(args->session, args->share, &new_user, args->confirm_keys);
 	return 0;
 }
 
@@ -437,6 +439,7 @@ int cmd_share(int argc, char **argv)
 		{"add", no_argument, NULL, 'A'},
 		{"rm", no_argument, NULL, 'R'},
 		{"clear", no_argument, NULL, 'c'},
+		{"confirm-keys", no_argument, NULL, 'k'},
 		{0, 0, 0, 0}
 	};
 
@@ -460,7 +463,7 @@ int cmd_share(int argc, char **argv)
 	 */
 	int option;
 	int option_index;
-	while ((option = getopt_long(argc, argv, "S:C:r:H:a:dwARc", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "S:C:r:H:a:dwARck", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				args.sync = parse_sync_string(optarg);
@@ -502,10 +505,19 @@ int cmd_share(int argc, char **argv)
 				args.clear = true;
 				args.add = args.remove = false;
 				break;
+			case 'k':
+				args.confirm_keys = true;
+				break;
 			case '?':
 			default:
 				invalid_params = true;
 		}
+	}
+
+	char *always_confirm_keys_str = getenv("LPASS_ALWAYS_CONFIRM_KEYS");
+	if (always_confirm_keys_str && !strcmp(always_confirm_keys_str, "1")) {
+		// Make sure we do not allow share adds without confirming the key fingerprint.
+		args.confirm_keys = true;
 	}
 
 	if (argc - optind < 1)

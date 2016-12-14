@@ -102,7 +102,7 @@ int cmd_rm(int argc, char **argv);
 #define cmd_rm_usage "rm [--sync=auto|now|no] " color_usage " {UNIQUENAME|UNIQUEID}"
 
 int cmd_status(int argc, char **argv);
-#define cmd_status_usage "status [--quiet, -q] " color_usage
+#define cmd_status_usage "status [--quiet, -q] [--public-key-fingerprint, -k] " color_usage
 
 int cmd_sync(int argc, char **argv);
 #define cmd_sync_usage "sync [--background, -b] " color_usage

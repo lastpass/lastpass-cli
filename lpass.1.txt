@@ -32,12 +32,12 @@ several subcommands:
  lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
  lpass *duplicate* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
  lpass *rm* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
- lpass *status* [--quiet, -q] [--color=auto|never|always]
+ lpass *status* [--quiet, -q] [--color=auto|never|always] [--public-key-fingerprint, -k]
  lpass *sync* [--background, -b] [--color=auto|never|always]
  lpass *import* [--sync=auto|now|no] [--keep-dupes] [FILENAME]
  lpass *export* [--sync=auto|now|no] [--color=auto|never|always] [--fields=FIELDLIST]
  lpass *share* *userls* SHARE
- lpass *share* *useradd* [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
+ lpass *share* *useradd* [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] [--confirm-keys, -k] SHARE USERNAME
  lpass *share* *usermod* [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
  lpass *share* *userdel* SHARE USERNAME
  lpass *share* *create* SHARE
@@ -221,6 +221,22 @@ current access levels for a user.  The '--add', '--rm', and '--clear' options
 may be used to add to, remove from, or reset the list.  Passing '--allow' or
 '--deny' will make the list a whitelist or blacklist, respectively.
 
+Confirming Sharing Keys When Sharing Folders
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Unauthorized access to your shared folder can be obtained by consuming a rogue
+public key from compromised Lastpass servers. To defend against this, you
+can choose to confirm the public key that is about to be used for 'share useradd'.
+
+First, 'login' as the sharee, and invoke 'status -k' to print the sharee's public
+key fingerprint.
+
+Then, 'login' as the sharer, and invoke the 'share useradd -k' command.
+The '-k' flag will print the public key fingerprint of the sharee and
+will require manual confirmation to actually share the folder. Confirm that the
+displayed fingerprint is the one that was shown during 'status -k' for the sharee.
+
+Set environment variable `LPASS_ALWAYS_CONFIRM_KEYS` to 1 to force key confirmation.
+
 Clipboard
 ~~~~~~~~~
 Commands that take a '-c' or '--clip' option will copy the output to the
@@ -289,6 +305,7 @@ in the section above:
 * 'LPASS_DISABLE_PINENTRY'
 * 'LPASS_ASKPASS'
 * 'LPASS_CLIPBOARD_COMMAND'
+* 'LPASS_LPASS_ALWAYS_CONFIRM_KEYS'
 
 EXAMPLES
 --------

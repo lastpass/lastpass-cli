@@ -40,12 +40,16 @@
 #include "config.h"
 #include "util.h"
 #include "upload-queue.h"
+#include "terminal.h"
 #include <string.h>
 #include <errno.h>
 #include <curl/curl.h>
 
+void confirm_public_keys(struct list_head *user_list);
+void verify_public_key_for_self(const struct session *session, struct share_user *user);
+
 int lastpass_share_getinfo(const struct session *session, const char *shareid,
-			   struct list_head *users)
+						   struct list_head *users)
 {
 	_cleanup_free_ char *reply = NULL;
 	size_t len;
@@ -101,7 +105,8 @@ int lastpass_share_get_users_by_username(const struct session *session,
 
 int lastpass_share_user_add(const struct session *session,
 			    struct share *share,
-			    struct share_user *user)
+			    struct share_user *user,
+				bool confirm_keys)
 {
 	_cleanup_free_ char *reply = NULL;
 	_cleanup_free_ char *enc_share_name = NULL;
@@ -120,6 +125,17 @@ int lastpass_share_user_add(const struct session *session,
 						   &user_list);
 	if (ret)
 		die("Unable to lookup user %s (%d)\n", user->username, ret);
+
+	/* ensure that we do not attempt to encrypt with a missing pubkey */
+	list_for_each_entry_safe(share_user, tmp, &user_list, list) {
+		if (share_user->sharing_key.len == 0) {
+			die("Unable to share with user %s without a sharing key.", share_user->username);
+		}
+	}
+
+	if (confirm_keys) {
+		confirm_public_keys(&user_list);
+	}
 
 	list_for_each_entry_safe(share_user, tmp, &user_list, list) {
 
@@ -163,6 +179,25 @@ int lastpass_share_user_add(const struct session *session,
 		return -EPERM;
 
 	return 0;
+}
+
+void confirm_public_keys(struct list_head *user_list)
+{
+	char *key_fingerprint_sha256_hex;
+	struct share_user *share_user, *tmp;
+
+	list_for_each_entry_safe(share_user, tmp, user_list, list) {
+		key_fingerprint_sha256_hex = cipher_public_key_fingerprint_sha256_hex(&share_user->sharing_key);
+		terminal_printf(
+				"Sharing using " TERMINAL_FG_GREEN TERMINAL_BOLD "public key fingerprint" TERMINAL_RESET " of " TERMINAL_UNDERLINE
+						"%s" TERMINAL_RESET " for user " TERMINAL_UNDERLINE "%s" TERMINAL_RESET ".\n",
+				key_fingerprint_sha256_hex, share_user->username);
+		free(key_fingerprint_sha256_hex);
+	}
+
+	if (!ask_yes_no(false, "Are you sure you want to share with public keys listed above?")) {
+		terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Sharing" TERMINAL_RESET ": aborted.\n");
+	}
 }
 
 int lastpass_share_user_mod(const struct session *session,
@@ -233,6 +268,10 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 	if (ret)
 		die("Unable to get pubkey for your user (%d)\n", ret);
 
+	/* confirm that the pubkey returned for our user is what we expect for our private key. */
+	/* TODO: we can use the pubkey derived from the private key and skip this check altogether. */
+	verify_public_key_for_self(session, &user);
+
 	xasprintf(&sf_username, "%s-%s", user.username, sharename);
 	for (i=0; i < strlen(sf_username); i++)
 		if (sf_username[i] == ' ')
@@ -284,6 +323,18 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 		return -EPERM;
 
 	return 0;
+}
+
+void verify_public_key_for_self(const struct session *session, struct share_user *user)
+{
+	_cleanup_free_ char *pubkey_fingerprint = cipher_public_key_fingerprint_sha256_hex(&user->sharing_key);
+	_cleanup_free_ char *privatekey_fingerprint = cipher_public_key_from_private_fingerprint_sha256_hex(
+			&session->private_key);
+
+	if (strcmp(pubkey_fingerprint, privatekey_fingerprint) != 0) {
+		die("Unexpected pubkey returned (fingerprint was: %s, expecting: %s)", pubkey_fingerprint,
+			privatekey_fingerprint);
+	}
 }
 
 int lastpass_share_delete(const struct session *session, struct share *share)
