@@ -7,6 +7,8 @@ include(GNUInstallDirs)
 
 find_package(PkgConfig REQUIRED)
 
+# pkg_get_variable is not available until CMake >= 3.4.0
+# Debian stable still packages CMake 3.0.2
 function(pkg_check_variable _pkg _name)
   string(TOUPPER ${_pkg} _pkg_upper)
   string(TOUPPER ${_name} _name_upper)
@@ -55,12 +57,17 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
 )
 target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+
+add_custom_command(OUTPUT lpass.1 DEPENDS ${CMAKE_SOURCE_DIR}/lpass.1.txt
+        COMMAND a2x -D ./ --no-xmllint -f manpage ${CMAKE_SOURCE_DIR}/lpass.1.txt)
+add_custom_command(OUTPUT lpass.1.html DEPENDS ${CMAKE_SOURCE_DIR}/lpass.1.txt
+        COMMAND asciidoc -b html5 -a data-uri -a icons -a toc2 -o lpass.1.html ${CMAKE_SOURCE_DIR}/lpass.1.txt)
+
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
-if(BASH_COMPLETION_COMPLETIONSDIR)
-  install(FILES contrib/lpass_bash_completion DESTINATION ${BASH_COMPLETION_COMPLETIONSDIR} RENAME lpass)
-endif()
+install(FILES contrib/lpass_bash_completion DESTINATION ${BASH_COMPLETION_COMPLETIONSDIR} RENAME lpass)
 
-add_custom_target(doc-man a2x --no-xmllint -f manpage ${CMAKE_SOURCE_DIR}/lpass.1.txt)
-add_custom_target(doc asciidoc -b html5 -a data-uri -a icons -a toc2 -o lpass.1.html ${CMAKE_SOURCE_DIR}/lpass.1.txt DEPENDS doc-man)
-add_custom_target(install-doc install -v -d ${CMAKE_INSTALL_FULL_MANDIR}/man1 && install -m 0644 -v lpass.1 ${CMAKE_INSTALL_FULL_MANDIR}/man1/lpass.1 DEPENDS doc)
-
+add_custom_target(doc-man DEPENDS lpass.1)
+add_custom_target(doc-html DEPENDS lpass.1.html)
+# See https://cmake.org/pipermail/cmake/2009-January/026520.html
+add_custom_target(install-doc COMMAND ${CMAKE_COMMAND} -DMANDIR=${CMAKE_INSTALL_FULL_MANDIR} -P ${CMAKE_SOURCE_DIR}/cmake_extras/install_doc.cmake DEPENDS doc-man)
+add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -DPROJECT_NAME=${PROJECT_NAME} -DMANDIR=${CMAKE_INSTALL_FULL_MANDIR} -P ${CMAKE_SOURCE_DIR}/cmake_extras/uninstall.cmake)
