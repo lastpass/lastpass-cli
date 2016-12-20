@@ -64,7 +64,9 @@ add_custom_command(OUTPUT lpass.1.html DEPENDS ${CMAKE_SOURCE_DIR}/lpass.1.txt
         COMMAND asciidoc -b html5 -a data-uri -a icons -a toc2 -o lpass.1.html ${CMAKE_SOURCE_DIR}/lpass.1.txt)
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
+if(BASH_COMPLETION_COMPLETIONSDIR)
 install(FILES contrib/lpass_bash_completion DESTINATION ${BASH_COMPLETION_COMPLETIONSDIR} RENAME lpass)
+endif()
 
 add_custom_target(doc-man DEPENDS lpass.1)
 add_custom_target(doc-html DEPENDS lpass.1.html)
