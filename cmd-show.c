@@ -81,6 +81,11 @@ static char *fix_ascii_armor(char *armor_str)
 	while ((ptr = strchr(ptr, ' ')) != NULL) {
 		if (ptr >= start_trailer)
 			break;
+		/* don't modify spaces after headers, e.g. encrypted keys */
+		if (ptr[-1] == ':') {
+			ptr++;
+			continue;
+		}
 		*ptr = '\n';
 	}
 	return armor_str;
