@@ -1,7 +1,7 @@
 /*
  * command for making copies of vault entries
  *
- * Copyright (C) 2014-2016 LastPass.
+ * Copyright (C) 2014-2017 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
