@@ -1,3 +1,23 @@
+# Version 1.1.0
+ * New command ```lpass import``` can import an existing csv file (or output
+   from ```lpass export``` into the vault
+ * ```lpass show``` and ```lpass ls``` learned a ```--format``` argument
+   to enable user-specified printf-style formats
+ * Bash completions will now complete field names if ```--field``` is
+   specified after the account name
+ * Build: cmake now used for building, by Filippo Cucchetto and
+   with fixes by Eli Schwartz
+ * Build: lpass has been updated to work with OpenSSL 1.1; please note
+   that libcurl-openssl must also be linked against the same version
+   in order to avoid mysterious segfaults
+ * Bugfix: crash in ```lpass ls -l``` with no last_modified_gmt fixed
+ * Bugfix: secure notes editing with "Name" fields now works properly
+ * Bugfix: editing secure note names now works (github #106)
+ * Bugfix: lpass-created server secure notes are now compatible with the plugin
+ * Bugfix: ```generate``` now uses all defined characters, by Ignat Korchagin
+ * Bugfix: ```lpass show``` for ssh-key secure notes no longer corrupts
+   password-protected ssh keys (github #232)
+
 # Version 1.0.0
  * New command ```lpass status``` shows whether or not the user is logged
    in with agent, from Nick Knudson
