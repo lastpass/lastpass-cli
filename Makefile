@@ -20,6 +20,9 @@ install-doc: $(CMAKEMAKE)
 install: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) install
 
+uninstall: $(CMAKEMAKE)
+	$(MAKE) -C $(BUILDDIR) uninstall
+
 $(CMAKEMAKE):
 	mkdir -p $(BUILDDIR) && cd $(BUILDDIR) && cmake -DCMAKE_INSTALL_PREFIX:PATH=$(PREFIX) ..
 
