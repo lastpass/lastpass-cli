@@ -34,6 +34,7 @@
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
 #include "cmd.h"
+#include "cipher.h"
 #include "util.h"
 #include "config.h"
 #include "terminal.h"
@@ -46,6 +47,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 /*
  * If a secure note field contains ascii armor, its newlines will
@@ -91,6 +93,86 @@ static char *fix_ascii_armor(char *armor_str)
 	return armor_str;
 }
 
+static char *attachment_filename(struct account *account,
+				 struct attach *attach)
+{
+	_cleanup_free_ unsigned char *key_bin = NULL;
+
+	if (!attach->filename ||
+	    !account->attachkey ||
+	    strlen(account->attachkey) != KDF_HASH_LEN * 2 ||
+	    hex_to_bytes(account->attachkey, &key_bin)) {
+		return xstrdup("unknown");
+	}
+
+	return cipher_aes_decrypt_base64(attach->filename, key_bin);
+}
+
+static bool attachment_is_binary(unsigned char *data, size_t len)
+{
+	size_t i;
+	for (i = 0; i < min(len, 100); i++) {
+		if (!isprint(data[i]))
+			return true;
+	}
+	return false;
+}
+
+static void show_attachment(const struct session *session,
+			    struct account *account,
+			    struct attach *attach)
+{
+	_cleanup_free_ unsigned char *key_bin = NULL;
+	_cleanup_free_ char *result = NULL;
+	_cleanup_free_ char *filename = NULL;
+	int ret;
+	char opt;
+	char *ptext;
+	size_t len;
+	unsigned char *bytes = NULL;
+	FILE *fp = stdout;
+
+	if (!account->attachkey || strlen(account->attachkey) != KDF_HASH_LEN * 2)
+		die("Missing attach key for account %s\n", account->name);
+
+	if (hex_to_bytes(account->attachkey, &key_bin))
+		die("Invalid attach key for account %s\n", account->name);
+
+	filename = attachment_filename(account, attach);
+
+	ret = lastpass_load_attachment(session, attach, &result);
+	if (ret)
+		die("Could not load attachment %s\n", attach->id);
+
+	ptext = cipher_aes_decrypt_base64(result, key_bin);
+	if (!ptext)
+		die("Unable to decrypt attachment %s\n", attach->id);
+
+	len = unbase64(ptext, &bytes);
+
+	if (attachment_is_binary(bytes, len)) {
+		opt = ask_options("yns", 's',
+			    "\"%s\" is a binary file, print it anyway (or save)? ",
+			    filename);
+		switch (opt) {
+		case 'n':
+			return;
+		case 's':
+			fp = fopen(filename, "wb");
+			if (!fp)
+				die("Unable to open %s\n", filename);
+			break;
+		default:
+			break;
+		}
+	}
+	len = fwrite(bytes, 1, len, fp);
+	if (fp != stdout) {
+		fprintf(stderr, TERMINAL_FG_GREEN "Wrote %zu bytes to \"%s\"\n" TERMINAL_RESET, len, filename);
+		fclose(fp);
+	}
+}
+
 static char *pretty_field_value(struct field *field)
 {
 	char *value;
@@ -123,6 +205,36 @@ static void print_field(char *field_format, struct account *account,
 	free(buf.bytes);
 }
 
+static void print_attachment(char *field_format,
+			     struct account *account,
+			     struct attach *attach)
+{
+	_cleanup_free_ char *attach_id = NULL;
+	_cleanup_free_ char *filename = NULL;
+
+	xasprintf(&attach_id, "att-%s", attach->id);
+	filename = attachment_filename(account, attach);
+
+	print_field(field_format, account, attach_id, filename);
+}
+
+static struct attach *find_attachment(struct account *account,
+				      const char *attach_id)
+{
+	struct attach *attach = NULL;
+
+	/* trim 'att-' off id if someone passed it */
+	if (!strncmp(attach_id, "att-", 4))
+		attach_id += 4;
+
+	list_for_each_entry(attach, &account->attach_head, list) {
+		if (!strcmp(attach->id, attach_id))
+			return attach;
+	}
+	return NULL;
+}
+
+
 int cmd_show(int argc, char **argv)
 {
 	unsigned char key[KDF_HASH_LEN];
@@ -139,6 +251,7 @@ int cmd_show(int argc, char **argv)
 		{"id", no_argument, NULL, 'I'},
 		{"name", no_argument, NULL, 'N'},
 		{"notes", no_argument, NULL, 'O'},
+		{"attach", required_argument, NULL, 'a'},
 		{"clip", no_argument, NULL, 'c'},
 		{"color", required_argument, NULL, 'C'},
 		{"basic-regexp", no_argument, NULL, 'G'},
@@ -151,7 +264,7 @@ int cmd_show(int argc, char **argv)
 
 	int option;
 	int option_index;
-	enum { ALL, USERNAME, PASSWORD, URL, FIELD, ID, NAME, NOTES } choice = ALL;
+	enum { ALL, USERNAME, PASSWORD, URL, FIELD, ID, NAME, NOTES, ATTACH } choice = ALL;
 	_cleanup_free_ char *field = NULL;
 	struct account *notes_expansion = NULL;
 	struct field *found_field;
@@ -164,9 +277,11 @@ int cmd_show(int argc, char **argv)
 	struct list_head matches, potential_set;
 	enum search_type search = SEARCH_EXACT_MATCH;
 	int fields = ACCOUNT_NAME | ACCOUNT_ID | ACCOUNT_FULLNAME;
+	struct attach *attach;
 
 	_cleanup_free_ char *title_format = NULL;
 	_cleanup_free_ char *field_format = NULL;
+	_cleanup_free_ char *attach_id = NULL;
 
 	while ((option = getopt_long(argc, argv, "cupFGxto", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -200,6 +315,10 @@ int cmd_show(int argc, char **argv)
 				break;
 			case 'N':
 				choice = NAME;
+				break;
+			case 'a':
+				choice = ATTACH;
+				attach_id = xstrdup(optarg);
 				break;
 			case 'O':
 				choice = NOTES;
@@ -334,6 +453,12 @@ int cmd_show(int argc, char **argv)
 			value = xstrdup(found->name);
 		else if (choice == NOTES)
 			value = xstrdup(found->note);
+		else if (choice == ATTACH) {
+			struct attach *attach = find_attachment(found, attach_id);
+			if (!attach)
+				die("Could not find specified attachment '%s'.", attach_id);
+			show_attachment(session, found, attach);
+		}
 
 		if (choice == ALL) {
 			print_header(title_format, found);
@@ -355,9 +480,12 @@ int cmd_show(int argc, char **argv)
 				print_field(field_format, found, found_field->name, pretty_field);
 				free(pretty_field);
 			}
+			list_for_each_entry(attach, &found->attach_head, list) {
+				print_attachment(field_format, found, attach);
+			}
 			if (strlen(found->note))
 				print_field(field_format, found, "Notes", found->note);
-		} else {
+		} else if (choice != ATTACH) {
 			if (!value)
 				die("Programming error.");
 			printf("%s", value);

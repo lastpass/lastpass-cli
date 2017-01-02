@@ -299,7 +299,7 @@ char *cipher_base64(const unsigned char *bytes, size_t len)
 	return base64(bytes, len);
 }
 
-static size_t unbase64(const char *bytes, unsigned char **unbase64)
+size_t unbase64(const char *bytes, unsigned char **unbase64)
 {
 	size_t len;
 	BIO *memory, *b64;

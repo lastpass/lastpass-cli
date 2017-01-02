@@ -442,3 +442,42 @@ int lastpass_upload(const struct session *session,
 
 	return xml_api_err(reply);
 }
+
+/*
+ * Get the attachment for a given attachment id.  The crypttext is returned
+ * and should be decrypted with account->attachkey.  The pointer returned
+ * in *result should be freed by the caller.
+ */
+int lastpass_load_attachment(const struct session *session,
+			     struct attach *attach,
+			     char **result)
+{
+	char *reply = NULL;
+	char *p;
+
+	*result = NULL;
+
+	reply = http_post_lastpass("show_website.php", session, NULL,
+				   "token", session->token,
+				   "getattach", attach->storagekey, NULL);
+	if (!reply)
+		return -ENOENT;
+
+	/* returned string is json-encoded base64 string; unescape it */
+	if (reply[0] == '"')
+		memmove(reply, reply+1, strlen(reply));
+	if (reply[strlen(reply)-1] == '"')
+		reply[strlen(reply)-1] = 0;
+
+	p = reply;
+	while (*p) {
+		if (*p == '\\') {
+			memmove(p, p + 1, strlen(p));
+		} else {
+			p++;
+		}
+	}
+
+	*result = reply;
+	return 0;
+}

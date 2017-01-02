@@ -67,9 +67,15 @@ struct account {
 	bool pwprotect;
 	bool fav;
 	bool is_app;
+	char *attachkey, *attachkey_encrypted;
+	bool attachpresent;
+	size_t attach_len;
+	char *attach_bytes;
 
 	struct list_head field_head;
 	struct share *share;
+
+	struct list_head attach_head;
 
 	struct list_head list;
 	struct list_head match_list;
@@ -85,6 +91,17 @@ struct app {
 	char *exeversion;
 	char *warnversion;
 	char *exehash;
+};
+
+struct attach {
+	char *id;
+	char *parent;
+	char *mimetype;
+	char *storagekey;
+	char *size;
+	char *filename;
+
+	struct list_head list;
 };
 
 /* resizable string buffer */

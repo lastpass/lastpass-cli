@@ -58,6 +58,7 @@ void warn_errno(const char *err, ...) _printf_(1, 2);
 _noreturn_ void die(const char *err, ...) _printf_(1, 2);
 _noreturn_ void die_errno(const char *err, ...) _printf_(1, 2);
 _noreturn_ void die_usage(const char *usage);
+char ask_options(char *options, char def, const char *prompt, ...);
 bool ask_yes_no(bool default_yes, const char *prompt, ...);
 
 void *xmalloc(size_t size);
