@@ -1,3 +1,4 @@
+PREFIX ?= /usr
 BUILDDIR=build
 CMAKEMAKE=$(BUILDDIR)/Makefile
 
@@ -20,6 +21,6 @@ install: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) install
 
 $(CMAKEMAKE):
-	mkdir -p $(BUILDDIR) && cd $(BUILDDIR) && cmake ..
+	mkdir -p $(BUILDDIR) && cd $(BUILDDIR) && cmake -DCMAKE_INSTALL_PREFIX:PATH=$(PREFIX) ..
 
 .PHONY: all doc-man clean
