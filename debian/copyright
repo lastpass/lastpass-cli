@@ -1,30 +1,58 @@
-Format: http://dep.debian.net/deps/dep5
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: lastpass-cli
+Upstream-Author: Jason A. Donenfeld <jasond@lastpass.com>
+Original-Source-Location: https://github.com/LastPass/lastpass-cli
+Packaged-By: Troy Heber <troyh@debian.org>
+Packaged-Date: Thu, 23 Oct 2014 09:12:57 -0600
 
 Files: *
-Copyright: 2014 LastPass <support@lastpass.com>
-License: GPL-2.0+
-
-Files: debian/*
-Copyright: 2014 Igor Partola <igor@igorpartola.com>
-License: GPL-2.0+
-
-License: GPL-2.0+
- This package is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
- (at your option) any later version.
+Copyright: 2014 LastPass. All Rights Reserved
+License: GPL-2+ with OpenSSL exception
+ This program is free software; you can redistribute it
+ and/or modify it under the terms of the GNU General Public
+ License as published by the Free Software Foundation; either
+ version 2 of the License, or (at your option) any later
+ version.
  .
- This package is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
+ In addition, as a special exception, the author of this
+ program gives permission to link the code of its
+ release with the OpenSSL project's "OpenSSL" library (or
+ with modified versions of it that use the same license as
+ the "OpenSSL" library), and distribute the linked
+ executables. You must obey the GNU General Public
+ License in all respects for all of the code used other
+ than "OpenSSL".  If you modify this file, you may extend
+ this exception to your version of the file, but you are
+ not obligated to do so.  If you do not wish to do so,
+ delete this exception statement from your version.
  .
- You should have received a copy of the GNU General Public License
- along with this program. If not, see <http://www.gnu.org/licenses/>
+ This program is distributed in the hope that it will be
+ useful, but WITHOUT ANY WARRANTY; without even the implied
+ warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ PURPOSE.  See the GNU General Public License for more
+ details.
  .
- On Debian systems, the complete text of the GNU General
- Public License version 2 can be found in "/usr/share/common-licenses/GPL-2".
+ You should have received a copy of the GNU General Public
+ License along with this package; if not, write to the Free
+ Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+ Boston, MA  02110-1301 USA
+ .
+ On Debian systems, the full text of the GNU General Public
+ License version 2 can be found in the file
+ `/usr/share/common-licenses/GPL-2'.
 
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
+
+Files: util.c
+Copyright: 2008 Otto Moerbeek <otto@drijf.net>.
+           1998 Todd C. Miller <Todd.Miller@courtesan.com>.
+License: ISC
+ Permission to use, copy, modify, and distribute this software for any
+ purpose with or without fee is hereby granted, provided that the above
+ copyright notice and this permission notice appear in all copies.
+ THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.

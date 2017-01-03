@@ -1,14 +1,30 @@
 Source: lastpass-cli
-Section: misc
-Priority: extra
-Maintainer: Igor Partola <igor@igorpartola.com>
-Build-Depends: debhelper (>= 8.0.0), libssl-dev, libcurl4-openssl-dev, libxml2-dev, asciidoc, libxml2-utils, xsltproc, docbook-xsl
-Standards-Version: 3.9.3
-Homepage: https://github.com/lastpass/lastpass-cli
+Section: utils
+Priority: optional
+Maintainer: Troy Heber <troyh@debian.org>
+Build-Depends: debhelper (>= 9), quilt (>= 0.47), libssl-dev, libxml2-dev, libcurl4-openssl-dev, asciidoc, xsltproc, docbook-xsl
+Standards-Version: 3.9.8.0
 
 Package: lastpass-cli
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libssl1.0.0, libcurl3, libxml2
-Recommends: pinentry-curses, xclip, xsel
-Description: Command line interface to LastPass.com
- lpass is designed to run on GNU/Linux, Cygwin and Mac OS X.
+Depends: ${shlibs:Depends}, ${misc:Depends}, binutils
+Description: command line interface to LastPass.com
+ This application is a command line interface to the LastPass.com services. It
+ brings both better security and convenience by allowing you to access, add,
+ modify, and delete entries in your online LastPass vault, all from the
+ terminal. You can also generate passwords for every server you use and
+ securely store those passwords directly in LastPass. LastPass Enterprise
+ features are supported as well, including Shared Folders.
+ .
+ Users who prefer the command line can access their data directly with “lpass
+ ls” then using “lpass show -c --password Sitename” to put the Sitename
+ password on the copy buffer. You can utilize “lpass show” to store passwords
+ used in scripts, rather than putting passwords in the scripts themselves.
+ LastPass can also be used as you work within the command line to help you
+ login to servers. We’ve included some example scripts below.
+ .
+ The new tool is beneficial for LastPass users who want to use the command
+ line to login to other machines as they work. There are examples such as
+ contrib/examples/change-ssh-password.sh which shows automated password
+ changing on a server. You could run it automatically on a nightly basis,
+ regularly changing the password on the server as a security measure.

@@ -1,3 +1,9 @@
+lastpass-cli (1.1.0) unstable; urgency=medium
+
+  * New upstream 1.1.0
+
+ -- Bob Copeland <copeland@lastpass.com>  Tue, 03 Jan 2017 15:47:40 -0500
+
 lastpass-cli (0.3.0) unstable; urgency=low
 
   * Initial Debian Package release.
