@@ -1,6 +1,8 @@
 PREFIX ?= /usr
+MANDIR ?= $(PREFIX)/share/man
 BUILDDIR=build
 CMAKEMAKE=$(BUILDDIR)/Makefile
+CMAKEOPTS=-DCMAKE_INSTALL_PREFIX:PATH=$(PREFIX) -DCMAKE_INSTALL_MANDIR:PATH=$(MANDIR)
 
 all: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) all
@@ -24,6 +26,6 @@ uninstall: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) uninstall
 
 $(CMAKEMAKE):
-	mkdir -p $(BUILDDIR) && cd $(BUILDDIR) && cmake -DCMAKE_INSTALL_PREFIX:PATH=$(PREFIX) ..
+	mkdir -p $(BUILDDIR) && cd $(BUILDDIR) && cmake $(CMAKEOPTS) ..
 
-.PHONY: all doc-man clean
+.PHONY: all doc-man clean $(CMAKEMAKE)
