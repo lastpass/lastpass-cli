@@ -212,7 +212,10 @@ static int compare_account(const void *a, const void *b)
 {
 	struct account * const *acct_a = a;
 	struct account * const *acct_b = b;
-	return strcmp((*acct_a)->fullname, (*acct_b)->fullname);
+	_cleanup_free_ char *str1 = get_display_fullname(*acct_a);
+	_cleanup_free_ char *str2 = get_display_fullname(*acct_b);
+
+	return strcmp(str1, str2);
 }
 
 int cmd_ls(int argc, char **argv)
