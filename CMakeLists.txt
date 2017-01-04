@@ -57,6 +57,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
 )
 target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+  target_link_libraries(${PROJECT_NAME} "-lkvm")
+endif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 
 add_custom_command(OUTPUT lpass.1 DEPENDS ${CMAKE_SOURCE_DIR}/lpass.1.txt
         COMMAND a2x -D ./ --no-xmllint -f manpage ${CMAKE_SOURCE_DIR}/lpass.1.txt)
