@@ -1,3 +1,8 @@
+# Version 1.1.1
+ * Bugfix: fix crash in ```lpass show``` for secure notes without attachments
+ * Build: fix build on OpenBSD
+ * Build: fix build when using LibreSSL
+
 # Version 1.1.0
  * New command ```lpass import``` can import an existing csv file (or output
    from ```lpass export``` into the vault
