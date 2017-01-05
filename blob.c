@@ -107,6 +107,8 @@ void account_free_contents(struct account *account)
 	free(account->username_encrypted);
 	free(account->password_encrypted);
 	free(account->note_encrypted);
+	free(account->attachkey);
+	free(account->attachkey_encrypted);
 
 	list_for_each_entry_safe(field, tmp, &account->field_head, list) {
 		field_free(field);
@@ -397,10 +399,12 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	if (parsed->group[0] == 16)
 		parsed->group[0] = '\0';
 
-	if (parsed->attachkey_encrypted) {
+	if (strlen(parsed->attachkey_encrypted)) {
 		parsed->attachkey = cipher_aes_decrypt_base64(
 			parsed->attachkey_encrypted, key);
 	}
+	if (!parsed->attachkey)
+		parsed->attachkey = xstrdup("");
 
 	/* use name as 'fullname' only if there's no assigned group */
 	if (strlen(parsed->group) &&
