@@ -56,7 +56,7 @@ static void filter_ansi(FILE *file, const char *fmt, va_list args)
 
 	len = xvasprintf(&str, fmt, args);
 
-	for (i = 0; i < len - 2; ++i) {
+	for (i = 0; len >= 2 && i < len - 2; ++i) {
 		if (str[i] == '\x1b' && str[i + 1] == '[') {
 			str[i] = str[i + 1] = '\0';
 			for (j = i + 2; j < len; ++j) {
