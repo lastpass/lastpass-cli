@@ -50,12 +50,14 @@ if(APPLE)
   set(PROJECT_FLAGS "${PROJECT_FLAGS} -Wno-deprecated-declarations")
 endif()
 
+# Main lpass executable
 add_executable(${PROJECT_NAME} ${PROJECT_HEADERS} ${PROJECT_SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES
   C_STANDARD 99
   COMPILE_FLAGS ${PROJECT_FLAGS}
   COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
 )
+
 target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
 if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
   target_link_libraries(${PROJECT_NAME} "-lkvm")
@@ -70,6 +72,17 @@ install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
 if(BASH_COMPLETION_COMPLETIONSDIR)
 install(FILES contrib/lpass_bash_completion DESTINATION ${BASH_COMPLETION_COMPLETIONSDIR} RENAME lpass)
 endif()
+
+# Test lpass executable with mock server, link against test versions first
+file(GLOB LPTEST_SOURCES test/*.c *.c)
+add_executable(lpass-test ${PROJECT_HEADERS} ${LPTEST_SOURCES})
+set_target_properties(lpass-test PROPERTIES
+  C_STANDARD 99
+  COMPILE_FLAGS "${PROJECT_FLAGS} -DTEST_BUILD"
+  COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
+)
+target_link_libraries(lpass-test ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+enable_testing()
 
 add_custom_target(doc-man DEPENDS lpass.1)
 add_custom_target(doc-html DEPENDS lpass.1.html)

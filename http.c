@@ -226,6 +226,7 @@ char *http_post_lastpass(const char *page, const struct session *session, size_t
 	return result;
 }
 
+#ifndef TEST_BUILD
 char *http_post_lastpass_v_noexit(const char *server, const char *page, const struct session *session, size_t *final_len, char **argv, int *curl_ret, long *http_code)
 {
 	_cleanup_free_ char *url = NULL;
@@ -322,6 +323,7 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 
 	return result.ptr;
 }
+#endif
 
 char *http_post_lastpass_v(const char *server, const char *page, const struct session *session, size_t *final_len, char **argv)
 {
