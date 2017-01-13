@@ -549,6 +549,8 @@ int edit_new_account(struct session *session,
 	}
 
 	account->id = xstrdup("0");
+	account->attachkey = xstrdup("");
+	account->attachkey_encrypted = xstrdup("");
 	account_set_password(account, xstrdup(""), key);
 	account_set_fullname(account, xstrdup(name), key);
 	account_set_username(account, xstrdup(""), key);
