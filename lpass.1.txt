@@ -244,6 +244,28 @@ VARIABLE1=VALUE1
 VARIABLE2=VALUE2
 ...
 
+Aliases
+~~~~~~~
+Default options can be specified for any command by creating command aliases.
+Command aliases are stored in the $LPASS_HOME directory with the name
+'alias.command' .  For example, to force the 'ls' subcommand to never use
+color, simply put
+
+`ls --color=never`
+
+into a file named '$LPASS_HOME/alias.ls' .
+
+Similarly, new subcommands can be created based on built-in subcommands with
+options.  For example, if a file named '$LPASS_HOME/alias.passclip' contained
+
+`show --password -c`
+
+then the command
+
+`lpass passclip amazon`
+
+would put your amazon password into your clipboard.
+
 ENVIRONMENT VARIABLES
 ---------------------
 The following environment variables may be used for configuration as described
