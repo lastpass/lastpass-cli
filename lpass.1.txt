@@ -127,6 +127,19 @@ Viewing
 ~~~~~~~
 The 'show' subcommand will display a password or selected field.
 
+By default, the site you specify with the 'show' subcommand must
+*exactly* match the name of the site.  If the '--fixed-strings' or '-F'
+option is set, then the 'show' subcommand will find a site containing
+that *exact* substring; if the '--basic-regexp' or '-G' option is set,
+then the 'show' subcommand will find a site matching a case-insensitive
+regular expression.
+
+By default if your 'show' subcommand matches more than one site, then
+the 'show' subcommand will generate a warning and display the names of
+matching sites but no other information.  The '--expand-multi' or '-x'
+option will instead show the requested information from all of the
+matching sites.
+
 The 'ls' subcommand will list names in groups in a tree structure. If
 the '--long' or '-l' option is set, then also list the last modification
 time.  The '-u' option may be passed to show the last use (last touch) time
