@@ -9,6 +9,7 @@ all: $(CMAKEMAKE)
 
 clean: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) clean
+	$(RM) -r $(BUILDDIR)
 
 doc-man: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) doc-man
