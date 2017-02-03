@@ -1,3 +1,13 @@
+# Version 1.1.2
+ * Bugfix: crash with ```lpass logout --color=never``` fixed
+ * Bugfix: ```lpass add``` with secure notes works again
+ * Bugfix: sort order in ```lpass ls``` is now consistent whether or not
+   colors are used
+ * Documentation has been enhanced to describe aliases and more options,
+   with patches by Eric B. Hymowitz.
+ * Build: debian package fixed for rebuild issues and missing build
+   dependencies
+
 # Version 1.1.1
  * Bugfix: fix crash in ```lpass show``` for secure notes without attachments
  * Build: fix build on OpenBSD
