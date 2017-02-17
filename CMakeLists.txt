@@ -75,7 +75,7 @@ endif()
 
 # Test lpass executable with mock server, link against test versions first
 file(GLOB LPTEST_SOURCES test/*.c *.c)
-add_executable(lpass-test ${PROJECT_HEADERS} ${LPTEST_SOURCES})
+add_executable(lpass-test EXCLUDE_FROM_ALL ${PROJECT_HEADERS} ${LPTEST_SOURCES})
 set_target_properties(lpass-test PROPERTIES
   C_STANDARD 99
   COMPILE_FLAGS "${PROJECT_FLAGS} -DTEST_BUILD"

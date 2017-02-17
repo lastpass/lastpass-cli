@@ -22,6 +22,9 @@ install-doc: $(CMAKEMAKE)
 install: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) install
 
+test: $(CMAKEMAKE)
+	$(MAKE) -C $(BUILDDIR) lpass-test && $(MAKE) -C $(BUILDDIR) test
+
 uninstall: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) uninstall
 
