@@ -1,0 +1,110 @@
+#!/bin/bash
+
+. $(dirname $0)/include.sh
+
+function test_login
+{
+	login || return 1
+	assertz $?
+}
+
+function test_login_wrong_pw_should_fail
+{
+	LPASS_ASKPASS=./askpass-wrong.sh login
+	local ret=$?
+	rm .askpass.lock 2>/dev/null
+	assert $ret
+}
+
+function test_add_account
+{
+	login || return 1
+	local name="test-add-account"
+	local url="https://example.com"
+	local username="user27"
+	local password="999999999"
+
+	cat<<__EOM__ | lpass add --sync=no --non-interactive $name
+Name: $name
+URL: $url
+Username: $username
+Password: $password
+__EOM__
+	assertz $? || return 1
+
+	assert_str_eq "$(lpass show --sync=no --password $name)" "$password"
+}
+
+function test_add_note
+{
+	login || return 1
+	local name="test-add-note"
+	cat<<__EOM__ | lpass add --sync=no --note-type=ssn --non-interactive $name
+Name: $name
+Number: 000-00-0000
+NoteType: Social Security
+__EOM__
+	assertz $? || return 1
+
+	assert_str_eq "$(lpass show --sync=no --field=Number $name)" "000-00-0000"
+}
+
+function test_edit_username
+{
+	login || return 1
+	local username="new-test-user"
+	echo $username | lpass edit --username --non-interactive test-account
+	assertz $? || return 1
+	assert_str_eq "$(lpass show --sync=no --username test-account)" $username
+}
+
+function test_edit_field
+{
+	login || return 1
+	local hostname="quux.bar.com"
+	echo $hostname | lpass edit --field=Hostname --non-interactive test-note
+	assertz $? || return 1
+	assert_str_eq "$(lpass show --sync=no --field=Hostname test-note)" $hostname
+}
+
+function test_duplicate
+{
+	login || return 1
+	lpass duplicate --sync=no test-account || return 1
+	local numaccts=$(lpass ls --sync=no | grep test-account | wc -l)
+	assert_eq $numaccts 2
+}
+
+function test_generate
+{
+	login || return 1
+	lpass generate --sync=no test-generate 30 >/dev/null || return 1
+	local newpw=$(lpass show --sync=no --password test-generate)
+	assert_eq ${#newpw} 30
+}
+
+function test_show
+{
+	login || return 1
+	read -r -d '' expected <<__EOM__
+test-group/test-account [id: 0001]
+Username: xyz@example.com
+Password: test-account-password
+URL: https://test-url.example.com/
+__EOM__
+	local out=$(lpass show --sync=no test-account)
+	assert_str_eq "$expected" "$out"
+}
+
+function test_ls
+{
+	login || return 1
+	read -r -d '' expected <<__EOM__
+test-group/test-account [id: 0001]
+test-group/test-note [id: 0002]
+__EOM__
+	local out=$(lpass ls --sync=no)
+	assert_str_eq "$expected" "$out"
+}
+
+runtests "$@"
