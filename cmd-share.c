@@ -368,12 +368,22 @@ static int share_limit(struct share_command *cmd, int argc, char **argv,
 static int share_create(struct share_command *cmd, int argc, char **argv,
 			struct share_args *args)
 {
+	int ret;
+	bool prepend_share;
+
 	if (argc != 0)
 		die_share_usage(cmd);
 
 	UNUSED(argv);
 
-	lastpass_share_create(args->session, args->sharename);
+	ret = lastpass_share_create(args->session, args->sharename);
+	if (ret)
+		die("No permission to create share");
+
+	prepend_share = strncmp(args->sharename, "Shared-", 7);
+	terminal_printf("Folder %s%s created.\n",
+			(prepend_share) ? "Shared-" : "",
+			args->sharename);
 	return 0;
 }
 
