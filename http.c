@@ -52,6 +52,7 @@ struct mem_chunk {
 	size_t len;
 };
 
+#ifndef TEST_BUILD
 static bool interrupted = false;
 static sig_t previous_handler = SIG_DFL;
 static void interruption_detected(int signal)
@@ -166,6 +167,7 @@ static CURLcode pin_keys(CURL *curl, void *sslctx, void *parm)
 			   verify_callback);
 	return CURLE_OK;
 }
+#endif
 
 static
 void vhttp_post_add_params(struct http_param_set *param_set, va_list args)
