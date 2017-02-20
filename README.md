@@ -139,6 +139,46 @@ sudo make -C /usr/ports/security/lastpass-cli all install clean
 apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel libiconv-devel cygutils-extra
 ```
 
+### Installing on Linux
+#### Redhat/Centos
+* Install the needed dependencies
+
+```
+sudo yum install openssl libcurl libxml2 pinentry xclip
+```
+
+
+##### Debian/Ubuntu
+* Debian: Install the needed dependencies
+
+```
+sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-openssl-dev pinentry-curses xclip
+```
+
+* Ubuntu: Install the needed dependencies
+
+```
+sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev pinentry-curses xclip
+```
+
+
+##### Other Linux Distros
+Install the packages listed in the Dependencies section of this document.
+
+### Installing on OS X
+You'll need to have Xcode installed and working. You can use different packages mangers for OS X like Homebrew/MacPorts/Fink. These instructions use Homebrew. In the future this package MAY become a home brew package.
+
+* Install homebrew folowing the instructions at http://brew.sh/
+* Brew install the needed dependencies (type the command below in your terminal)
+* The below does not include packages needed for clipboard support.
+
+```
+brew install openssl curl libxml2 pinentry-mac asciidoc
+```
+
+* Note: If you get an error about needed "sudo" for the make command, that means you haven't launched xcode and accepted Apple's license agreement.
+
+
 ## Building
 
     $ cmake . && make
