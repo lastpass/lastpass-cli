@@ -49,6 +49,22 @@ __EOM__
 	assert_str_eq "$(lpass show --sync=no --field=Number $name)" "000-00-0000"
 }
 
+function test_add_ssn_name
+{
+	login || return 1
+	local name="test-add-note"
+	local person_name="John Doe"
+	cat<<__EOM__ | lpass add --sync=no --note-type=ssn --non-interactive $name
+Name: $name
+Name: $person_name
+Number: 000-00-0000
+NoteType: Social Security
+__EOM__
+	assertz $? || return 1
+
+	assert_str_eq "$(lpass show --sync=no --field=Name $name)" "$person_name"
+}
+
 function test_edit_username
 {
 	login || return 1
