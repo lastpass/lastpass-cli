@@ -245,6 +245,8 @@ int cmd_ls(int argc, char **argv)
 	int i, num_accounts;
 	_cleanup_free_ char *fmt_str = NULL;
 
+	struct share *share;
+
 	while ((option = getopt_long(argc, argv, "lmu", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
@@ -298,9 +300,26 @@ int cmd_ls(int argc, char **argv)
 	list_for_each_entry(account, &blob->account_head, list) {
 		num_accounts++;
 	}
+	list_for_each_entry(share, &blob->share_head, list) {
+		num_accounts++;
+	}
+
 	i=0;
 	account_array = xcalloc(num_accounts, sizeof(struct account *));
 	list_for_each_entry(account, &blob->account_head, list) {
+		account_array[i++] = account;
+	}
+	/* fake accounts for shares, so that empty shared folders are shown. */
+	list_for_each_entry(share, &blob->share_head, list) {
+		struct account *account = new_account();
+		char *tmpname = NULL;
+
+		xasprintf(&tmpname, "%s/", share->name);
+		account->share = share;
+		account->id = share->id;
+		account_set_name(account, xstrdup(""), key);
+		account_set_fullname(account, tmpname, key);
+		account_set_url(account, "http://group", key);
 		account_array[i++] = account;
 	}
 	qsort(account_array, num_accounts, sizeof(struct account *),
