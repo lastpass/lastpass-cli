@@ -112,12 +112,27 @@ __EOM__
 	assert_str_eq "$expected" "$out"
 }
 
+function test_show_reprompt
+{
+	login || return 1
+	read -r -d '' expected <<__EOM__
+test-group/test-reprompt-account [id: 0003]
+Username: xyz@example.com
+Password: test-account-password
+URL: https://test-url.example.com/
+Reprompt: Yes
+__EOM__
+	local out=$(lpass show --sync=no test-reprompt-account)
+	assert_str_eq "$expected" "$out"
+}
+
 function test_ls
 {
 	login || return 1
 	read -r -d '' expected <<__EOM__
 test-group/test-account [id: 0001]
 test-group/test-note [id: 0002]
+test-group/test-reprompt-account [id: 0003]
 __EOM__
 	local out=$(lpass ls --sync=no)
 	assert_str_eq "$expected" "$out"

@@ -104,6 +104,17 @@ static void init_test_data()
 		"Password: test-note-password", key);
 	list_add_tail(&account->list, &test_data.blob.account_head);
 
+	account = new_account();
+	account->id = xstrdup("0003");
+	account_set_name(account, "test-reprompt-account", key);
+	account_set_group(account, "test-group", key);
+	account_set_username(account, "xyz@example.com", key);
+	account_set_password(account, "test-account-password", key);
+	account_set_url(account, "https://test-url.example.com/", key);
+	account_set_note(account, "", key);
+	account->pwprotect = true;
+	list_add_tail(&account->list, &test_data.blob.account_head);
+
 	is_initialized = true;
 }
 

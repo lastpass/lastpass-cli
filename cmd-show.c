@@ -483,6 +483,8 @@ int cmd_show(int argc, char **argv)
 			list_for_each_entry(attach, &found->attach_head, list) {
 				print_attachment(field_format, found, attach);
 			}
+			if (found->pwprotect)
+				print_field(field_format, found, "Reprompt", "Yes");
 			if (strlen(found->note))
 				print_field(field_format, found, "Notes", found->note);
 		} else if (choice != ATTACH) {

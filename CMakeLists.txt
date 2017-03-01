@@ -93,6 +93,7 @@ add_test(test_edit_field ${CMAKE_SOURCE_DIR}/test/tests test_edit_field)
 add_test(test_duplicate ${CMAKE_SOURCE_DIR}/test/tests test_duplicate)
 add_test(test_generate ${CMAKE_SOURCE_DIR}/test/tests test_generate)
 add_test(test_show ${CMAKE_SOURCE_DIR}/test/tests test_show)
+add_test(test_show_reprompt ${CMAKE_SOURCE_DIR}/test/tests test_show_reprompt)
 add_test(test_ls ${CMAKE_SOURCE_DIR}/test/tests test_ls)
 
 add_custom_target(doc-man DEPENDS lpass.1)
