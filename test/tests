@@ -83,6 +83,18 @@ function test_edit_field
 	assert_str_eq "$(lpass show --sync=no --field=Hostname test-note)" $hostname
 }
 
+function test_edit_reprompt
+{
+	login || return 1
+	echo "Reprompt: No" | lpass edit --non-interactive test-reprompt-account
+	assertz $? || return 1
+	assert_str_eq "$(lpass show --sync=no test-reprompt-account | grep Reprompt)" ""
+
+	echo "Reprompt: Yes" | lpass edit --non-interactive test-reprompt-account
+	assertz $? || return 1
+	assert_str_eq "$(lpass show --sync=no test-reprompt-account | grep Reprompt)" "Reprompt: Yes"
+}
+
 function test_duplicate
 {
 	login || return 1

@@ -155,6 +155,11 @@ static void assign_account_value(struct account *account,
 	assign_if("Password", password);
 	assign_if("Application", appname);
 
+	if (!strcmp(label, "Reprompt")) {
+		account->pwprotect = !strcmp(trim(value), "Yes");
+		return;
+	}
+
 	/* if we got here maybe it's a secure note field */
 	list_for_each_entry(editable_field, &account->field_head, list) {
 		if (!strcmp(label, editable_field->name)) {
@@ -351,6 +356,10 @@ static int write_account_file(FILE *fp, struct account *account,
 
 	list_for_each_entry(editable_field, &account->field_head, list) {
 		write_field(editable_field->name, editable_field->value);
+	}
+
+	if (account->pwprotect) {
+		write_field("Reprompt", "Yes");
 	}
 
 	if (fprintf(fp, "Notes:    # Add notes below this line.\n%s", account->note) < 0)
