@@ -515,6 +515,7 @@ int edit_account(struct session *session,
 		account_free(notes_expansion);
 		account_set_note(editable, xstrdup(notes_collapsed->note), key);
 		account_set_fullname(editable, xstrdup(notes_collapsed->fullname), key);
+		editable->pwprotect = notes_collapsed->pwprotect;
 		account_free(notes_collapsed);
 	}
 
