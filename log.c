@@ -44,15 +44,44 @@
 
 int lpass_log_level()
 {
+    static int initialized  = 0;
+	static int level = LOG_LEVEL_NONE;
 	char *log_level_str;
-	int level;
+
+    if (initialized)
+        return (enum log_level) level;
 
 	log_level_str = getenv("LPASS_LOG_LEVEL");
 	if (!log_level_str)
-		return LOG_NONE;
+		return LOG_LEVEL_NONE;
 
 	level = strtoul(log_level_str, NULL, 10);
+    initialized = 1;
 	return (enum log_level) level;
+}
+
+int lpass_log_is_none() {
+    return lpass_log_level() >= LOG_LEVEL_NONE;
+}
+
+int lpass_log_is_error() {
+    return lpass_log_level() >= LOG_LEVEL_ERROR;
+}
+
+int lpass_log_is_warning() {
+    return lpass_log_level() >= LOG_LEVEL_WARNING;
+}
+
+int lpass_log_is_info() {
+    return lpass_log_level() >= LOG_LEVEL_INFO;
+}
+
+int lpass_log_is_debug() {
+    return lpass_log_level() >= LOG_LEVEL_DEBUG;
+}
+
+int lpass_log_is_verbose() {
+    return lpass_log_level() >= LOG_LEVEL_VERBOSE;
 }
 
 void lpass_log(enum log_level level, char *fmt, ...)

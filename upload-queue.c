@@ -141,7 +141,7 @@ static void upload_queue_drop(const char *name)
 	char *basename;
 	int ret;
 
-	lpass_log(LOG_DEBUG, "UQ: dropping %s\n", name);
+	LOG_DEBUG("UQ: dropping %s\n", name);
 
 	make_upload_dir("upload-fail");
 
@@ -157,7 +157,7 @@ static void upload_queue_drop(const char *name)
 	new_full = config_path(newname);
 	ret = rename(old_full, new_full);
 
-	lpass_log(LOG_DEBUG, "UQ: rename returned %d (errno=%d)\n", ret, errno);
+	LOG_DEBUG("UQ: rename returned %d (errno=%d)\n", ret, errno);
 
 	upload_queue_cleanup_failures();
 }
@@ -225,7 +225,7 @@ static char *upload_queue_next_entry(unsigned const char key[KDF_HASH_LEN], char
 	result = config_read_encrypted_string(*name, key);
 	if (!result) {
 		/* could not decrypt: drop this file */
-		lpass_log(LOG_DEBUG, "UQ: unable to decrypt job %s\n", *name);
+		LOG_DEBUG("UQ: unable to decrypt job %s\n", *name);
 		upload_queue_drop(*name);
 		config_unlink(*lock);
 		return NULL;
@@ -255,7 +255,7 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 
 	while ((entry = upload_queue_next_entry(key, &name, &lock))) {
 
-		lpass_log(LOG_DEBUG, "UQ: processing job %s\n", name);
+		LOG_DEBUG("UQ: processing job %s\n", name);
 
 		size = 0;
 		for (p = entry; *p; ++p) {
@@ -287,12 +287,12 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 		backoff = 1;
 		for (int i = 0; i < 5; ++i) {
 			if (i) {
-				lpass_log(LOG_DEBUG, "UQ: attempt %d, sleeping %d seconds\n", i+1, backoff);
+				LOG_DEBUG("UQ: attempt %d, sleeping %d seconds\n", i+1, backoff);
 				sleep(backoff);
 				backoff *= 8;
 			}
 
-			lpass_log(LOG_DEBUG, "UQ: posting to %s\n", argv[0]);
+			LOG_DEBUG("UQ: posting to %s\n", argv[0]);
 
 			result = http_post_lastpass_v_noexit(session->server, argv[0],
 				session, NULL, &argv[1],
@@ -302,7 +302,7 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 				(curl_ret == HTTP_ERROR_CODE ||
 				 curl_ret == HTTP_ERROR_CONNECT);
 
-			lpass_log(LOG_DEBUG, "UQ: result %d (http_code=%ld)\n", curl_ret, http_code);
+			LOG_DEBUG("UQ: result %d (http_code=%ld)\n", curl_ret, http_code);
 
 			if (result && strlen(result))
 				should_fetch_new_blob_after = true;
@@ -311,7 +311,7 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 				break;
 		}
 		if (!result) {
-			lpass_log(LOG_DEBUG, "UQ: failed, http_failed_all: %d\n", http_failed_all);
+			LOG_DEBUG("UQ: failed, http_failed_all: %d\n", http_failed_all);
 
 			/* server failed response 5 times, remove it */
 			if (http_failed_all)
@@ -319,7 +319,7 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 
 			config_unlink(lock);
 		} else {
-			lpass_log(LOG_DEBUG, "UQ: succeeded\n");
+			LOG_DEBUG0("UQ: succeeded\n");
 			config_unlink(name);
 			config_unlink(lock);
 		}
@@ -366,13 +366,13 @@ static void upload_queue_run(const struct session *session, unsigned const char 
 		setvbuf(stdout, NULL, _IOLBF, 0);
 
 		if (http_init()) {
-			lpass_log(LOG_ERROR, "UQ: unable to restart curl\n");
+			LOG_ERROR0("UQ: unable to restart curl\n");
 			_exit(EXIT_FAILURE);
 		}
 
-		lpass_log(LOG_DEBUG, "UQ: starting queue run\n");
+		LOG_DEBUG0("UQ: starting queue run\n");
 		upload_queue_upload_all(session, key);
-		lpass_log(LOG_DEBUG, "UQ: queue run complete\n");
+		LOG_DEBUG0("UQ: queue run complete\n");
 		upload_queue_cleanup(0);
 		_exit(EXIT_SUCCESS);
 	}
