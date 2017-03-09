@@ -29,8 +29,8 @@ int lpass_log_is_none();
 void lpass_log(enum log_level level, char *fmt, ...);
 FILE *lpass_log_open();
 
-#define LOG0(level, fmt)      (lpass_log(level, "%s:%d " fmt, __FILE__, __LINE__))
-#define LOG(level, fmt, ...)  (lpass_log(level, "%s:%d " fmt, __FILE__, __LINE__, __VA_ARGS__))
+#define LOG0(level, fmt)      (lpass_log(level, "%s:%d:%s: " fmt, __FILE__, __LINE__, __func__))
+#define LOG(level, fmt, ...)  (lpass_log(level, "%s:%d:%s: " fmt, __FILE__, __LINE__, __func__, __VA_ARGS__))
 
 #define LOG_VERBOSE0(fmt)      if (lpass_log_is_verbose()) LOG0(LOG_LEVEL_VERBOSE, fmt)
 #define LOG_VERBOSE(fmt, ...)  if (lpass_log_is_verbose()) LOG(LOG_LEVEL_VERBOSE, fmt, __VA_ARGS__)
