@@ -82,7 +82,7 @@ char *format_timestamp(char *timestamp, bool utc)
 static
 void append_str(struct buffer *buf, char *str, bool add_slash)
 {
-	if (!strlen(str))
+	if (!str || !strlen(str))
 		return;
 
 	buffer_append_str(buf, str);
