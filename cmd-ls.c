@@ -372,5 +372,12 @@ int cmd_ls(int argc, char **argv)
 	free_node(root);
 	session_free(session);
 	blob_free(blob);
+
+	for (i=0; i < num_accounts; i++)
+	{
+		struct account *account = account_array[i];
+    account_free(account);
+  }
+
 	return 0;
 }
