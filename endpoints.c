@@ -248,6 +248,8 @@ void lastpass_log_access(enum blobsync sync, const struct session *session, unsi
 		http_post_add_params(&params, "sharedfolderid", account->share->id, NULL);
 
 	upload_queue_enqueue(sync, key, session, "loglogin.php", &params);
+
+	free(params.argv);
 }
 
 
