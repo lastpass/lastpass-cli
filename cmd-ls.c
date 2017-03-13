@@ -373,11 +373,14 @@ int cmd_ls(int argc, char **argv)
 	session_free(session);
 	blob_free(blob);
 
+  /* NB: valgrind identified something related to account_array as a leak, though
+   * freeing the entries crashes the cli.
 	for (i=0; i < num_accounts; i++)
 	{
 		struct account *account = account_array[i];
     account_free(account);
   }
+  */
 
 	return 0;
 }
