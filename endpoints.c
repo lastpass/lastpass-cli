@@ -428,7 +428,7 @@ int lastpass_upload(const struct session *session,
 		    starts_with(params.argv[i], "extra")) {
 			free(params.argv[i]);
 		}
-		if (starts_with(params.argv[i], "url")) {
+		else if (starts_with(params.argv[i], "url")) {
 			free(params.argv[i]);
 			if (i < params.n_alloced) {
 				free(params.argv[i+1]);

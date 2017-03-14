@@ -348,7 +348,9 @@ int cmd_ls(int argc, char **argv)
 				continue;
 			group_len = strlen(group);
 			sub += group_len;
-			if (group[group_len - 1] != '/' && sub[0] != '\0' && sub[0] != '/')
+			if (group_len &&
+			    group[group_len - 1] != '/' &&
+			    sub[0] != '\0' && sub[0] != '/')
 				continue;
 		}
 
