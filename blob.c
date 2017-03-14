@@ -62,6 +62,8 @@
 # endif
 #endif
 
+static void attach_free(struct attach *attach);
+
 struct app *account_to_app(const struct account *account)
 {
 	return container_of(account, struct app, account);
@@ -93,26 +95,38 @@ void field_free(struct field *field)
 void account_free_contents(struct account *account)
 {
 	struct field *field, *tmp;
+	struct attach *attach, *attach_tmp;
 
 	free(account->id);
 	free(account->name);
+	free(account->name_encrypted);
 	free(account->group);
+	free(account->group_encrypted);
 	free(account->fullname);
 	free(account->url);
 	free(account->username);
-	free(account->password);
-	free(account->note);
-	free(account->name_encrypted);
-	free(account->group_encrypted);
 	free(account->username_encrypted);
+	free(account->password);
 	free(account->password_encrypted);
+	free(account->note);
 	free(account->note_encrypted);
+	free(account->last_touch);
+	free(account->last_modified_gmt);
 	free(account->attachkey);
 	free(account->attachkey_encrypted);
 
 	list_for_each_entry_safe(field, tmp, &account->field_head, list) {
 		field_free(field);
 	}
+
+  // NB: do we need to free the share pointer?
+
+  list_for_each_entry_safe(attach, attach_tmp, &account->attach_head, list) {
+    attach_free(attach);
+  }
+
+  // NB: do we need to free list?
+  // NB: do we need to free match_list?
 }
 
 void app_free(struct app *app)
