@@ -176,6 +176,7 @@ struct account *notes_expand(struct account *acc);
 struct account *notes_collapse(struct account *acc);
 void share_free(struct share *share);
 struct share *find_unique_share(struct blob *blob, const char *name);
+void buffer_init(struct buffer *buf);
 void buffer_append(struct buffer *buffer, void *bytes, size_t len);
 void buffer_append_char(struct buffer *buf, char c);
 void buffer_append_str(struct buffer *buf, char *str);

@@ -194,7 +194,7 @@ static void print_node(struct node *head, char *fmt_str, int level)
 			if (node->account) {
 				struct buffer buf;
 
-				memset(&buf, 0, sizeof(buf));
+				buffer_init(&buf);
 				format_account(&buf, fmt_str, node->account);
 				terminal_printf("%s\n", buf.bytes);
 				free(buf.bytes);
@@ -359,7 +359,7 @@ int cmd_ls(int argc, char **argv)
 		else {
 			struct buffer buf;
 
-			memset(&buf, 0, sizeof(buf));
+			buffer_init(&buf);
 			format_account(&buf, fmt_str, account);
 			terminal_printf("%s\n", buf.bytes);
 			free(buf.bytes);

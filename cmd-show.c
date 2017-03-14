@@ -189,7 +189,7 @@ static void print_header(char *title_format, struct account *found)
 {
 	struct buffer buf;
 
-	memset(&buf, 0, sizeof(buf));
+	buffer_init(&buf);
 	format_account(&buf, title_format, found);
 	terminal_printf("%s\n", buf.bytes);
 	free(buf.bytes);
@@ -199,7 +199,8 @@ static void print_field(char *field_format, struct account *account,
 			char *name, char *value)
 {
 	struct buffer buf;
-	memset(&buf, 0, sizeof(buf));
+
+	buffer_init(&buf);
 	format_field(&buf, field_format, account, name, value);
 	terminal_printf("%s\n", buf.bytes);
 	free(buf.bytes);

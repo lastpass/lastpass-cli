@@ -675,6 +675,13 @@ error:
 	return NULL;
 }
 
+void buffer_init(struct buffer *buf)
+{
+	buf->len = 0;
+	buf->max = 80;
+	buf->bytes = xcalloc(buf->max, 1);
+}
+
 void buffer_append(struct buffer *buffer, void *bytes, size_t len)
 {
 	if (buffer->len + len > buffer->max) {
