@@ -35,7 +35,7 @@ several subcommands:
  lpass *status* [--quiet, -q] [--color=auto|never|always]
  lpass *sync* [--background, -b] [--color=auto|never|always]
  lpass *import* [--sync=auto|now|no] [FILENAME]
- lpass *export* [--sync=auto|now|no] [--color=auto|never|always]
+ lpass *export* [--full] [--sync=auto|now|no] [--color=auto|never|always]
  lpass *share* *userls* SHARE
  lpass *share* *useradd* [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
  lpass *share* *usermod* [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
@@ -185,7 +185,8 @@ will create a duplicate entry of the one specified, but with a different 'ID'.
 Backup
 ~~~~~~
 The 'export' subcommand will dump all account information including
-passwords to stdout (unencrypted) in CSV format.
+passwords to stdout (unencrypted) in CSV format.  Note that this does
+not include attachment information.
 
 The 'import' subcommand does the reverse: accounts from an unencrypted
 CSV file are uploaded to the server.
