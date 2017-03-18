@@ -46,11 +46,12 @@
 #include <unistd.h>
 #include <string.h>
 
-
 static void print_csv_cell(const char *cell, bool is_last)
 {
 	const char *ptr;
 	bool needs_quote = false;
+
+	cell = cell == NULL ? "" : cell;
 
 	/* decide if we need quoting */
 	for (ptr = cell; *ptr; ptr++) {
@@ -78,17 +79,50 @@ static void print_csv_cell(const char *cell, bool is_last)
 		printf(",");
 }
 
+void print_account_to_csv_standard(struct account* account, const char* groupname)
+{
+		print_csv_cell(account->url, false);
+		print_csv_cell(account->username, false);
+		print_csv_cell(account->password, false);
+		print_csv_cell(account->note, false);
+		print_csv_cell(account->name, false);
+		print_csv_cell(groupname, false);
+		print_csv_cell(bool_str(account->fav), true);
+}
+
+void print_account_to_csv_full(struct account* account, const char* groupname)
+{
+		print_csv_cell(account->id, false);
+		print_csv_cell(account->name, false);
+		print_csv_cell(account->group, false);
+		print_csv_cell(groupname, false);
+		print_csv_cell(account->fullname, false);
+		print_csv_cell(account->url, false);
+		print_csv_cell(account->username, false);
+		print_csv_cell(account->password, false);
+		print_csv_cell(account->note, false);
+		print_csv_cell(account->last_touch, false);
+		print_csv_cell(account->last_modified_gmt, false);
+		print_csv_cell(bool_str(account->fav), false);
+		print_csv_cell(bool_str(account->attachpresent), true);
+}
+
 int cmd_export(int argc, char **argv)
 {
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
 		{"color", required_argument, NULL, 'C'},
+		{"full", no_argument, NULL, 'f'},
 		{0, 0, 0, 0}
 	};
 	int option;
 	int option_index;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	struct account *account;
+	static const char *csv_header_standard = "url,username,password,extra,name,grouping,fav\r\n";
+	static const char *csv_header_full = "id,name,group,groupname,fullname,url,username,password,note,last_touch,last_modified_gmt,fav,attachpresent\r\n";
+	const char *csv_header = csv_header_standard;
+	int is_standard_format = 1;
 
 	while ((option = getopt_long(argc, argv, "c", long_options, &option_index)) != -1) {
 		switch (option) {
@@ -98,6 +132,10 @@ int cmd_export(int argc, char **argv)
 			case 'C':
 				terminal_set_color_mode(
 					parse_color_mode_string(optarg));
+				break;
+			case 'f':
+				csv_header = csv_header_full;
+				is_standard_format = 0;
 				break;
 			case '?':
 			default:
@@ -122,7 +160,7 @@ int cmd_export(int argc, char **argv)
 		}
 	}
 
-	printf("url,username,password,extra,name,grouping,fav\r\n");
+	printf("%s", csv_header);
 
 	list_for_each_entry(account, &blob->account_head, list) {
 
@@ -145,13 +183,12 @@ int cmd_export(int argc, char **argv)
 		}
 
 		lastpass_log_access(sync, session, key, account);
-		print_csv_cell(account->url, false);
-		print_csv_cell(account->username, false);
-		print_csv_cell(account->password, false);
-		print_csv_cell(account->note, false);
-		print_csv_cell(account->name, false);
-		print_csv_cell(groupname, false);
-		print_csv_cell(bool_str(account->fav), true);
+		if (is_standard_format) {
+			print_account_to_csv_standard(account, groupname);
+			continue;
+		}
+
+		print_account_to_csv_full(account, groupname);
 	}
 
 	session_free(session);
