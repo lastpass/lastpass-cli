@@ -44,6 +44,8 @@
 #include <errno.h>
 #include "util.h"
 
+#define MAX_NOTE_LEN (unsigned long) 45000
+
 #if defined(__linux__) || defined(__CYGWIN__)
 static char *shared_memory_dir(void)
 {
@@ -257,6 +259,10 @@ static void parse_account_file(FILE *input, struct account *account,
 	if (ret)
 		return;
 
+	if (len > MAX_NOTE_LEN) {
+		die("Maximum note length is %lu bytes (was %lu)",
+		    MAX_NOTE_LEN, len);
+	}
 	account_set_note(account, value, key);
 }
 
