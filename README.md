@@ -57,7 +57,7 @@ sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-op
 * For Ubuntu:
 
 ```
-sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip
+sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip cmake
 ```
 
 #### Gentoo
@@ -136,7 +136,7 @@ sudo make -C /usr/ports/security/lastpass-cli all install clean
   instructions in the 'Building' section.
 
 ```
-apt-cyg install wget make gcc-core openssl-devel libcurl-devel libxml2-devel libiconv-devel cygutils-extra
+apt-cyg install wget make cmake gcc-core gcc-g++ openssl-devel libcurl-devel libxml2-devel libiconv-devel cygutils-extra
 ```
 
 ## Building
@@ -161,8 +161,11 @@ Otherwise, from the build directory:
 
 ## Documentation
 
+Install `asciidoc` and `xsltproc` if they is not already installed.
+
+    $ sudo apt-get install asciidoc xsltproc
+
 The `install-doc` target builds and installs the documentation.
-It requires AsciiDoc as a prerequisite.
 
     $ sudo make install-doc
 
