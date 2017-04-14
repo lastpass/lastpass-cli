@@ -161,7 +161,7 @@ Otherwise, from the build directory:
 
 ## Documentation
 
-Install `asciidoc` and `xsltproc` if they is not already installed.
+Install `asciidoc` and `xsltproc` if they are not already installed.
 
     $ sudo apt-get install asciidoc xsltproc
 
