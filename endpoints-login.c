@@ -344,7 +344,7 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 
 	if (!strcmp(cause, "outofbandrequired") && oob_login(login_server, key, args, error_message, &reply, &otp_name, &session)) {
 		if (trust)
-			http_post_lastpass("trust.php", session, NULL, "uuid", trusted_id, "trustlabel", trusted_label, NULL);
+			http_post_lastpass("trust.php", session, NULL, "token", session->token, "uuid", trusted_id, "trustlabel", trusted_label, NULL);
 		return session;
 	}
 
