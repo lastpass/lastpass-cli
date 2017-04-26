@@ -1,6 +1,8 @@
 #ifndef NOTE_TYPES
 #define NOTE_TYPES
 
+#include <stdbool.h>
+
 enum note_type {
 	NOTE_TYPE_NONE = -1,
 	NOTE_TYPE_AMEX,
@@ -34,6 +36,7 @@ struct note_template {
 extern struct note_template note_templates[];
 
 const char *notes_get_name(enum note_type note_type);
+bool note_has_field(enum note_type note_type, const char *field);
 enum note_type notes_get_type_by_shortname(const char *shortname);
 enum note_type notes_get_type_by_name(const char *type_str);
 char *note_type_usage();

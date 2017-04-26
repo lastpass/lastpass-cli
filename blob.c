@@ -1136,7 +1136,7 @@ reencrypt:
 struct account *notes_expand(struct account *acc)
 {
 	struct account *expand;
-	struct field *field;
+	struct field *field = NULL;
 	char *start, *lf, *colon, *name, *value;
 	struct attach *attach, *tmp;
 	char *line = NULL;
@@ -1157,19 +1157,48 @@ struct account *notes_expand(struct account *acc)
 	if (strncmp(acc->note, "NoteType:", 9))
 		return NULL;
 
+	enum note_type note_type = NOTE_TYPE_NONE;
+	lf = strchr(acc->note + 9, '\n');
+	if (lf) {
+		_cleanup_free_ char *type = xstrndup(acc->note + 9, lf - (acc->note + 9));
+		note_type = notes_get_type_by_name(type);
+	}
+
 	for (start = acc->note; ; ) {
-		lf = strchrnul(start, '\n');
-		if (lf - start < 0)
-			lf = NULL;
-		if (lf - start <= 0)
+		name = value = NULL;
+		lf = strchr(start, '\n');
+		if (!lf || lf == start)
 			goto skip;
+
 		line = xstrndup(start, lf - start);
 		colon = strchr(line, ':');
-		if (!colon)
+		if (colon) {
+			name = xstrndup(line, colon - line);
+			value = xstrdup(colon + 1);
+		}
+
+		/*
+		 * Append non-keyed strings to existing field.
+		 * If no field, skip.
+		 */
+		if (!name) {
+			if (field)
+				xstrappendf(&field->value, "\n%s", line);
 			goto skip;
-		*colon = '\0';
-		name = line;
-		value = colon + 1;
+		}
+
+		/*
+		 * If this is a known notetype, append any non-existent
+		 * keys to the existing field.  For example, Proc-Type
+		 * in the ssh private key field goes into private key,
+		 * not a Proc-Type field.
+		 */
+		if (note_type != NOTE_TYPE_NONE &&
+		    !note_has_field(note_type, name) && field) {
+			xstrappendf(&field->value, "\n%s", line);
+			goto skip;
+		}
+
 		if (!strcmp(name, "Username"))
 			expand->username = xstrdup(value);
 		else if (!strcmp(name, "Password"))
@@ -1190,6 +1219,8 @@ struct account *notes_expand(struct account *acc)
 			list_add(&field->list, &expand->field_head);
 		}
 skip:
+		free(value);
+		free(name);
 		free(line);
 		line = NULL;
 		if (!lf || !*lf)

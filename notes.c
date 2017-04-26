@@ -121,6 +121,21 @@ const char *notes_get_name(enum note_type note_type)
 	return note_templates[note_type].name;
 }
 
+bool note_has_field(enum note_type note_type, const char *field)
+{
+	const char **p;
+	if (note_type <= NOTE_TYPE_NONE || note_type >= NUM_NOTE_TYPES)
+		return true;
+
+	p = note_templates[note_type].fields;
+	while (*p) {
+		if (!strcmp(field, *p))
+			return true;
+		p++;
+	}
+	return false;
+}
+
 enum note_type notes_get_type_by_shortname(const char *type_str)
 {
 	BUILD_BUG_ON(ARRAY_SIZE(note_templates) != NUM_NOTE_TYPES);
