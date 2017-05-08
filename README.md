@@ -57,7 +57,7 @@ sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-op
 * For Ubuntu:
 
 ```
-sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip cmake
+sudo apt-get install openssl libcurl4-openssl-dev libxml2 libssl-dev libxml2-dev pinentry-curses xclip cmake build-essential
 ```
 
 #### Gentoo
