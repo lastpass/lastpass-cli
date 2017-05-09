@@ -252,7 +252,7 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 
 	xasprintf(&url, "https://%s/%s", login_server, page);
 
-	lpass_log(LOG_DEBUG, "Making request to %s\n", url);
+	LOG_DEBUG( "Making request to %s\n", url);
 
 	curl = curl_easy_init();
 	if (!curl)
@@ -278,7 +278,7 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_USERAGENT, LASTPASS_CLI_USERAGENT);
 
-	if (lpass_log_level() >= LOG_VERBOSE) {
+	if (lpass_log_is_verbose()) {
 		logstream = lpass_log_open();
 		if (logstream) {
 			curl_easy_setopt(curl, CURLOPT_STDERR, logstream);
