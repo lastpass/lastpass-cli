@@ -53,6 +53,11 @@
 #include <sys/param.h>
 #endif
 
+#if !defined(SUN_LEN)
+#define SUN_LEN(su) \
+        (sizeof(*(su)) - sizeof((su)->sun_path) + strlen((su)->sun_path))
+#endif
+
 #if !defined(__linux__) && !defined(__CYGWIN__)
 #define SOCKET_SEND_PID 1
 struct ucred {
