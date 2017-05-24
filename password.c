@@ -231,6 +231,8 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 	char *ret;
 	va_list params;
 	int devnull;
+    char *passfd_s;
+    int passfd;
 
 	askpass = getenv("LPASS_ASKPASS");
 	if (askpass) {
@@ -239,6 +241,24 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 		va_end(params);
 		return askpass;
 	}
+
+    passfd_s = getenv("LPASS_PASSFD");
+    if (passfd_s) {
+        passfd = atoi(passfd_s);
+        if (passfd > 0) {
+            char *password = NULL;
+            int pwlen = 0, off = 0, incr = 64, more = 64;
+            while (more == incr) {
+				password = secure_resize(password, pwlen, pwlen + incr);
+                more = read(passfd, &password[off], incr);
+                off += more;
+            }
+            if (more == 0)
+				password = secure_resize(password, pwlen, pwlen + 1);
+            password[off] = '\0';
+            return password;
+        }
+    }
 
 	password_fallback = getenv("LPASS_DISABLE_PINENTRY");
 	if (password_fallback && !strcmp(password_fallback, "1")) {
