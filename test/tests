@@ -190,4 +190,24 @@ __EOM__
 	assert_str_eq "$expected" "$out"
 }
 
+function test_export
+{
+	login || return 1
+	read -r -d '' expected <<__EOM__
+url,username,password,extra,name,grouping,fav
+http://sn,,,"NoteType: Server
+Hostname: foo.example.com
+Username: test-note-user
+Password: test-note-password",test-reprompt-note,test-group,0
+https://test-url.example.com/,xyz@example.com,test-account-password,,test-reprompt-account,test-group,0
+http://sn,,,"NoteType: Server
+Hostname: foo.example.com
+Username: test-note-user
+Password: test-note-password",test-note,test-group,0
+https://test-url.example.com/,xyz@example.com,test-account-password,,test-account,test-group,0
+__EOM__
+	local out=$(lpass export --sync=no | tr -d '\r')
+	assert_str_eq "$expected" "$out"
+}
+
 runtests "$@"
