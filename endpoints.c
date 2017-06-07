@@ -90,58 +90,6 @@ void lastpass_remove_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	upload_queue_enqueue(sync, key, session, "show_website.php", &params);
 }
 
-static char *stringify_field(const struct field *field)
-{
-	char *str, *name, *type, *value, *intermediate;
-	CURL *curl;
-
-	curl = curl_easy_init();
-	if (!curl)
-		return xstrdup("");
-
-	name = curl_easy_escape(curl, field->name, 0);
-	type = curl_easy_escape(curl, field->type, 0);
-	if (field->value_encrypted)
-		value = curl_easy_escape(curl, field->value_encrypted, 0);
-	else if (!strcmp(field->type, "checkbox") || !strcmp(field->type, "radio")) {
-		xasprintf(&intermediate, "%s-%c", field->value, field->checked ? '1' : '0');
-		value = curl_easy_escape(curl, intermediate, 0);
-		free(intermediate);
-	} else
-		value = curl_easy_escape(curl, field->value, 0);
-
-	xasprintf(&str, "0\t%s\t%s\t%s\n", name, value, type);
-
-	curl_free(name);
-	curl_free(type);
-	curl_free(value);
-	curl_easy_cleanup(curl);
-
-	return str;
-}
-
-static char *stringify_fields(const struct list_head *field_head)
-{
-	char *field_str, *fields = NULL;
-	struct field *field;
-
-	list_for_each_entry(field, field_head, list) {
-		field_str = stringify_field(field);
-		xstrappend(&fields, field_str);
-		free(field_str);
-	}
-	if (fields)
-		xstrappend(&fields, "0\taction\t\taction\n0\tmethod\t\tmethod\n");
-	else
-		fields = xstrdup("");
-
-	field_str = NULL;
-	bytes_to_hex((unsigned char *) fields, &field_str, strlen(fields));
-	free(fields);
-
-	return field_str;
-}
-
 static void add_app_fields(const struct account *account,
 			   struct http_param_set *params)
 {
@@ -172,10 +120,8 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	};
 
 	_cleanup_free_ char *url = NULL;
-	_cleanup_free_ char *fields = NULL;
 
 	bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
-	fields = stringify_fields(&account->field_head);
 
 	++blob->version;
 
