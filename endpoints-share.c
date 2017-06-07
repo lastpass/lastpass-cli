@@ -192,7 +192,7 @@ int lastpass_share_user_mod(const struct session *session,
 int lastpass_share_user_del(const struct session *session, const char *shareid,
 			    struct share_user *user)
 {
-	_cleanup_free_ char *reply = NULL;
+	char *reply = NULL;
 	size_t len;
 
 	reply = http_post_lastpass("share.php", session, &len,
@@ -202,6 +202,8 @@ int lastpass_share_user_del(const struct session *session, const char *shareid,
 				   "delete", "1",
 				   "uid", user->uid,
 				   "xmlr", "1", NULL);
+
+	free(reply);
 	return 0;
 }
 
@@ -286,7 +288,7 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 
 int lastpass_share_delete(const struct session *session, struct share *share)
 {
-	_cleanup_free_ char *reply = NULL;
+	char *reply = NULL;
 	size_t len;
 
 	reply = http_post_lastpass("share.php", session, &len,
@@ -294,6 +296,7 @@ int lastpass_share_delete(const struct session *session, struct share *share)
 				   "id", share->id,
 				   "delete", "1",
 				   "xmlr", "1", NULL);
+	free(reply);
 	return 0;
 }
 
@@ -382,7 +385,7 @@ int lastpass_share_set_limits(const struct session *session,
 			      struct share_user *user,
 			      struct share_limit *limit)
 {
-	_cleanup_free_ char *reply = NULL;
+	char *reply = NULL;
 	_cleanup_free_ char *aid_buf = NULL;
 	char numaids_str[30] = {0};
 	struct share_limit_aid *aid;
@@ -416,5 +419,6 @@ int lastpass_share_set_limits(const struct session *session,
 				   "aids", aid_buf,
 				   "xmlr", "1", NULL);
 
+	free(reply);
 	return 0;
 }
