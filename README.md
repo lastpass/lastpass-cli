@@ -141,7 +141,10 @@ apt-cyg install wget make cmake gcc-core gcc-g++ openssl-devel libcurl-devel lib
 
 ## Building
 
-    $ cmake . && make
+    $ make
+
+Under the covers, make invokes cmake in a build directory; you may also use
+cmake directly if you need more control over the build process.
 
 ## Installing
 
