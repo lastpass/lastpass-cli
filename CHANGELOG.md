@@ -1,3 +1,15 @@
+# Version 1.2.0
+ * ```lpass show``` now supports new-style multiline ssh keys
+ * ```lpass export``` now supports --fields=FIELDLIST argument to
+   control output, with patches from Kyle Burton
+ * ```lpass ls``` now always shows empty shared folders
+ * ```lpass edit``` can now set the 'master password reprompt' field in sites
+ * ```lpass share create``` now shows the created share name
+ * Bugfix: crash in `lpass show` fixed by Kyle Burton
+ * build fixes for termux and documentation updates, from Christian Rondeau
+ * documentation updates for Ubuntu from Craig Menning and Glenn Oppegard
+ * Test suite now included covering basic operations
+
 # Version 1.1.2
  * Bugfix: crash with ```lpass logout --color=never``` fixed
  * Bugfix: ```lpass add``` with secure notes works again
