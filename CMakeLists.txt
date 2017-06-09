@@ -82,6 +82,9 @@ set_target_properties(lpass-test PROPERTIES
   COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
 )
 target_link_libraries(lpass-test ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+  target_link_libraries(lpass-test "-lkvm")
+endif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
 enable_testing()
 add_test(test_login ${CMAKE_SOURCE_DIR}/test/tests test_login)
 add_test(test_login_wrong_pw_should_fail ${CMAKE_SOURCE_DIR}/test/tests test_login_wrong_pw_should_fail)
