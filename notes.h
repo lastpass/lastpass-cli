@@ -36,6 +36,7 @@ struct note_template {
 extern struct note_template note_templates[];
 
 const char *notes_get_name(enum note_type note_type);
+bool note_field_is_multiline(enum note_type note_type, const char *field);
 bool note_has_field(enum note_type note_type, const char *field);
 enum note_type notes_get_type_by_shortname(const char *shortname);
 enum note_type notes_get_type_by_name(const char *type_str);

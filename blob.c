@@ -1194,7 +1194,8 @@ struct account *notes_expand(struct account *acc)
 		 * not a Proc-Type field.
 		 */
 		if (note_type != NOTE_TYPE_NONE &&
-		    !note_has_field(note_type, name) && field) {
+		    !note_has_field(note_type, name) && field &&
+		    note_field_is_multiline(note_type, field->name)) {
 			xstrappendf(&field->value, "\n%s", line);
 			goto skip;
 		}

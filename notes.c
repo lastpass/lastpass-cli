@@ -121,6 +121,11 @@ const char *notes_get_name(enum note_type note_type)
 	return note_templates[note_type].name;
 }
 
+bool note_field_is_multiline(enum note_type note_type, const char *field)
+{
+	return note_type == NOTE_TYPE_SSH_KEY && !strcmp(field, "Private Key");
+}
+
 bool note_has_field(enum note_type note_type, const char *field)
 {
 	const char **p;
