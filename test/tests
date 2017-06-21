@@ -178,6 +178,22 @@ __EOM__
 	assert_str_eq "$expected" "$out"
 }
 
+function test_show_note
+{
+	login || return 1
+	# note the extra space here because mock server includes one
+	# normally note fields are trimmed when saved
+	read -r -d '' expected <<__EOM__
+test-group/test-note [id: 0002]
+Username:  test-note-user
+Password:  test-note-password
+Hostname:  foo.example.com
+NoteType:  Server
+__EOM__
+	local out=$(lpass show --sync=no test-note)
+	assert_str_eq "$expected" "$out"
+}
+
 function test_show_reprompt
 {
 	login || return 1
