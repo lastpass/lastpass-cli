@@ -1,3 +1,10 @@
+# Version 1.2.1
+ * Bugfix: fix regression with ```lpass show``` not displaying all fields
+   for secure notes
+ * Use sysctl instead of procfs for pid-to-cmd on some versions of BSD,
+   from Thomas Hurst
+ * Build: fix build for test binaries on OpenBSD, from Björn Ketelaars
+
 # Version 1.2.0
  * ```lpass show``` now supports new-style multiline ssh keys
  * ```lpass export``` now supports --fields=FIELDLIST argument to

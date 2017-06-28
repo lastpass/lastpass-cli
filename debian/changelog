@@ -1,3 +1,9 @@
+lastpass-cli (1.2.1) unstable; urgency=medium
+
+  * New upstream 1.2.1
+
+ -- Bob Copeland <copeland@lastpass.com>  Wed, 28 Jun 2017 08:50:06 -0400
+
 lastpass-cli (1.2.0) unstable; urgency=medium
 
   * New upstream 1.2.0
