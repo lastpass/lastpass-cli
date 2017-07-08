@@ -138,6 +138,10 @@ void format_account_item(struct buffer *buf, char fmt,
 		/* group name */
 		append_str(buf, account->group, add_slash);
 		break;
+	case 'l':
+		/* URL */
+		append_str(buf, account->url, add_slash);
+		break;
 	default:
 		break;
 	}
