@@ -283,6 +283,11 @@ static void agent_start(unsigned const char key[KDF_HASH_LEN])
 	if (config_exists("plaintext_key"))
 		return;
 
+	char *disable_str = getenv("LPASS_AGENT_DISABLE");
+	if (disable_str && !strcmp(disable_str, "1")) {
+		return;
+	}
+
 	child = fork();
 	if (child < 0)
 		die_errno("fork(agent)");
@@ -308,8 +313,6 @@ static void agent_start(unsigned const char key[KDF_HASH_LEN])
 
 bool agent_get_decryption_key(unsigned char key[KDF_HASH_LEN])
 {
-	char *disable_str;
-
 	if (config_exists("plaintext_key")) {
 		_cleanup_free_ unsigned char *key_buffer = NULL;
 		if (config_read_buffer("plaintext_key", &key_buffer) == KDF_HASH_LEN) {
@@ -326,10 +329,7 @@ bool agent_get_decryption_key(unsigned char key[KDF_HASH_LEN])
 	if (!agent_ask(key)) {
 		if (!agent_load_key(key))
 			return false;
-		disable_str = getenv("LPASS_AGENT_DISABLE");
-		if (!disable_str || strcmp(disable_str, "1")) {
-			agent_start(key);
-		}
+		agent_start(key);
 	}
 	mlock(key, KDF_HASH_LEN);
 	return true;
