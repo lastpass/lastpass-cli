@@ -101,7 +101,7 @@ __EOM__
 Name: $name
 Hostname: foobar
 __EOM__
-    echo "$privkey" | tr '\n' ' '| lpass edit --sync=no --field='Private Key' --non-interactive $name
+    echo "$privkey" | lpass edit --sync=no --field='Private Key' --non-interactive $name
     echo "$pubkey" | lpass edit --sync=no --field='Public Key' --non-interactive $name
     assert_str_eq "$(lpass show --sync=no --field='Private Key' $name)" "$privkey" || return 1
     assert_str_eq "$(lpass show --sync=no --field='Public Key' $name)" "$pubkey"
