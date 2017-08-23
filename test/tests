@@ -103,7 +103,7 @@ Hostname: foobar
 __EOM__
     echo "$privkey" | tr '\n' ' '| lpass edit --sync=no --field='Private Key' --non-interactive $name
     echo "$pubkey" | lpass edit --sync=no --field='Public Key' --non-interactive $name
-    assert_str_eq "$(lpass show --sync=no --field='Private Key' $name)" "$privkey"
+    assert_str_eq "$(lpass show --sync=no --field='Private Key' $name)" "$privkey" || return 1
     assert_str_eq "$(lpass show --sync=no --field='Public Key' $name)" "$pubkey"
 }
 
@@ -142,7 +142,7 @@ function test_edit_reprompt_note
 	login || return 1
 	echo "Reprompt: No" | lpass edit --non-interactive test-reprompt-note
 	assertz $? || return 1
-	assert_str_eq "$(lpass show --sync=no test-reprompt-note | grep Reprompt)" ""
+	assert_str_eq "$(lpass show --sync=no test-reprompt-note | grep Reprompt)" "" || return 1
 
 	echo "Reprompt: Yes" | lpass edit --non-interactive test-reprompt-note
 	assertz $? || return 1
