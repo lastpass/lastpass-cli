@@ -182,6 +182,7 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	http_post_add_params(&params,
 			     "extjs", "1",
 			     "token", session->token,
+			     "method", "cli",
 			     "name", account->name_encrypted,
 			     "grouping", account->group_encrypted,
 			     "pwprotect", account->pwprotect ? "on" : "off",
@@ -205,17 +206,26 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 			http_post_add_params(&params, "appaid", account->id, NULL);
 
 		upload_queue_enqueue(sync, key, session, "addapp.php", &params);
-
-	} else {
-		http_post_add_params(&params,
-				     "aid", account->id,
-				     "url", url,
-				     "username", account->username_encrypted,
-				     "password", account->password_encrypted,
-				     "extra", account->note_encrypted,
-				     NULL);
-		upload_queue_enqueue(sync, key, session, "show_website.php", &params);
+		goto out_free_params;
 	}
+	http_post_add_params(&params,
+			     "aid", account->id,
+			     "url", url,
+			     "username", account->username_encrypted,
+			     "password", account->password_encrypted,
+			     "extra", account->note_encrypted,
+			     NULL);
+
+	if (strlen(fields)) {
+		http_post_add_params(&params,
+				     "save_all", "1",
+				     "data", fields,
+				     NULL);
+	}
+	upload_queue_enqueue(sync, key, session, "show_website.php", &params);
+
+out_free_params:
+	free(params.argv);
 }
 
 unsigned long long lastpass_get_blob_version(struct session *session, unsigned const char key[KDF_HASH_LEN])
