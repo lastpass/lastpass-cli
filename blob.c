@@ -1167,7 +1167,7 @@ struct account *notes_expand(struct account *acc)
 	for (start = acc->note; ; ) {
 		name = value = NULL;
 		lf = strchrnul(start, '\n');
-		if (lf == start)
+		if (lf == start && !field)
 			goto skip;
 
 		line = xstrndup(start, lf - start);
