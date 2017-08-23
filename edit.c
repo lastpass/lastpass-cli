@@ -480,10 +480,9 @@ int edit_account(struct session *session,
 		parse_account_file(tmpfile, editable, key);
 		value = NULL;
 	} else {
-		value = NULL;
-		len = 0;
-		if (getline(&value, &len, tmpfile) < 0)
-			die_unlink_errno("getline", tmppath, tmpdir);
+		ret = read_file_buf(tmpfile, &value, &len);
+		if (ret)
+			die_unlink_errno("fread(tmpfile)", tmppath, tmpdir);
 	}
 	fclose(tmpfile);
 
