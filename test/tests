@@ -100,6 +100,33 @@ __EOM__
     cat <<__EOM__ | lpass add --sync=no --note-type=ssh-key --non-interactive $name
 Name: $name
 Hostname: foobar
+Private Key: $privkey
+Public Key: $pubkey
+__EOM__
+    assert_str_eq "$(lpass show --sync=no --field='Private Key' $name)" "$privkey" || return 1
+    assert_str_eq "$(lpass show --sync=no --field='Public Key' $name)" "$pubkey"
+}
+
+function test_edit_ssh_key
+{
+    login || return 1
+    local name="test-edit-ssh-key"
+	read -r -d '' privkey <<__EOM__
+-----BEGIN EC PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,5D91CAD2A62C0E3EDCCB853FCB21054D
+
+V/HhFCirRljWoJnjOwwhoFqdRnpWbXQsrppky/uT/Ttb9k5YmC9SLhEZyf8fAReJ
+KGiE8MvnnXKvDMj5eqeWge/YleHsNvyR+8qPqfPha9X/vYCUeR/ZoGg/CKzMVBN3
+bnghFVqB3npQykkkbiBEKLDwosTkR/0JO4I8PRzo34k=
+-----END EC PRIVATE KEY-----
+__EOM__
+    read -r -d '' pubkey <<__EOM__
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBHiavhPDPg2OH2YjJWDpF9JHpKfnVGB0xc7cSojMXMJftgH4UvgUr8fVJhfp1ix/I8a/a8C0RiCo/Q/A6z3o+7U= blah
+__EOM__
+    cat <<__EOM__ | lpass add --sync=no --note-type=ssh-key --non-interactive $name
+Name: $name
+Hostname: foobar
 __EOM__
     echo "$privkey" | lpass edit --sync=no --field='Private Key' --non-interactive $name
     echo "$pubkey" | lpass edit --sync=no --field='Public Key' --non-interactive $name

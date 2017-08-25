@@ -206,47 +206,100 @@ int read_file_buf(FILE *fp, char **value_out, size_t *len_out)
 	return 0;
 }
 
+enum note_type get_note_type(struct account *account)
+{
+	struct field *editable_field;
+
+	list_for_each_entry(editable_field, &account->field_head, list) {
+		if (!strcmp(editable_field->name, "NoteType")) {
+			return notes_get_type_by_name(editable_field->value);
+		}
+	}
+	return NOTE_TYPE_NONE;
+}
+
+struct parsed_name_value
+{
+	char *name;
+	char *value;
+	int lineno;
+	struct list_head list;
+};
+
 /*
  * Read a file representing all of the data in an account.
  * We generate this file when editing an account, and parse it back
- * after a user has edited it.  Each line, with the exception of the
- * final "notes" label, is parsed from the end of the label to the
- * first newline.  In the case of notes, the rest of the file is considered
- * part of the note.
+ * after a user has edited it.
+ *
+ * Multiline values are accepted (though they may not be supported by
+ * lastpass in all cases).
+ *
+ * Once the "Notes:" label is encountered, everything else is concatenated
+ * into the note.
  *
  * Name: text0
  * URL: text1
  * [...]
  * Notes:
  * notes text here
- *
  */
-static void parse_account_file(FILE *input, struct account *account,
-			       unsigned char key[KDF_HASH_LEN])
+static void parse_account_file(FILE *input, enum note_type note_type,
+			       struct list_head *list_head)
 {
 	_cleanup_free_ char *line = NULL;
 	ssize_t read;
 	size_t len = 0;
-	char *label, *delim, *value;
+	char *name, *delim, *value = NULL;
 	bool parsing_notes = false;
 	int ret;
 	int lineno = 0;
 
+	struct parsed_name_value *current = NULL;
+
 	/* parse label: [value] */
 	while ((read = getline(&line, &len, input)) != -1) {
 		lineno++;
-		delim = strchr(line, ':');
-		if (!delim)
-			continue;
-		*delim = 0;
-		value = delim + 1;
-		label = line;
 
-		if (!strcmp(label, "Notes")) {
+		line = trim(line);
+		delim = strchr(line, ':');
+		if (!delim) {
+			/* non keyed strings go to existing field (if any) */
+			if (current)
+				xstrappendf(&current->value, "\n%s", line);
+			continue;
+		}
+
+		name = xstrndup(line, delim - line);
+		value = xstrdup(delim + 1);
+
+		/*
+		 * If this is a known notetype, append any non-existent
+		 * keys to the existing field.  For example, Proc-Type
+		 * in the ssh private key field goes into private key,
+		 * not a Proc-Type field.
+		 */
+		if (note_type != NOTE_TYPE_NONE &&
+		    !note_has_field(note_type, name) && current &&
+		    note_field_is_multiline(note_type, current->name)) {
+			xstrappendf(&current->value, "\n%s", line);
+
+			free(name);
+			free(value);
+			continue;
+		}
+
+		if (!strcmp(name, "Notes")) {
 			parsing_notes = true;
+			free(name);
+			free(value);
 			break;
 		}
-		assign_account_value(account, label, value, lineno, key);
+
+		current = new0(struct parsed_name_value, 1);
+		current->name = name;
+		current->value = value;
+		current->lineno = lineno;
+		list_add_tail(&current->list, list_head);
 	}
 
 	if (!parsing_notes)
@@ -263,7 +316,30 @@ static void parse_account_file(FILE *input, struct account *account,
 		die("Maximum note length is %lu bytes (was %lu)",
 		    MAX_NOTE_LEN, len);
 	}
-	account_set_note(account, value, key);
+
+	current = new0(struct parsed_name_value, 1);
+	current->name = xstrdup("Notes");
+	current->value = value;
+	current->lineno = lineno;
+	list_add_tail(&current->list, list_head);
+}
+
+static void read_account_file(FILE *input, struct account *account,
+			      unsigned char key[KDF_HASH_LEN])
+{
+	LIST_HEAD(fields);
+	struct parsed_name_value *entry, *tmp;
+
+	parse_account_file(input, get_note_type(account), &fields);
+
+	list_for_each_entry_safe(entry, tmp, &fields, list) {
+		assign_account_value(account, entry->name, entry->value,
+				     entry->lineno, key);
+		free(entry->name);
+		free(entry->value);
+		list_del(&entry->list);
+		free(entry);
+	}
 }
 
 static
@@ -319,18 +395,6 @@ static void add_default_fields(struct account *account,
 
 		add_default_field(account, tmpl->fields[i], key);
 	}
-}
-
-enum note_type get_note_type(struct account *account)
-{
-	struct field *editable_field;
-
-	list_for_each_entry(editable_field, &account->field_head, list) {
-		if (!strcmp(editable_field->name, "NoteType")) {
-			return notes_get_type_by_name(editable_field->value);
-		}
-	}
-	return NOTE_TYPE_NONE;
 }
 
 static int write_account_file(FILE *fp, struct account *account,
@@ -477,7 +541,7 @@ int edit_account(struct session *session,
 		if (ret)
 			die_unlink_errno("fread(tmpfile)", tmppath, tmpdir);
 	} else if (choice == EDIT_ANY) {
-		parse_account_file(tmpfile, editable, key);
+		read_account_file(tmpfile, editable, key);
 		value = NULL;
 	} else {
 		ret = read_file_buf(tmpfile, &value, &len);
