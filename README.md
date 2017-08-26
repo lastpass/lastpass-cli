@@ -175,3 +175,5 @@ The `install-doc` target builds and installs the documentation.
 Once installed,
 
     $ man lpass
+    
+You can view the full documentation in the manpage, `man lpass` or [view it online](https://lastpass.github.io/lastpass-cli/lpass.1.html).
