@@ -461,6 +461,7 @@ int lastpass_upload(const struct session *session,
  * in *result should be freed by the caller.
  */
 int lastpass_load_attachment(const struct session *session,
+			     const char *shareid,
 			     struct attach *attach,
 			     char **result)
 {
@@ -469,9 +470,27 @@ int lastpass_load_attachment(const struct session *session,
 
 	*result = NULL;
 
-	reply = http_post_lastpass("show_website.php", session, NULL,
-				   "token", session->token,
-				   "getattach", attach->storagekey, NULL);
+	struct http_param_set params = {
+		.argv = NULL,
+		.n_alloced = 0
+	};
+
+	http_post_add_params(&params,
+			     "token", session->token,
+			     "getattach", attach->storagekey,
+			     NULL);
+
+	if (shareid) {
+		http_post_add_params(&params,
+				     "sharedfolderid", shareid,
+				     NULL);
+	}
+
+	reply = http_post_lastpass_param_set("getattach.php",
+					     session, NULL,
+					     &params);
+
+	free(params.argv);
 	if (!reply)
 		return -ENOENT;
 
