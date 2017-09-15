@@ -129,6 +129,7 @@ static void show_attachment(const struct session *session,
 	char opt;
 	char *ptext;
 	size_t len;
+	char *shareid = NULL;
 	unsigned char *bytes = NULL;
 	FILE *fp = stdout;
 
@@ -138,9 +139,12 @@ static void show_attachment(const struct session *session,
 	if (hex_to_bytes(account->attachkey, &key_bin))
 		die("Invalid attach key for account %s\n", account->name);
 
+	if (account->share != NULL)
+		shareid = account->share->id;
+
 	filename = attachment_filename(account, attach);
 
-	ret = lastpass_load_attachment(session, attach, &result);
+	ret = lastpass_load_attachment(session, shareid, attach, &result);
 	if (ret)
 		die("Could not load attachment %s\n", attach->id);
 
