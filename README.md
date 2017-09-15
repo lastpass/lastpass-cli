@@ -18,7 +18,16 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 
 ### Installing on Linux
 #### Arch
-* Binary packages are available in the [Arch User Repository (AUR)](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli). Information about installing packages from the AUR [can be found on the Arch wiki](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages).
+* A binary package is available from the community repository, use pacman to simple install lastpass-cli.
+* Can be build from source with the "lastpass-cli-git" *[Arch User Repository (AUR)](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli). 
+Information about installing packages from the AUR [can be found on the Arch wiki](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages).
+
+```
+# from community repository
+sudo pacman -S lastpass-cli
+# from AUR repository
+packer -S lastpass-cli-git
+```
 
 #### Fedora
 
