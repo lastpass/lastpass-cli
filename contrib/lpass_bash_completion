@@ -20,7 +20,7 @@ __lpass_complete_name()
     local matches
 
     # matches on full path
-    matches=$(lpass ls | egrep "^$cur" | awk '{print $1}')
+    matches=$(lpass ls | egrep "^$cur" | sed -e "s/ \[id.*//g")
     # matches on leaves
     matches+=$(lpass ls | egrep "/$cur" | sed -e "s/ \[id.*//g" | \
                awk -F '/' '{print $NF}')
