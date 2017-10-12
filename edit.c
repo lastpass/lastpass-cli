@@ -526,9 +526,9 @@ int edit_account(struct session *session,
 		}
 		fclose(tmpfile);
 
-		xasprintf(&editcmd, "${EDITOR:-vi} '%s'", tmppath);
+		xasprintf(&editcmd, "${VISUAL:-${EDITOR:-vi}} '%s'", tmppath);
 		if (system(editcmd) < 0)
-			die_unlink_errno("system($EDITOR)", tmppath, tmpdir);
+			die_unlink_errno("system($VISUAL)", tmppath, tmpdir);
 
 		tmpfile = fopen(tmppath, "r");
 	} else
