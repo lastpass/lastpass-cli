@@ -1,3 +1,15 @@
+# Version 1.2.2
+ * `lpass ls --format` now supports "%al" to show URL, from Yikai Zhao
+ * $VISUAL can be used in preference to $EDITOR, from Wesley Schwengle
+ * `lpass edit` can now directly edit multiline ssh keys
+ * fields are now preserved when edited with `lpass edit`
+ * Bugfix: use-after-free in http.c fixed, from Björn Ketelaars
+ * Bugfix: command-line completion now works for names with spaces
+ * Bugfix: loading attachments from shared folders now works, from Spencer
+   Whyte
+ * Debian packing updates from Hannes Hörl
+ * Documentation updates from Darragh Grealish and Steven Liekens
+
 # Version 1.2.1
  * Bugfix: fix regression with ```lpass show``` not displaying all fields
    for secure notes
