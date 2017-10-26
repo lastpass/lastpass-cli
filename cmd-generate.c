@@ -61,7 +61,7 @@ int cmd_generate(int argc, char **argv)
 		{"clip", no_argument, NULL, 'c'},
 		{0, 0, 0, 0}
 	};
-	char option;
+	int option;
 	int option_index;
 	char *username = NULL;
 	char *url = NULL;
