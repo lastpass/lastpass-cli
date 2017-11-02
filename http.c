@@ -294,6 +294,9 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
 	curl_easy_setopt(curl, CURLOPT_SSL_CTX_FUNCTION, pin_keys);
 #endif
+	/* Allow the user to override the libcurl builtin CA path. */
+	if (getenv("CURL_CA_BUNDLE") != NULL)
+		curl_easy_setopt(curl, CURLOPT_CAINFO, getenv("CURL_CA_BUNDLE"));
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
 	curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
