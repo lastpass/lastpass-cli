@@ -352,6 +352,6 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 	if (otp_login(login_server, key, args, error_message, &reply, otp_name, cause, user_lower, &session))
 		return session;
 
-	error_other(error_message, &session, "An unspecified error occured.");
+	error_other(error_message, &session, "An unspecified error occurred.");
 	return NULL;
 }

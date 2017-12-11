@@ -148,7 +148,7 @@ complete -f -c lpass -n '__lpass_using_command edit show' \
 # --non-interactive
 complete -f -c lpass -n '__lpass_using_command add edit' \
     -l non-interactive \
-    -d 'Use stardard input instead of $EDITOR'
+    -d 'Use standard input instead of $EDITOR'
 
 # --no-symbols
 complete -f -c lpass -n '__lpass_using_command generate' \
@@ -182,7 +182,7 @@ complete -f -c lpass -n '__lpass_using_command status' \
 
 # --sync=SYNC
 complete -f -c lpass \
-    -n '__lpass_using_command show ls add edit generate dubplicate rm export import' \
+    -n '__lpass_using_command show ls add edit generate duplicate rm export import' \
     -r -l sync \
     -a 'auto now no' \
     -d 'Synchronize local cache with server'

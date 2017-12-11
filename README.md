@@ -37,7 +37,7 @@ packer -S lastpass-cli-git
 sudo dnf install lastpass-cli
 ```
 
-#### Redhat/Centos
+#### Red Hat/Centos
 
 * Packages are available in [EPEL](https://fedoraproject.org/wiki/EPEL) for RHEL/CentOS 7 and later.
 

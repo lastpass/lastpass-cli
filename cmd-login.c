@@ -91,7 +91,7 @@ int cmd_login(int argc, char **argv)
 	if (argc - optind != 1)
 		die_usage(cmd_login_usage);
 
-	if (!force && plaintext_key && !ask_yes_no(false, "You have used the --plaintext-key option. This option will greatly reduce the security of your passwords. You are advised, instead, to use the agent, whose timeout can be disabled by settting LPASS_AGENT_TIMEOUT=0. Are you sure you would like to do this?"))
+	if (!force && plaintext_key && !ask_yes_no(false, "You have used the --plaintext-key option. This option will greatly reduce the security of your passwords. You are advised, instead, to use the agent, whose timeout can be disabled by setting LPASS_AGENT_TIMEOUT=0. Are you sure you would like to do this?"))
 		die("Login aborted. Try again without --plaintext-key.");
 
 	username = argv[optind];
