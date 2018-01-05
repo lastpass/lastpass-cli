@@ -96,12 +96,6 @@ brew update
 brew install lastpass-cli --with-pinentry
 ```
 
-Alternatively, if you want to install the documentation as well:
-
-```
-brew install lastpass-cli --with-pinentry --with-doc
-```
-
 #### With [MacPorts](https://www.macports.org/)
 * [Install MacPorts](https://www.macports.org/install.php), if necessary.
 * Update MacPorts' local ports tree:
