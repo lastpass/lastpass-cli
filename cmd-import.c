@@ -343,6 +343,7 @@ int cmd_import(int argc, char **argv)
 {
 	static struct option long_options[] = {
 		{"sync", required_argument, NULL, 'S'},
+		{"keep-dupes", no_argument, NULL, 'k'},
 		{0, 0, 0, 0}
 	};
 	int option;
@@ -355,16 +356,20 @@ int cmd_import(int argc, char **argv)
 	struct list_head accounts;
 	struct account *account;
 	int count, new_count;
+	bool keep_dupes = false;
 	int ret;
 
 	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
 		switch (option) {
-			case 'S':
-				sync = parse_sync_string(optarg);
-				break;
-			case '?':
-			default:
-				die_usage(cmd_import_usage);
+		case 'S':
+			sync = parse_sync_string(optarg);
+			break;
+		case 'k':
+			keep_dupes = true;
+			break;
+		case '?':
+		default:
+			die_usage(cmd_import_usage);
 		}
 	}
 
@@ -385,7 +390,9 @@ int cmd_import(int argc, char **argv)
 	printf("Parsed %d accounts\n", count);
 
 	new_count = 0;
-	csv_dedupe_accounts(&blob->account_head, &accounts);
+	if (!keep_dupes)
+		csv_dedupe_accounts(&blob->account_head, &accounts);
+
 	list_for_each_entry(account, &accounts, list) {
 		new_count++;
 	};

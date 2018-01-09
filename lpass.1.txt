@@ -34,7 +34,7 @@ several subcommands:
  lpass *rm* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
  lpass *status* [--quiet, -q] [--color=auto|never|always]
  lpass *sync* [--background, -b] [--color=auto|never|always]
- lpass *import* [--sync=auto|now|no] [FILENAME]
+ lpass *import* [--sync=auto|now|no] [--keep-dupes] [FILENAME]
  lpass *export* [--sync=auto|now|no] [--color=auto|never|always] [--fields=FIELDLIST]
  lpass *share* *userls* SHARE
  lpass *share* *useradd* [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
