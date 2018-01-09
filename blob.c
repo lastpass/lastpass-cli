@@ -1194,6 +1194,7 @@ struct account *notes_expand(struct account *acc)
 		 * not a Proc-Type field.
 		 */
 		if (note_type != NOTE_TYPE_NONE &&
+		    note_type != NOTE_TYPE_GENERIC &&
 		    !note_has_field(note_type, name) && field &&
 		    note_field_is_multiline(note_type, field->name)) {
 			xstrappendf(&field->value, "\n%s", line);
@@ -1285,10 +1286,16 @@ struct account *notes_collapse(struct account *acc)
 	list_for_each_entry(field, &acc->field_head, list) {
 		trim(field->value);
 		trim(field->name);
-		if (!strcmp(field->name, "NoteType"))
+		if (!strcmp(field->name, "NoteType")) {
+			/* generic notes have no note type; drop */
+			enum note_type note_type = notes_get_type_by_name(field->value);
+			if (note_type == NOTE_TYPE_GENERIC)
+				continue;
+
 			xstrprependf(&collapse->note, "%s:%s\n", field->name, field->value);
-		else
+		} else {
 			xstrappendf(&collapse->note, "%s:%s\n", field->name, field->value);
+		}
 	}
 	if (strlen(acc->username))
 		xstrappendf(&collapse->note, "%s:%s\n", "Username", trim(acc->username));
