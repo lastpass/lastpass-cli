@@ -77,8 +77,11 @@ variable 'LPASS_AGENT_DISABLE' is set to 1, the agent will not be used.
 
 Password Entry
 ~~~~~~~~~~~~~~
-If available, the *pinentry* program, part of *gpg2*(1), may be used for inputting
-passwords if it is installed. If unavailable, or if the 'LPASS_DISABLE_PINENTRY'
+The *pinentry* program, part of *gpg2*(1), may be used for inputting
+passwords if it is installed. A custom path to the *pinentry* program can be
+provided by the 'LPASS_PINENTRY' environment variable.
+
+If *pinentry* program is unavailable, or if the 'LPASS_DISABLE_PINENTRY'
 environment variable is set to 1, passwords will be read from standard input and a
 prompt will be displayed on standard error.
 
@@ -279,6 +282,7 @@ in the section above:
 * 'LPASS_AUTO_SYNC_TIME'
 * 'LPASS_AGENT_TIMEOUT'
 * 'LPASS_AGENT_DISABLE'
+* 'LPASS_PINENTRY'
 * 'LPASS_DISABLE_PINENTRY'
 * 'LPASS_ASKPASS'
 * 'LPASS_CLIPBOARD_COMMAND'
