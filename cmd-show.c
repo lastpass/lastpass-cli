@@ -120,7 +120,8 @@ static bool attachment_is_binary(unsigned char *data, size_t len)
 
 static void show_attachment(const struct session *session,
 			    struct account *account,
-			    struct attach *attach)
+			    struct attach *attach,
+			    bool quiet)
 {
 	_cleanup_free_ unsigned char *key_bin = NULL;
 	_cleanup_free_ char *result = NULL;
@@ -154,7 +155,7 @@ static void show_attachment(const struct session *session,
 
 	len = unbase64(ptext, &bytes);
 
-	if (attachment_is_binary(bytes, len)) {
+	if (attachment_is_binary(bytes, len) && !quiet) {
 		opt = ask_options("yns", 's',
 			    "\"%s\" is a binary file, print it anyway (or save)? ",
 			    filename);
@@ -264,6 +265,7 @@ int cmd_show(int argc, char **argv)
 		{"expand-multi", no_argument, NULL, 'x'},
 		{"title-format", required_argument, NULL, 't'},
 		{"format", required_argument, NULL, 'o'},
+		{"quiet", no_argument, NULL, 'q'},
 		{0, 0, 0, 0}
 	};
 
@@ -279,6 +281,7 @@ int cmd_show(int argc, char **argv)
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
 	bool expand_multi = false;
+	bool quiet = false;
 	struct list_head matches, potential_set;
 	enum search_type search = SEARCH_EXACT_MATCH;
 	int fields = ACCOUNT_NAME | ACCOUNT_ID | ACCOUNT_FULLNAME;
@@ -288,7 +291,7 @@ int cmd_show(int argc, char **argv)
 	_cleanup_free_ char *field_format = NULL;
 	_cleanup_free_ char *attach_id = NULL;
 
-	while ((option = getopt_long(argc, argv, "cupFGxto", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "cupFGxtoq", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -343,6 +346,9 @@ int cmd_show(int argc, char **argv)
 				break;
 			case 't':
 				title_format = xstrdup(optarg);
+				break;
+			case 'q':
+				quiet = true;
 				break;
 			case '?':
 			default:
@@ -462,7 +468,7 @@ int cmd_show(int argc, char **argv)
 			struct attach *attach = find_attachment(found, attach_id);
 			if (!attach)
 				die("Could not find specified attachment '%s'.", attach_id);
-			show_attachment(session, found, attach);
+			show_attachment(session, found, attach, quiet);
 		}
 
 		if (choice == ALL) {
