@@ -1,0 +1,5 @@
+find_path(YAJL_INCLUDE_DIR yajl/yajl_version.h)
+find_library(YAJL_LIBRARIES NAMES yajl libyajl)
+
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(yajl DEFAULT_MSG YAJL_LIBRARIES YAJL_INCLUDE_DIR)

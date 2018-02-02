@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 project(lpass)
 
 include(GNUInstallDirs)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_extras)
 
 find_package(PkgConfig REQUIRED)
 
@@ -29,6 +30,9 @@ endif()
 
 find_package(LibXml2 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIR})
+
+find_package(YAJL REQUIRED)
+include_directories(${YAJL_INCLUDE_DIR})
 
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
@@ -58,7 +62,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
 )
 
-target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES} ${YAJL_LIBRARIES})
 if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
   target_link_libraries(${PROJECT_NAME} "-lkvm")
 endif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
@@ -81,7 +85,7 @@ set_target_properties(lpass-test PROPERTIES
   COMPILE_FLAGS "${PROJECT_FLAGS} -DTEST_BUILD"
   COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
 )
-target_link_libraries(lpass-test ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+target_link_libraries(lpass-test ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES} ${YAJL_LIBRARIES})
 if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
   target_link_libraries(lpass-test "-lkvm")
 endif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
