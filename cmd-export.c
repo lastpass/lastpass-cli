@@ -338,7 +338,7 @@ void print_json_field(const struct session *session,
 	JSON_OUTPUT_FIELD("last_modified_gmt", account->last_modified_gmt, is_last);
 	JSON_OUTPUT_FIELD_BOOL("attachpresent", account->attachpresent, is_last);
 
-	if (!strcmp(field_name, "attachments") && !list_empty (&account->attach_head)) {
+	if (!strcmp(field_name, "attachments")) {
 		printf ("      \"attachments\" : [\n");
 		list_for_each_entry(attach, &account->attach_head, list) {
 			print_json_base64_attachment (session, account, attach);
