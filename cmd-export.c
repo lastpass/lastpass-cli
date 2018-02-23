@@ -42,6 +42,7 @@
 #include "blob.h"
 #include "endpoints.h"
 #include "agent.h"
+#include "json_format.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -65,21 +66,6 @@ static void parse_field_arg(char *arg, struct list_head *head)
 		sel->name = token;
 		list_add_tail(&sel->list, head);
 	}
-}
-
-static char *attachment_filename(struct account *account,
-				 struct attach *attach)
-{
-	_cleanup_free_ unsigned char *key_bin = NULL;
-
-	if (!attach->filename ||
-	    !account->attachkey ||
-	    strlen(account->attachkey) != KDF_HASH_LEN * 2 ||
-	    hex_to_bytes(account->attachkey, &key_bin)) {
-		return xstrdup("unknown");
-	}
-
-	return cipher_aes_decrypt_base64(attach->filename, key_bin);
 }
 
 static void print_csv_cell(const char *cell, bool is_last)
@@ -188,176 +174,43 @@ static void print_csv_header (struct list_head *field_list) {
 	}
 }
 
-static void print_json_quoted_string(const char *str) {
-	const char *ptr = NULL;
+#define JSON_OUTPUT_FIELD(name, value) \
+	do { \
+		if (!strcmp(field_name, name)) { \
+			field->u.string_value = value; \
+			return field; \
+		} \
+	} while (0)
 
-	putchar ('"');
-
-	for (ptr = str; *ptr; ptr++) {
-		/* escape some characters according to http://www.ietf.org/rfc/rfc4627.txt */
-		switch (*ptr) {
-			case '\b': putchar ('\\'); putchar ('b'); break;
-			case '\f': putchar ('\\'); putchar ('f'); break;
-			case '\n': putchar ('\\'); putchar ('n'); break;
-			case '\r': putchar ('\\'); putchar ('r'); break;
-			case '\t': putchar ('\\'); putchar ('t'); break;
-			case '\\': putchar ('\\'); putchar ('\\');	break;
-			case  '"': putchar ('\\'); putchar ('"');	break;
-			default:
-				if ((*ptr) < ' ') {
-					printf ("\\u%04x", *ptr);
-				}
-				else {
-					putchar (*ptr);
-				}
-				break;
-		}
-	}
-
-	putchar ('"');
-}
-
-void print_json_base64_attachment (const struct session *session,
-			struct account *account,
-			struct attach *attach
-) {
-	_cleanup_free_ unsigned char *key_bin = NULL;
-	_cleanup_free_ char *result = NULL;
-	_cleanup_free_ char *filename = NULL;
-	int ret;
-	char *ptext;
-	char *shareid = NULL;
-
-	if (!account->attachkey || strlen(account->attachkey) != KDF_HASH_LEN * 2)
-		die("Missing attach key for account %s\n", account->name);
-
-	if (hex_to_bytes(account->attachkey, &key_bin))
-		die("Invalid attach key for account %s\n", account->name);
-
-	if (account->share != NULL)
-		shareid = account->share->id;
-
-	filename = attachment_filename(account, attach);
-
-	ret = lastpass_load_attachment(session, shareid, attach, &result);
-	if (ret)
-		die("Could not load attachment %s\n", attach->id);
-
-	ptext = cipher_aes_decrypt_base64(result, key_bin);
-	if (!ptext)
-		die("Unable to decrypt attachment %s\n", attach->id);
-
-	/* print json attachment object (id, filename, size, base64data) */
-	printf ("        {\n");
-
-	printf ("          \"id\" : ");
-	print_json_quoted_string (attach->id);
-	printf (",\n");
-
-	printf ("          \"filename\" : ");
-	print_json_quoted_string (filename);
-	printf (",\n");
-
-	printf ("          \"size\" : ");
-	print_json_quoted_string (attach->size);
-	printf (",\n");
-
-	printf ("          \"base64data\" : ");
-	print_json_quoted_string (ptext);
-	printf ("        }");
-}
-
-static void print_json_account_name (struct account *account, bool append_name) {
-	_cleanup_free_ char *share_group = NULL;
-	_cleanup_free_ char *account_name = NULL;
-	char *groupname = account->group;
-
-	if (account->share) {
-		xasprintf(&share_group, "%s\\%s", account->share->name, account->group);
-
-		/* trim trailing backslash if no subfolder */
-		if (!strlen(account->group))
-			share_group[strlen(share_group)-1] = '\0';
-
-		groupname = share_group;
-	}
-
-	if (append_name) {
-		if (strlen(groupname) > 0) {
-			xasprintf(&account_name, "%s\\%s", groupname, account->name);
-			print_json_quoted_string (account_name);
-		}
-		else {
-			print_json_quoted_string (account->name);
-		}
-	}
-	else {
-		print_json_quoted_string (groupname);
-	}
-}
-
-void print_json_field(const struct session *session,
-			struct account *account,
-			const char *field_name,
-		  bool is_last)
+static struct json_field *export_field(const char *field_name, struct account *account)
 {
-	struct attach *attach = NULL;
-	_cleanup_free_ char *share_group = NULL;
+	struct json_field *field = xmalloc(sizeof(struct json_field));
 
-#define JSON_OUTPUT_FIELD(name, value, is_last) \
-	if (!strcmp(field_name, name)) { \
-		printf ("    "); \
-		print_json_quoted_string(name); \
-		printf(" : "); \
-		print_json_quoted_string(value); \
-		if (!is_last) putchar (','); \
-		putchar ('\n'); \
-		return; \
-	}
+	field->name = field_name;
+	field->type = STRING_FIELD;
 
-#define JSON_OUTPUT_FIELD_BOOL(name, bool_value, is_last) \
-	if (!strcmp(field_name, name)) { \
-		printf ("    "); \
-		print_json_quoted_string(name); \
-		printf(" : %s", bool_value ? "true" : "false"); \
-		if (!is_last) putchar (','); \
-		putchar ('\n'); \
-		return; \
-	}
+	JSON_OUTPUT_FIELD("url", account->url);
+	JSON_OUTPUT_FIELD("username", account->username);
+	JSON_OUTPUT_FIELD("password", account->password);
+	JSON_OUTPUT_FIELD("extra", account->note);
+	JSON_OUTPUT_FIELD("name", account->name);
+	JSON_OUTPUT_FIELD("id", account->id);
+	JSON_OUTPUT_FIELD("group", account->group);
+	JSON_OUTPUT_FIELD("fullname", account->fullname);
+	JSON_OUTPUT_FIELD("last_touch", account->last_touch);
+	JSON_OUTPUT_FIELD("last_modified_gmt", account->last_modified_gmt);
+	/*JSON_OUTPUT_FIELD_BOOL("fav", account->fav);
+	JSON_OUTPUT_FIELD_BOOL("attachpresent", account->attachpresent); */
 
-	JSON_OUTPUT_FIELD("url", account->url, is_last);
-	JSON_OUTPUT_FIELD("username", account->username, is_last);
-	JSON_OUTPUT_FIELD("password", account->password, is_last);
-	JSON_OUTPUT_FIELD("extra", account->note, is_last);
-	JSON_OUTPUT_FIELD("name", account->name, is_last);
-	JSON_OUTPUT_FIELD_BOOL("fav", account->fav, is_last);
-	JSON_OUTPUT_FIELD("id", account->id, is_last);
-	JSON_OUTPUT_FIELD("group", account->group, is_last);
-	JSON_OUTPUT_FIELD("fullname", account->fullname, is_last);
-	JSON_OUTPUT_FIELD("last_touch", account->last_touch, is_last);
-	JSON_OUTPUT_FIELD("last_modified_gmt", account->last_modified_gmt, is_last);
-	JSON_OUTPUT_FIELD_BOOL("attachpresent", account->attachpresent, is_last);
-
-	if (!strcmp(field_name, "attachments")) {
-		printf ("      \"attachments\" : [\n");
-		list_for_each_entry(attach, &account->attach_head, list) {
-			print_json_base64_attachment (session, account, attach);
-		}
-		printf ("      ]%s\n", is_last ? "" : ",");
-		return;
-	}
-
-	if (!strcmp(field_name, "grouping")) {
-		printf ("    \"grouping\" : ");
-		print_json_account_name (account, false);
-		printf ("%s\n", is_last ? "" : ",");
-		return;
-	}
+	/* not found */
+	free(field);
+	return NULL;
 }
 
-void print_json_entries (const struct session *session,
-			struct list_head *account_head,
-			struct list_head *field_list)
+void get_json_entries(const struct session *session,
+		      struct list_head *account_head,
+		      struct list_head *field_list,
+		      struct list_head *object_list)
 {
 	struct account *last_account =
 		list_last_entry_or_null(account_head, struct account, list);
@@ -365,29 +218,34 @@ void print_json_entries (const struct session *session,
 		list_last_entry_or_null(field_list, struct field_selection, list);
 	struct field_selection *field_sel = NULL;
 	struct account *account = NULL;
+	struct json_field *json_object, *json_field;
 
 	list_for_each_entry(account, account_head, list) {
 		/* skip groups */
 		if (!strcmp(account->url, "http://group"))
 			continue;
 
-		printf ("  ");
-		print_json_account_name (account, true);
-		printf (" : {\n");
+		json_object = xmalloc(sizeof(*json_object));
+		json_object->name = account->id;
+		json_object->type = OBJECT_FIELD;
+		INIT_LIST_HEAD(&json_object->children);
 
 		list_for_each_entry(field_sel, field_list, list) {
-			print_json_field(session, account, field_sel->name, field_sel == last_entry);
+			json_field = export_field(field_sel->name, account);
+			if (!json_field)
+				continue;
+
+			list_add_tail(&json_field->siblings,
+				      &json_object->children);
 		}
-		printf ("  }%s\n", (account == last_account) ? "" : ",");
+		list_add_tail(&json_object->siblings, object_list);
 	}
 }
 
 static void print_header (enum output_format format, struct list_head *field_list) {
 	switch (format) {
 		case OUTPUT_FORMAT_JSON:
-			printf ("{\n");
 			break;
-
 		case OUTPUT_FORMAT_CSV:
 		default:
 			print_csv_header (field_list);
@@ -395,31 +253,27 @@ static void print_header (enum output_format format, struct list_head *field_lis
 	}
 }
 
-static void print_footer (enum output_format format) {
-	switch (format) {
-		case OUTPUT_FORMAT_JSON:
-			printf ("}\n");
-			break;
-
-		case OUTPUT_FORMAT_CSV:
-		default:
-			break;
-	}
-}
-
-void print_entries (enum output_format format,
-			const struct session *session,
-			struct list_head *account_head,
-			struct list_head *field_list)
+void print_entries(enum output_format format,
+		   const struct session *session,
+		   struct list_head *account_head,
+		   struct list_head *field_list)
 {
+	struct json_field o = {
+		.name = NULL,
+		.type = OBJECT_FIELD,
+	};
+	INIT_LIST_HEAD(&o.children);
+
 	switch (format) {
 		case OUTPUT_FORMAT_JSON:
-			print_json_entries (session, account_head, field_list);
+			get_json_entries(session, account_head, field_list,
+					 &o.children);
+			json_format(&o, 0, true);
 			break;
 
 		case OUTPUT_FORMAT_CSV:
 		default:
-			print_csv_entries (account_head, field_list);
+			print_csv_entries(account_head, field_list);
 			break;
 	}
 }
@@ -493,9 +347,8 @@ int cmd_export(int argc, char **argv)
 		}
 	}
 
-	print_header (format, &field_list);
-	print_entries (format, session, &blob->account_head, &field_list);
-	print_footer (format);
+	print_header(format, &field_list);
+	print_entries(format, session, &blob->account_head, &field_list);
 
 	/* log access to all entries */
 	list_for_each_entry(account, &blob->account_head, list) {
