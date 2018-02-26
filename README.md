@@ -60,7 +60,7 @@ sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-de
 * For Debian:
 
 ```
-sudo apt-get install openssl libcurl3 libxml2 libssl-dev libxml2-dev libcurl4-openssl-dev pinentry-curses xclip
+sudo apt-get install openssl libcurl3 libxml2 libssl1.0-dev libxml2-dev libcurl4-openssl-dev pinentry-curses xclip
 ```
 
 * For Ubuntu:
