@@ -252,6 +252,7 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 	long http_code;
 	bool http_failed_all;
 	int backoff;
+	int backoff_scale = 8;
 
 	while ((entry = upload_queue_next_entry(key, &name, &lock))) {
 
@@ -289,7 +290,7 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 			if (i) {
 				lpass_log(LOG_DEBUG, "UQ: attempt %d, sleeping %d seconds\n", i+1, backoff);
 				sleep(backoff);
-				backoff *= 8;
+				backoff *= backoff_scale;
 			}
 
 			lpass_log(LOG_DEBUG, "UQ: posting to %s\n", argv[0]);
@@ -303,6 +304,13 @@ static void upload_queue_upload_all(const struct session *session, unsigned cons
 				 curl_ret == HTTP_ERROR_CONNECT);
 
 			lpass_log(LOG_DEBUG, "UQ: result %d (http_code=%ld)\n", curl_ret, http_code);
+
+			if (http_code == 500) {
+				/* not a rate-limit error; try again with less backoff */
+				backoff_scale = 2;
+			} else {
+				backoff_scale = 8;
+			}
 
 			if (result && strlen(result))
 				should_fetch_new_blob_after = true;
