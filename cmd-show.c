@@ -43,7 +43,7 @@
 #include "endpoints.h"
 #include "clipboard.h"
 #include "format.h"
-#include "json_format.h"
+#include "json-format.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>

@@ -36,7 +36,7 @@
 #include "blob.h"
 #include "util.h"
 #include "list.h"
-#include "json_format.h"
+#include "json-format.h"
 
 #define INDENT_SPACES 2
 
