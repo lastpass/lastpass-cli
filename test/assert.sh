@@ -20,7 +20,10 @@ function assert_eq
 
 function assert_str_neq
 {
-	if [[ "$1" == "$2" ]]; then
+	local s1="$(echo $1 | sed -e "s/  *$//g")"
+	local s2="$(echo $2 | sed -e "s/  *$//g")"
+
+	if [[ "$s1" == "$s2" ]]; then
 		echo "FAIL: \"$1 != $2\" $3"
 		return 1
 	fi
@@ -28,8 +31,11 @@ function assert_str_neq
 
 function assert_str_eq
 {
-	if [[ "$1" != "$2" ]]; then
-		echo "FAIL: \"$1 == $2\" $3"
+	local s1="$(echo $1 | sed -e "s/  *$//g")"
+	local s2="$(echo $2 | sed -e "s/  *$//g")"
+
+	if [[ "$s1" != "$s2" ]]; then
+		echo "FAIL: \"$s1 == $s2\" $3"
 		return 1
 	fi
 }

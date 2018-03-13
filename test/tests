@@ -205,6 +205,29 @@ __EOM__
 	assert_str_eq "$expected" "$out"
 }
 
+function test_show_json
+{
+	login || return 1
+	read -r -d '' expected <<__EOM__
+[
+  {
+    "id": "0001",
+    "name": "test-account",
+    "fullname": "test-group/test-account",
+    "username": "xyz@example.com",
+    "password": "test-account-password",
+    "last_modified_gmt": "skipped",
+    "last_touch": "skipped",
+    "group": "test-group",
+    "url": "https://test-url.example.com/",
+    "note": ""
+  }
+]
+__EOM__
+	local out=$(lpass show --sync=no --json test-account)
+	assert_str_eq "$expected" "$out"
+}
+
 function test_show_note
 {
 	login || return 1
