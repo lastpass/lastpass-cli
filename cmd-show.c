@@ -43,6 +43,7 @@
 #include "endpoints.h"
 #include "clipboard.h"
 #include "format.h"
+#include "json_format.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <string.h>
@@ -265,6 +266,7 @@ int cmd_show(int argc, char **argv)
 		{"expand-multi", no_argument, NULL, 'x'},
 		{"title-format", required_argument, NULL, 't'},
 		{"format", required_argument, NULL, 'o'},
+		{"json", no_argument, NULL, 'j'},
 		{"quiet", no_argument, NULL, 'q'},
 		{0, 0, 0, 0}
 	};
@@ -280,6 +282,7 @@ int cmd_show(int argc, char **argv)
 	struct app *app;
 	enum blobsync sync = BLOB_SYNC_AUTO;
 	bool clip = false;
+	bool json = false;
 	bool expand_multi = false;
 	bool quiet = false;
 	struct list_head matches, potential_set;
@@ -291,7 +294,7 @@ int cmd_show(int argc, char **argv)
 	_cleanup_free_ char *field_format = NULL;
 	_cleanup_free_ char *attach_id = NULL;
 
-	while ((option = getopt_long(argc, argv, "cupFGxtoq", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "cupFGxtoqj", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -323,6 +326,9 @@ int cmd_show(int argc, char **argv)
 				break;
 			case 'N':
 				choice = NAME;
+				break;
+			case 'j':
+				json = true;
 				break;
 			case 'a':
 				choice = ATTACH;
@@ -432,6 +438,11 @@ int cmd_show(int argc, char **argv)
 	if (clip)
 		clipboard_open();
 
+	if (json) {
+		json_format_account_list(&matches);
+		goto done;
+	}
+
 	list_for_each_entry(account, &matches, match_list) {
 
 		found = account;
@@ -508,6 +519,7 @@ int cmd_show(int argc, char **argv)
 
 		account_free(notes_expansion);
 	}
+done:
 	session_free(session);
 	blob_free(blob);
 	return 0;

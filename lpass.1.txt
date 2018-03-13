@@ -24,7 +24,7 @@ several subcommands:
  lpass *login* [--trust] [--plaintext-key [--force, -f]] [--color=auto|never|always] USERNAME
  lpass *logout* [--force, -f] [--color=auto|never|always]
  lpass *passwd*
- lpass *show* [--sync=auto|now|no] [--clip, -c] [--quiet, -q] [--expand-multi, -x] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name|--attach=ATTACHID] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
+ lpass *show* [--sync=auto|now|no] [--clip, -c] [--quiet, -q] [--expand-multi, -x] [--json, -j] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name|--attach=ATTACHID] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
  lpass *ls* [--sync=auto|now|no] [--long, -l] [-m] [-u] [--color=auto|never|always] [GROUP]
  lpass *mv* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID} GROUP
  lpass *add* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD|--note-type=NOTETYPE} [--color=auto|never|always] {NAME|UNIQUEID}
@@ -147,6 +147,9 @@ The 'ls' subcommand will list names in groups in a tree structure. If
 the '--long' or '-l' option is set, then also list the last modification
 time.  The '-u' option may be passed to show the last use (last touch) time
 instead, if available. Both times are in GMT.
+
+Passing '--json' to 'show' will generate json output instead of
+human-readable text.
 
 In addition to using the built-in formats, both 'show' and 'ls' subcommands
 support printf-style format strings by using the '--format' option with
