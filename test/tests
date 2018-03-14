@@ -35,6 +35,28 @@ __EOM__
 	assert_str_eq "$(lpass show --sync=no --password $name)" "$password"
 }
 
+function test_add_site_note
+{
+	login || return 1
+	local name="test-add-site-note"
+	local url="https://example.com"
+	local username="user27"
+	local password="999999999"
+	local notes="here are some notes!!"
+
+	cat<<__EOM__ | lpass add --sync=no --non-interactive $name
+Name: $name
+URL: $url
+Username: $username
+Password: $password
+Notes:
+$notes
+__EOM__
+	assertz $? || return 1
+
+	assert_str_eq "$(lpass show --sync=no --note $name)" "$notes"
+}
+
 function test_add_note
 {
 	login || return 1
