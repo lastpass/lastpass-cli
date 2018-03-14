@@ -156,6 +156,7 @@ static void assign_account_value(struct account *account,
 	assign_if("Username", username);
 	assign_if("Password", password);
 	assign_if("Application", appname);
+	assign_if("Notes", note);
 
 	if (!strcmp(label, "Reprompt")) {
 		account->pwprotect = !strcmp(trim(value), "Yes");
