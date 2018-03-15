@@ -1,3 +1,18 @@
+# Version 1.3.0
+ * `lpass show` now supports `--json` format
+ * `lpass show` now supports `--quiet` flag to suppress prompts,
+   from Pau Sanchez
+ * `lpass import` has `--keep-dupes` flag which will preserve duplicate
+   accounts on import
+ * `LPASS_PINENTRY` environment variable may now be used to set custom
+   path to pinentry, from Martynas Mickevičius
+ * Build fix for aarch64 and others from Natanael Copa
+ * New fish completions from Israel Chauca Fuentes
+ * Zsh completions from Richard Hillmann
+ * Brew build instructions updates from Roger D. Winans
+ * bugfix: site notes now show up in notes textarea instead of fields
+ * spelling fixes from Josh Soref
+
 # Version 1.2.2
  * `lpass ls --format` now supports "%al" to show URL, from Yikai Zhao
  * $VISUAL can be used in preference to $EDITOR, from Wesley Schwengle
