@@ -8,3 +8,6 @@ certificate.h
 tags
 build
 test/.lpass
+
+# IDE
+/.idea
