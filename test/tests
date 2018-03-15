@@ -71,14 +71,14 @@ __EOM__
 	assert_str_eq "$(lpass show --sync=no --field=Number $name)" "000-00-0000"
 }
 
-function test_add_note_with_notes
+function test_add_note_with_field
 {
 	login || return 1
 	local name="test-add-note-with-notes"
 	cat<<__EOM__ | lpass add --sync=no --note-type=ssn --non-interactive $name
 Name: $name
 Number: 000-00-0000
-Note: This is my SSN
+Field: This is my SSN
 NoteType: Social Security
 __EOM__
 	assertz $? || return 1
