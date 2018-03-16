@@ -1,0 +1,29 @@
+FROM debian:testing-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN mkdir -p /tmp/build
+WORKDIR /tmp/build
+
+RUN apt-get update \
+	&& apt-get --no-install-recommends -y install \
+		bash-completion \
+		build-essential \
+		cmake \
+		libcurl3  \
+		libcurl4-openssl-dev  \
+		# We install libssl1.0-dev because.. warnings otherwise
+		#libssl-dev  \
+		libssl1.0-dev \
+		libxml2  \
+		libxml2-dev  \
+		openssl  \
+		pkg-config \
+		ca-certificates \
+		xclip
+
+COPY . /tmp/build/
+
+RUN make \
+	&& make test \
+	&& make install
