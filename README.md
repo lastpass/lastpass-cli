@@ -49,7 +49,7 @@ sudo yum install lastpass-cli
   the 'Building' section.
 
 ```
-sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-devel libcurl-devel gcc gcc-c++ make
+sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-devel libcurl-devel gcc gcc-c++ make cmake
 ```
 
 
