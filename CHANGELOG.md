@@ -1,3 +1,10 @@
+# Version 1.3.1
+ * Revert "pins: remove GlobalSign R1/R3 pins" from Robert Copeland
+ * Readme update from Wesley Schwengle
+ * Add Dockerfile to create a clean build environment from Wesley Schwengle
+ * Missing dependencies in readme
+ * Added CLion project files to ignore list
+
 # Version 1.3.0
  * `lpass show` now supports `--json` format
  * `lpass show` now supports `--quiet` flag to suppress prompts,

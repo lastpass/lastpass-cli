@@ -1,3 +1,9 @@
+lastpass-cli (1.3.1) unstable; urgency=medium  Thu, 17 May 2018 11:39:15 +0200
+
+  * New upstream 1.3.1
+
+ -- Andras Rutkai <andras.rutkai@logmein.com>  Thu, 15 Mar 2018 10:16:04 -0400
+
 lastpass-cli (1.3.0) unstable; urgency=medium
 
   * New upstream 1.3.0
