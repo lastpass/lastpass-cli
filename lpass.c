@@ -102,6 +102,8 @@ static int global_options(int argc, char *argv[])
 			case 'h':
 				version();
 				printf("\n");
+				help();
+				return 0;
 			case '?':
 				help();
 				return option == 'h';
