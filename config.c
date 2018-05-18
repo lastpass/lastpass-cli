@@ -175,7 +175,7 @@ enum config_type config_path_type(const char *name)
 	}
 
 	/* lock files are runtime */
-	if (strlen(name) >= 5 && !strcmp(name-5, ".lock")) {
+	if (strlen(name) >= 5 && !strcmp(name + strlen(name) - 5, ".lock")) {
 		return CONFIG_RUNTIME;
 	}
 
