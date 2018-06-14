@@ -4,9 +4,6 @@
 ##
 ##
 
-set -x
-
-
 usage() { echo "Usage: $0 [-l <email>] [-o <outdir>] [-i <id>]" 1>&2; exit 1; }
 
 while getopts ":i:o:hl:" o; do
@@ -56,16 +53,11 @@ else
 fi
 
 for id in ${ids}; do
-
-
   show=$(lpass show ${id})
   attcount=$(echo "${show}" | grep -c "att-")
   path=$(lpass show --format="%/as%/ag%an" ${id} | uniq | tail -1)
 
-
-
   until [  ${attcount} -lt 1 ]; do
-
     att=`lpass show ${id} | grep att- | sed "${attcount}q;d" | tr -d :`
     attid=$(echo ${att} | awk '{print $1}')
     attname=$(echo ${att} | awk '{print $2}')
