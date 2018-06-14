@@ -2,35 +2,84 @@
 ##
 ## Usage: lpass-att-export.sh
 ##
-##  - login via lpass login
-##  - run ./lpass-att-export.sh
-##  - check subfolder 'lpass-export'
 ##
 
+set -x
 
-mkdir -p lpass-export
-cd lpass-export
 
-for id in `lpass ls | sed -n "s/^.*id:\s*\([0-9]*\).*$/\1/p"`; do
+usage() { echo "Usage: $0 [-l <email>] [-o <outdir>] [-i <id>]" 1>&2; exit 1; }
 
-  path=`lpass show ${id} | sed "1q;d" | awk '{$NF=""; print $0}' | awk '{$NF=""; print $0}' | awk '{$1=$1};1'`
-  attcount=`lpass show ${id} | grep att- | wc -l`
+while getopts ":i:o:hl:" o; do
+    case "${o}" in
+        i)
+            id=${OPTARG}
+            ;;
+        o)
+            outdir=${OPTARG}
+            ;;
+        l)
+            email=${OPTARG}
+            ;;
+        h)
+            usage
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+if [ -z "${outdir}" ]; then
+    usage
+fi
+
+command -v lpass >/dev/null 2>&1 || { echo >&2 "I require lpass but it's not installed.  Aborting."; exit 1; }
+
+if [ ! -d ${outdir} ]; then
+  echo "${outdir} does not exist. Exiting."
+  exit 1
+fi
+
+if ! lpass status; then
+  if [ -z ${email} ]; then
+    echo "No login data found, Please login with -l or use lpass login before."
+    exit 1;
+  fi
+  lpass login ${email}
+fi
+
+if [ -z ${id} ]; then
+  ids=$(lpass ls | sed -n "s/^.*id:\s*\([0-9]*\).*$/\1/p")
+else
+  ids=${id}
+fi
+
+for id in ${ids}; do
+
+
+  show=$(lpass show ${id})
+  attcount=$(echo "${show}" | grep -c "att-")
+  path=$(lpass show --format="%/as%/ag%an" ${id} | uniq | tail -1)
+
+
 
   until [  ${attcount} -lt 1 ]; do
+
     att=`lpass show ${id} | grep att- | sed "${attcount}q;d" | tr -d :`
-    attid=`echo ${att} | awk '{print $1}'`
-    attname=`echo ${att} | awk '{print $2}'`
+    attid=$(echo ${att} | awk '{print $1}')
+    attname=$(echo ${att} | awk '{print $2}')
 
     if [[ -z  ${attname}  ]]; then
       attname=${path#*/}
     fi
 
     path=${path//\\//}
-    mkdir -p "${path}"
-    out=${path}/${attname}
+    mkdir -p "${outdir}/${path}"
+    out=${outdir}/${path}/${attname}
 
     if [[ -f ${out} ]]; then
-        out=${path}/${attcount}_${attname}
+        out=${outdir}/${path}/${attcount}_${attname}
     fi
 
     echo ${id} - ${path} ": " ${attid} "-" ${attname} " > " ${out}
