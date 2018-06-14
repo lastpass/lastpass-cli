@@ -54,38 +54,43 @@ sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-de
 
 
 #### Debian/Ubuntu
+
 * Install the needed build dependencies, and then follow instructions in
   the 'Building' section.
 
-* For Debian:
+* For Debian (stable/oldstable) and Ubuntu < 18.04
 
 ```
-sudo apt install --no-install-recommends \
+apt-get --no-install-recommends -yqq install \
+  bash-completion \
   build-essential \
   cmake \
   libcurl3  \
-  libcurl4-openssl-dev  \
-  libssl-dev  \
-  libxml2  \
+  libcurl3-openssl-dev  \
+  libssl1.0 \
+  libssl1.0-dev \
+  libxml2 \
   libxml2-dev  \
-  openssl  \
-  pinentry-curses \
-  pkg-config  \
+  pkg-config \
+  ca-certificates \
   xclip
 ```
 
-* For Ubuntu:
+* For Debian (testing/experimental) and Ubuntu >= 18.04
 
 ```
-sudo apt install --no-install-recommends \
+apt-get --no-install-recommends -yqq install \
+  bash-completion \
+  build-essential \
   cmake \
-  libcurl4-openssl-dev \
-  libssl-dev \
+  libcurl4  \
+  libcurl4-openssl-dev  \
+  libssl-dev  \
   libxml2 \
-  libxml2-dev \
-  openssl \
-  pinentry-curses \
+  libxml2-dev  \
+  libssl1.1 \
   pkg-config \
+  ca-certificates \
   xclip
 ```
 

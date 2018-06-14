@@ -7,18 +7,19 @@ WORKDIR /tmp/build
 
 RUN apt-get update \
 	&& apt-get --no-install-recommends -y install \
-		bash-completion \
+		# Build dependencies
 		build-essential \
 		cmake \
-		libcurl3  \
 		libcurl4-openssl-dev  \
-		# We install libssl1.0-dev because.. warnings otherwise
-		#libssl-dev  \
-		libssl1.0-dev \
-		libxml2  \
+		libssl-dev  \
 		libxml2-dev  \
-		openssl  \
 		pkg-config \
+		# Run time dependencies
+		libssl1.1 \
+		libcurl4  \
+		libxml2 \
+		# Optionals handy for testing within the container
+		bash-completion \
 		ca-certificates \
 		xclip
 
