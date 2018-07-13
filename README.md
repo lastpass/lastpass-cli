@@ -19,7 +19,7 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 ### Installing on Linux
 #### Arch
 * A binary package is available from the community repository, use pacman to simple install lastpass-cli.
-* Can be build from source with the "lastpass-cli-git" *[Arch User Repository (AUR)](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli). 
+* Can be build from source with the "lastpass-cli-git" *[Arch User Repository (AUR)](https://aur.archlinux.org/packages.php?O=0&L=0&C=0&K=lastpass-cli).
 Information about installing packages from the AUR [can be found on the Arch wiki](https://wiki.archlinux.org/index.php/Arch_User_Repository#Installing_packages).
 
 ```
@@ -58,7 +58,25 @@ sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-de
 * Install the needed build dependencies, and then follow instructions in
   the 'Building' section.
 
-* For Debian (stable/oldstable) and Ubuntu < 18.04
+* For Ubuntu 16.04 (xenial)
+
+```
+apt-get --no-install-recommends -yqq install \
+  bash-completion \
+  build-essential \
+  cmake \
+  libcurl3  \
+  libcurl3-openssl-dev  \
+  libssl1.0.0 \
+  libssl-dev \
+  libxml2 \
+  libxml2-dev  \
+  pkg-config \
+  ca-certificates \
+  xclip
+```
+
+* For Debian (stable/oldstable) and other Ubuntus < 18.04
 
 ```
 apt-get --no-install-recommends -yqq install \
@@ -203,5 +221,5 @@ The `install-doc` target builds and installs the documentation.
 Once installed,
 
     $ man lpass
-    
+
 You can view the full documentation in the manpage, `man lpass` or [view it online](https://lastpass.github.io/lastpass-cli/lpass.1.html).
