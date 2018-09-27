@@ -154,8 +154,7 @@ char *config_path_for_type(enum config_type type, const char *name)
 	ret = stat(config, &sbuf);
 	if ((ret == -1 && errno == ENOENT) || !S_ISDIR(sbuf.st_mode)) {
 		unlink(config);
-		if (mkdir(config, 0700) < 0)
-			die_errno("mkdir(%s)", config);
+		mkdir(config, 0700);
 	} else if (ret == -1)
 		die_errno("stat(%s)", config);
 
