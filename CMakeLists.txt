@@ -1,4 +1,6 @@
 set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake > 2.8.4 is required
+
+set(CURL_BASE_PATH "/usr/local/opt/curl/")
 cmake_minimum_required(VERSION 2.8)
 
 project(lpass)
@@ -33,8 +35,8 @@ include_directories(${LIBXML2_INCLUDE_DIR})
 find_package(OpenSSL REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-find_package(CURL REQUIRED)
-include_directories(${CURL_INCLUDE_DIR})
+#find_package(CURL REQUIRED)
+include_directories("${CURL_BASE_PATH}/include")
 
 pkg_check_variable(bash-completion completionsdir)
 
@@ -58,7 +60,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
   COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
 )
 
-target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} "${CURL_BASE_PATH}/lib/libcurl.dylib")
 if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
   target_link_libraries(${PROJECT_NAME} "-lkvm")
 endif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
@@ -81,7 +83,7 @@ set_target_properties(lpass-test PROPERTIES
   COMPILE_FLAGS "${PROJECT_FLAGS} -DTEST_BUILD"
   COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
 )
-target_link_libraries(lpass-test ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+target_link_libraries(lpass-test ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} "/usr/local/opt/curl/lib/libcurl.dylib")
 if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
   target_link_libraries(lpass-test "-lkvm")
 endif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
