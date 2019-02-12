@@ -263,8 +263,10 @@ static int csv_parse_accounts(FILE *fp, struct list_head *account_list,
 	if (url_index == -1 && username_index == -1 &&
 	    password_index == -1 && extra_index == -1 &&
 	    name_index == -1 && grouping_index == -1 &&
-	    fav_index == -1)
+	    fav_index == -1) {
+		die("Could not read the CSV header at the first line of the input file");
 		return 0;
+	}
 
 	first = record;
 	list_for_each_entry(record, &items, list) {
