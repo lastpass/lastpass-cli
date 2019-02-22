@@ -81,7 +81,7 @@ static void help(void)
 	terminal_printf("Usage:\n");
 	printf("  %s {--help|--version}\n", ARGV[0]);
 	for (size_t i = 0; i < ARRAY_SIZE(commands); ++i)
-		printf("  %s %s\n", ARGV[0], commands[i].usage);
+		printf("  %s %s\n", basename(ARGV[0]), commands[i].usage);
 }
 
 static int global_options(int argc, char *argv[])
