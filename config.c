@@ -159,6 +159,21 @@ char *config_path_for_type(enum config_type type, const char *name)
 	} else if (ret == -1)
 		die_errno("stat(%s)", config);
 
+	_cleanup_free_ char *buffer = xstrdup(name);
+	_cleanup_free_ char *dir_path = xstrdup(config);
+	char *saveptr = NULL;
+	for (char *token = strtok_r(buffer, "/", &saveptr); token && saveptr && strlen(saveptr) > 0; token = strtok_r(NULL, "/", &saveptr)) {
+		xasprintf(&dir_path, "%s/%s", dir_path, token);
+
+		ret = stat(dir_path, &sbuf);
+		if ((ret == -1 && errno == ENOENT) || !S_ISDIR(sbuf.st_mode)) {
+			unlink(dir_path);
+			if (mkdir(dir_path, 0700) < 0)
+				die_errno("mkdir(%s)", dir_path);
+		} else if (ret == -1)
+			die_errno("stat(%s)", dir_path);
+	}
+
 	xasprintf(&path, "%s/%s", config, name);
 
 	return path;
