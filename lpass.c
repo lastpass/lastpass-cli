@@ -46,6 +46,10 @@
 #include <getopt.h>
 #include <unistd.h>
 
+#if (defined(__APPLE__) && defined(__MACH__)) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <libgen.h>
+#endif
+
 #define CMD(name) { #name, cmd_##name##_usage, cmd_##name }
 static struct {
 	const char *name;
