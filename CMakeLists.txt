@@ -1,27 +1,36 @@
-set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake > 2.8.4 is required
-cmake_minimum_required(VERSION 2.8)
+IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_GREATER_EQUAL 3.1)
+  cmake_minimum_required(VERSION 3.1)
+ELSE()
+  set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake > 2.8.4 is required
+  cmake_minimum_required(VERSION 2.8)
+ENDIF()
 
 project(lpass)
-
 include(GNUInstallDirs)
-
 find_package(PkgConfig REQUIRED)
 
-# pkg_get_variable is not available until CMake >= 3.4.0
-# Debian stable still packages CMake 3.0.2
-function(pkg_check_variable _pkg _name)
-  string(TOUPPER ${_pkg} _pkg_upper)
-  string(TOUPPER ${_name} _name_upper)
-  string(REPLACE "-" "_" _pkg_upper ${_pkg_upper})
-  string(REPLACE "-" "_" _name_upper ${_name_upper})
-  set(_output_name "${_pkg_upper}_${_name_upper}")
+IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.4)
+  # pkg_get_variable is not available until CMake >= 3.4.0
+  # Debian oldstable still packages CMake 3.0.2
+  function(pkg_get_variable _output_name _pkg _name)
+    execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=${_name} ${_pkg}
+                    OUTPUT_VARIABLE _pkg_result
+                    OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-  execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=${_name} ${_pkg}
-                  OUTPUT_VARIABLE _pkg_result
-                  OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set("${_output_name}" "${_pkg_result}" CACHE STRING "pkg-config variable ${_name} of ${_pkg}")
+  endfunction()
 
-  set("${_output_name}" "${_pkg_result}" CACHE STRING "pkg-config variable ${_name} of ${_pkg}")
-endfunction()
+  pkg_get_variable(BASH_COMPLETION_PREFIX bash-completion prefix)
+  if(BASH_COMPLETION_PREFIX)
+    set(BASH_COMPLETION_FOUND TRUE)
+  endif()
+
+ELSE()
+
+  include(FindPkgConfig)
+  pkg_search_module(BASH_COMPLETION bash-completion)
+
+ENDIF()
 
 if((APPLE) AND (NOT DEFINED OPENSSL_ROOT_DIR))
   set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
@@ -35,8 +44,6 @@ include_directories(${OPENSSL_INCLUDE_DIR})
 
 find_package(CURL REQUIRED)
 include_directories(${CURL_INCLUDE_DIR})
-
-pkg_check_variable(bash-completion completionsdir)
 
 set(PROJECT_NAME lpass)
 
@@ -69,8 +76,18 @@ add_custom_command(OUTPUT lpass.1.html DEPENDS ${CMAKE_SOURCE_DIR}/lpass.1.txt
         COMMAND asciidoc -b html5 -a data-uri -a icons -a toc2 -o lpass.1.html ${CMAKE_SOURCE_DIR}/lpass.1.txt)
 
 install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
-if(BASH_COMPLETION_COMPLETIONSDIR)
-install(FILES contrib/lpass_bash_completion DESTINATION ${BASH_COMPLETION_COMPLETIONSDIR} RENAME lpass)
+
+if(BASH_COMPLETION_FOUND)
+  pkg_get_variable(BASH_COMPLETION_COMPLETIONSDIR bash-completion completionsdir)
+
+  # Fix GH-478
+  if(NOT "${BASH_COMPLETION_PREFIX}" STREQUAL "${CMAKE_INSTALL_PREFIX}")
+    string(REGEX REPLACE "^${BASH_COMPLETION_PREFIX}" "${CMAKE_INSTALL_PREFIX}" COMP_DIR ${BASH_COMPLETION_COMPLETIONSDIR})
+    set(BASH_COMPLETION_COMPLETIONSDIR ${COMP_DIR})
+    unset(COMP_DIR)
+  endif()
+
+  install(FILES contrib/lpass_bash_completion DESTINATION ${BASH_COMPLETION_COMPLETIONSDIR} RENAME lpass)
 endif()
 
 # Test lpass executable with mock server, link against test versions first
