@@ -136,7 +136,7 @@ brew update
 * Install the lastpass-cli formula:
 
 ```
-brew install lastpass-cli --with-pinentry
+brew install lastpass-cli
 ```
 
 #### With [MacPorts](https://www.macports.org/)
