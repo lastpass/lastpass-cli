@@ -1,0 +1,45 @@
+#!/bin/sh
+
+# This file has been adopted from the git project
+# You can find the original at https://github.com/git/git/blob/master/GIT-VERSION-GEN
+
+LPVF=version.h
+DEF_VER=v1.3.2.GIT
+
+LF='
+'
+
+# First see if there is a version file (included in release tarballs),
+# then try git-describe, then default.
+if test -f version
+then
+	VN=$(cat version) || VN="$DEF_VER"
+elif test -d ${GIT_DIR:-.git} -o -f .git &&
+	VN=$(git describe --match "v[0-9]*" HEAD 2>/dev/null) &&
+	case "$VN" in
+	*$LF*) (exit 1) ;;
+	v[0-9]*)
+		git update-index -q --refresh
+		test -z "$(git diff-index --name-only HEAD --)" ||
+		VN="$VN-dirty" ;;
+	esac
+then
+	VN=$(echo "$VN" | sed -e 's/-/./g');
+else
+	VN="$DEF_VER"
+fi
+
+VN=$(expr "$VN" : v*'\(.*\)')
+
+if test -r $LPVF
+then
+	VC=$(sed -e 's/^LASTPASS_VERSION = //' <$LPVF)
+else
+	VC=unset
+fi
+test "$VN" = "$VC" || {
+	echo >&2 "LASTPASS_CLI_VERSION  =$VN"
+	echo >&2 "LASTPASS_CLI_USERAGENT = $VN"
+	echo "#define LASTPASS_CLI_VERSION \"$VN\"" >$LPVF
+	echo "#define LASTPASS_CLI_USERAGENT \"LastPass-CLI/\" LASTPASS_CLI_VERSION" >>$LPVF
+}

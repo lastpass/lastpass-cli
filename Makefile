@@ -30,6 +30,6 @@ uninstall: $(CMAKEMAKE)
 	$(MAKE) -C $(BUILDDIR) uninstall
 
 $(CMAKEMAKE):
-	mkdir -p $(BUILDDIR) && cd $(BUILDDIR) && cmake $(CMAKEOPTS) ..
+	./LASTPASS-VERSION-GEN && mkdir -p $(BUILDDIR) && cd $(BUILDDIR) && cmake $(CMAKEOPTS) ..
 
 .PHONY: all doc-man clean $(CMAKEMAKE)
