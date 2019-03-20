@@ -910,15 +910,19 @@ static struct blob *blob_get_latest(struct session *session, const unsigned char
 	local = local_blob(key, &session->private_key);
 	if (!local)
 		return lastpass_get_blob(session, key);
+
 	remote_version = lastpass_get_blob_version(session, key);
+
 	if (remote_version == 0) {
 		blob_free(local);
 		return NULL;
 	}
-	if (local->version < remote_version || (local->local_version && local->version == remote_version)) {
+
+	if (remote_version > local->version) {
 		blob_free(local);
 		return lastpass_get_blob(session, key);
 	}
+
 	config_touch("blob");
 	return local;
 }
