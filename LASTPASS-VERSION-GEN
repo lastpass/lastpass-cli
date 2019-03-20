@@ -33,7 +33,7 @@ VN=$(expr "$VN" : v*'\(.*\)')
 
 if test -r $LPVF
 then
-	VC=$(sed -e 's/^LASTPASS_VERSION = //' <$LPVF)
+	VC=$(sed -ne 's/^#define LASTPASS_CLI_VERSION "\(.*\)"/\1/p' <$LPVF)
 else
 	VC=unset
 fi
