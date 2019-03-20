@@ -278,6 +278,11 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 	curl_easy_setopt(curl, CURLOPT_URL, url);
 	curl_easy_setopt(curl, CURLOPT_USERAGENT, LASTPASS_CLI_USERAGENT);
 
+	/* TODO: Make this optional via either env vars and/or an option for
+	 *       lpass -4 or lpass -6
+	 */
+	curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+
 	if (lpass_log_level() >= LOG_VERBOSE) {
 		logstream = lpass_log_open();
 		if (logstream) {
