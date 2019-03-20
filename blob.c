@@ -942,19 +942,20 @@ static time_t auto_sync_time(void)
 
 struct blob *blob_load(enum blobsync sync, struct session *session, const unsigned char key[KDF_HASH_LEN])
 {
-	if (sync == BLOB_SYNC_AUTO) {
-		if (!config_exists("blob"))
-			return blob_get_latest(session, key);
-		else if (time(NULL) - config_mtime("blob") <= auto_sync_time())
-			return local_blob(key, &session->private_key);
+	if (sync == BLOB_SYNC_YES)
 		return blob_get_latest(session, key);
-	} else if (sync == BLOB_SYNC_YES)
-		return blob_get_latest(session, key);
-	else if (sync == BLOB_SYNC_NO)
+
+	if (sync == BLOB_SYNC_NO)
 		return local_blob(key, &session->private_key);
 
-	return NULL;
+	if (config_exists("blob") &&
+			time(NULL) - config_mtime("blob") < auto_sync_time()) {
+		return local_blob(key, &session->private_key);
+	}
+
+	return blob_get_latest(session, key);
 }
+
 void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN])
 {
 	_cleanup_free_ char *bluffer = NULL;
