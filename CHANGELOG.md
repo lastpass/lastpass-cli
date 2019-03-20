@@ -1,3 +1,18 @@
+# Version 1.3.2
+ * Disable IPv6 support (Wesley Schwengle)
+ * Link against Brew Curl on MacOS (Tom Sullivan)
+ * Autogenerate versions from git (Wesley Schwengle/Eli Schwartz)
+ * Remove memory leak in `config_path_for_type` (Tom Sullivan)
+ * Install bash-completions in PREFIX dir (Wesley Schwengle)
+ * Include `libgen.h` for BSD builds (Tom Sullivan)
+ * Create subdirectories when determining config path (Tom Sullivan)
+ * Only show basename in usage (William Casarin)
+ * Fix segmentation fault on BSD while running `make test` (Björn Ketelaars)
+ * README.md updates:
+   * Brew formula installation (Thomas Haggett)
+   * Ubuntu Xenial dependencies (Nick Timkovich)
+   * Debian stable/testing and Ubuntu dependencies (Wesley Schwengle)
+
 # Version 1.3.1
  * Revert "pins: remove GlobalSign R1/R3 pins" from Robert Copeland
  * Readme update from Wesley Schwengle
