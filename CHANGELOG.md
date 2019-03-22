@@ -1,4 +1,5 @@
 # Version 1.3.2
+ * Don't require using make (Eli Schwartz)
  * Disable IPv6 support (Wesley Schwengle)
  * Link against Brew Curl on MacOS (Tom Sullivan)
  * Autogenerate versions from git (Wesley Schwengle/Eli Schwartz)
