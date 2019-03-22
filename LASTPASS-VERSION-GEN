@@ -39,7 +39,6 @@ else
 fi
 test "$VN" = "$VC" || {
 	echo >&2 "LASTPASS_CLI_VERSION  =$VN"
-	echo >&2 "LASTPASS_CLI_USERAGENT = $VN"
 	echo "#define LASTPASS_CLI_VERSION \"$VN\"" >$LPVF
 	echo "#define LASTPASS_CLI_USERAGENT \"LastPass-CLI/\" LASTPASS_CLI_VERSION" >>$LPVF
 }
