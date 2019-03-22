@@ -51,7 +51,7 @@ include_directories(${CURL_INCLUDE_DIR})
 
 set(PROJECT_NAME lpass)
 
-file(GLOB PROJECT_HEADERS *.h)
+file(GLOB PROJECT_HEADERS *.h version.h)
 file(GLOB PROJECT_SOURCES *.c)
 
 set(PROJECT_DEFINITIONS "_GNU_SOURCE")
@@ -60,6 +60,9 @@ set(PROJECT_FLAGS "-std=gnu99 -pedantic -Wall -Wextra -Wno-language-extension-to
 if(APPLE)
   set(PROJECT_FLAGS "${PROJECT_FLAGS} -Wno-deprecated-declarations")
 endif()
+
+execute_process(COMMAND ./LASTPASS-VERSION-GEN
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 # Main lpass executable
 add_executable(${PROJECT_NAME} ${PROJECT_HEADERS} ${PROJECT_SOURCES})
