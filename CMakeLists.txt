@@ -1,8 +1,8 @@
-IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_GREATER_EQUAL 3.1)
-  cmake_minimum_required(VERSION 3.1)
-ELSE()
+IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.1)
   set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake > 2.8.4 is required
   cmake_minimum_required(VERSION 2.8)
+ELSE()
+  cmake_minimum_required(VERSION 3.1)
 ENDIF()
 
 project(lpass)
