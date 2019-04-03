@@ -136,6 +136,13 @@ static int agent_socket_get_cred(int fd, struct ucred *cred)
 }
 #endif
 
+void _assert_socket_sun_path(struct sockaddr_un *sa, char *path)
+{
+	if (strlen(path) >= sizeof(sa->sun_path))
+		die("Path too large for agent control socket.");
+}
+
+
 static void agent_run(unsigned const char key[KDF_HASH_LEN])
 {
 	char *agent_timeout_str;
@@ -158,8 +165,7 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 		alarm(agent_timeout);
 
 	_cleanup_free_ char *path = agent_socket_path();
-	if (strlen(path) >= sizeof(sa.sun_path))
-		die("Path too large for agent control socket.");
+	_assert_socket_sun_path(&sa, path);
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
@@ -209,8 +215,7 @@ void agent_kill(void)
 	int fd;
 
 	_cleanup_free_ char *path = agent_socket_path();
-	if (strlen(path) >= sizeof(sa.sun_path))
-		die("Path too large for agent control socket.");
+	_assert_socket_sun_path(&sa, path);
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
@@ -243,8 +248,7 @@ bool agent_ask(unsigned char key[KDF_HASH_LEN])
 	bool ret = false;
 
 	_cleanup_free_ char *path = agent_socket_path();
-	if (strlen(path) >= sizeof(sa.sun_path))
-		die("Path too large for agent control socket.");
+	_assert_socket_sun_path(&sa, path);
 
 	fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
