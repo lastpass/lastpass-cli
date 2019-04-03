@@ -138,10 +138,23 @@ static int agent_socket_get_cred(int fd, struct ucred *cred)
 
 void _assert_socket_sun_path(struct sockaddr_un *sa, char *path)
 {
-	if (strlen(path) >= sizeof(sa->sun_path))
+	if (strlen(path) >= sizeof(sa->sun_path)) {
 		die("Path too large for agent control socket.");
+	}
 }
 
+int _setup_agent_socket(struct sockaddr_un *sa, char *path)
+{
+	int fd;
+
+	_assert_socket_sun_path(sa, path);
+	memset(sa, 0, sizeof(*sa));
+	sa->sun_family = AF_UNIX;
+	strlcpy(sa->sun_path, path, sizeof(sa->sun_path));
+
+	fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	return fd;
+}
 
 static void agent_run(unsigned const char key[KDF_HASH_LEN])
 {
@@ -157,6 +170,7 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 	signal(SIGQUIT, agent_cleanup);
 	signal(SIGTERM, agent_cleanup);
 	signal(SIGALRM, agent_cleanup);
+
 	agent_timeout_str = getenv("LPASS_AGENT_TIMEOUT");
 	agent_timeout = 60 * 60; /* One hour by default. */
 	if (agent_timeout_str && strlen(agent_timeout_str))
@@ -165,13 +179,7 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 		alarm(agent_timeout);
 
 	_cleanup_free_ char *path = agent_socket_path();
-	_assert_socket_sun_path(&sa, path);
-
-	fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-	memset(&sa, 0, sizeof(sa));
-	sa.sun_family = AF_UNIX;
-	strlcpy(sa.sun_path, path, sizeof(sa.sun_path));
+	fd = _setup_agent_socket(&sa, path);
 
 	unlink(path);
 
@@ -215,13 +223,7 @@ void agent_kill(void)
 	int fd;
 
 	_cleanup_free_ char *path = agent_socket_path();
-	_assert_socket_sun_path(&sa, path);
-
-	fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-	memset(&sa, 0, sizeof(sa));
-	sa.sun_family = AF_UNIX;
-	strlcpy(sa.sun_path, path, sizeof(sa.sun_path));
+	fd = _setup_agent_socket(&sa, path);
 
 	if (connect(fd, (struct sockaddr *)&sa, SUN_LEN(&sa)) < 0)
 		goto out;
@@ -248,13 +250,7 @@ bool agent_ask(unsigned char key[KDF_HASH_LEN])
 	bool ret = false;
 
 	_cleanup_free_ char *path = agent_socket_path();
-	_assert_socket_sun_path(&sa, path);
-
-	fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-	memset(&sa, 0, sizeof(sa));
-	sa.sun_family = AF_UNIX;
-	strlcpy(sa.sun_path, path, sizeof(sa.sun_path));
+	fd = _setup_agent_socket(&sa, path);
 
 	ret = connect(fd, (struct sockaddr *)&sa, SUN_LEN(&sa)) >= 0;
 	if (!ret)
