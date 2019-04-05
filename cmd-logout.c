@@ -74,18 +74,18 @@ int cmd_logout(int argc, char **argv)
 	if (optind < argc)
 		die_usage(cmd_logout_usage);
 
-	if (!config_exists("verify"))
-		die("Not currently logged in.");
-
 	if (!force && !ask_yes_no(true, "Are you sure you would like to log out?")) {
 		terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Log out" TERMINAL_RESET ": aborted.\n");
 		return 1;
 	}
 
-	init_all(0, key, &session, NULL);
+	if (agent_ask(key)) {
+		init_all(0, key, &session, NULL);
+		lastpass_logout(session);
+	}
 
 	session_kill();
-	lastpass_logout(session);
+
 	terminal_printf(TERMINAL_FG_YELLOW TERMINAL_BOLD "Log out" TERMINAL_RESET ": complete.\n");
 	return 0;
 }

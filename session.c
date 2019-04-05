@@ -101,8 +101,11 @@ struct session *session_load(unsigned const char key[KDF_HASH_LEN])
 
 void session_kill()
 {
-	if (!config_unlink("verify") || !config_unlink("username") || !config_unlink("session_sessionid") || !config_unlink("iterations"))
-		die_errno("could not log out.");
+	config_unlink("verify");
+	config_unlink("username");
+	config_unlink("session_sessionid");
+	config_unlink("iterations");
+
 	config_unlink("blob");
 	config_unlink("session_token");
 	config_unlink("session_uid");
