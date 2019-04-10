@@ -37,7 +37,7 @@ if((APPLE) AND (NOT DEFINED OPENSSL_ROOT_DIR))
 endif()
 
 if((APPLE))
-  set(ENV{PKG_CONFIG_PATH} "/usr/local/opt/curl/lib/pkgconfig")
+  set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig")
 endif()
 
 find_package(LibXml2 REQUIRED)
