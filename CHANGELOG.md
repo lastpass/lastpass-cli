@@ -1,3 +1,9 @@
+# Version 1.3.3
+ * Decrease the time for the cli app to do things (Eli Schwartz)
+ * 'blob_load' refactor (Eli Schwartz)
+ * Fixed bug where logout requires login (Eli Schwartz)
+ * Fix non-default PKG_CONFIG_PATH on macOS (Alyssa Ross)
+
 # Version 1.3.2
  * Don't require using make (Eli Schwartz)
  * Disable IPv6 support (Wesley Schwengle)
