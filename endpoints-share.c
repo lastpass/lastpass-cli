@@ -130,6 +130,9 @@ int lastpass_share_user_add(const struct session *session,
 		bytes_to_hex(share->key, &hex_share_key, sizeof(share->key));
 
 		size_t enc_share_key_len = share_user->sharing_key.len;
+
+                if (enc_share_key_len) {
+                /* A sharing key has been provided */
 		enc_share_key = xmalloc(enc_share_key_len);
 
 		ret = cipher_rsa_encrypt(hex_share_key, &share_user->sharing_key,
@@ -156,6 +159,24 @@ int lastpass_share_user_add(const struct session *session,
 					   "give", bool_str(!user->hide_passwords),
 					   "canadminister", bool_str(user->admin),
 					   "xmlr", "1", NULL);
+                } else {
+                /* No sharing key has been provided */
+		reply = http_post_lastpass("share.php", session, &len,
+					   "token", session->token,
+					   "id", share->id,
+					   "update", "1",
+					   "add", "1",
+					   "notify", "1",
+					   "msfuser0", share_user->uid,
+					   "msfcgid0", share_user->cgid ? share_user->cgid : "",
+					   "sharename", enc_share_name,
+					   "name", share->name,
+					   "msfreadonly", bool_str(user->read_only),
+					   "msfgive", bool_str(!user->hide_passwords),
+					   "msfcanadminister", bool_str(user->admin),
+					   "xmlr", "1", NULL);
+                }
+
 		free(share_user);
 	}
 
