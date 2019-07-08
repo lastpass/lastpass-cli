@@ -89,8 +89,9 @@ void clipboard_open(void)
 		char *clipboard_command = getenv("LPASS_CLIPBOARD_COMMAND");
 		if (clipboard_command) {
 			exec_command(clipboard_command);
-			die("Unable to copy contents to clipboard. Please make sure you have `xclip`, `xsel`, `pbcopy`, or `putclip` installed.");
+			die("Unable to copy contents to clipboard. Please make sure you have `wl-clip`, `xclip`, `xsel`, `pbcopy`, or `putclip` installed.");
 		} else {
+			execlp("wl-copy", "wl-copy", NULL);
 			execlp("xclip", "xclip", "-selection", "clipboard", "-in", NULL);
 			execlp("xsel", "xsel", "--clipboard", "--input", NULL);
 			execlp("pbcopy", "pbcopy", NULL);
