@@ -75,7 +75,13 @@ static struct multifactor_type multifactor_types[] = {
 		.error_str = "outofbandrequired",
 		.error_failure_str = "multifactorresponsefailed",
 		.post_var = "otp"
-	}
+	},
+    {
+        .name = "Microsoft Authenticator Code",
+        .error_str = "microsoftauthrequired",
+        .error_failure_str = "microsoftauthfailed",
+        .post_var = "otp"
+    }
 };
 
 static void filter_error_message(char *message)
