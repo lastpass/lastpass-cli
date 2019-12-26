@@ -88,6 +88,7 @@ _lpass()
     local subcmd="${COMP_WORDS[2]}"
     local prev="${COMP_WORDS[COMP_CWORD-1]}"
     local optind=1
+    local a i
 
     for i in `seq 2 $COMP_CWORD`; do
         if [[ ${COMP_WORDS[COMP_CWORD]} != "-*" ]]; then
