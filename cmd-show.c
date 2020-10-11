@@ -268,6 +268,7 @@ int cmd_show(int argc, char **argv)
 		{"format", required_argument, NULL, 'o'},
 		{"json", no_argument, NULL, 'j'},
 		{"quiet", no_argument, NULL, 'q'},
+		{"simple", no_argument, NULL, 's'},
 		{0, 0, 0, 0}
 	};
 
@@ -285,6 +286,7 @@ int cmd_show(int argc, char **argv)
 	bool json = false;
 	bool expand_multi = false;
 	bool quiet = false;
+	bool simpleOutput = false;
 	struct list_head matches, potential_set;
 	enum search_type search = SEARCH_EXACT_MATCH;
 	int fields = ACCOUNT_NAME | ACCOUNT_ID | ACCOUNT_FULLNAME;
@@ -294,7 +296,7 @@ int cmd_show(int argc, char **argv)
 	_cleanup_free_ char *field_format = NULL;
 	_cleanup_free_ char *attach_id = NULL;
 
-	while ((option = getopt_long(argc, argv, "cupFGxtoqj", long_options, &option_index)) != -1) {
+	while ((option = getopt_long(argc, argv, "cupFGxtoqjs", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -355,6 +357,9 @@ int cmd_show(int argc, char **argv)
 				break;
 			case 'q':
 				quiet = true;
+				break;
+			case 's':
+				simpleOutput = true;
 				break;
 			case '?':
 			default:
@@ -497,13 +502,15 @@ int cmd_show(int argc, char **argv)
 					print_field(field_format, found, "Application", app->appname);
 			}
 
-			list_for_each_entry(found_field, &found->field_head, list) {
-				pretty_field = pretty_field_value(found_field);
-				print_field(field_format, found, found_field->name, pretty_field);
-				free(pretty_field);
-			}
-			list_for_each_entry(attach, &found->attach_head, list) {
-				print_attachment(field_format, found, attach);
+			if (!simpleOutput) {
+				list_for_each_entry(found_field, &found->field_head, list) {
+					pretty_field = pretty_field_value(found_field);
+					print_field(field_format, found, found_field->name, pretty_field);
+					free(pretty_field);
+				}
+				list_for_each_entry(attach, &found->attach_head, list) {
+					print_attachment(field_format, found, attach);
+				}
 			}
 			if (found->pwprotect)
 				print_field(field_format, found, "Reprompt", "Yes");
