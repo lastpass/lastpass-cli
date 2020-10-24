@@ -81,9 +81,10 @@ The *pinentry* program, part of *gpg2*(1), may be used for inputting
 passwords if it is installed. A custom path to the *pinentry* program can be
 provided by the 'LPASS_PINENTRY' environment variable.
 
-If *pinentry* program is unavailable, or if the 'LPASS_DISABLE_PINENTRY'
-environment variable is set to 1, passwords will be read from standard input and a
-prompt will be displayed on standard error.
+If *pinentry* program is unavailable, if the 'LPASS_DISABLE_PINENTRY'
+environment variable is set to 1, or if an SSH connection is detected,
+passwords will be read from standard input and a prompt will be displayed
+on standard error.
 
 The program used for inputting passwords may also be configured by setting the
 'LPASS_ASKPASS' environment variable. 'LPASS_ASKPASS' is expected to be a
