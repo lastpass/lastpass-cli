@@ -227,6 +227,7 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 	_cleanup_free_ char *prompt_colon = NULL;
 	_cleanup_free_ char *password = NULL;
 	char *password_fallback;
+	char *ssh_detected;
 	char *askpass;
 	char *pinentry_fallback = "pinentry";
 	char *pinentry;
@@ -243,7 +244,8 @@ char *password_prompt(const char *prompt, const char *error, const char *descfmt
 	}
 
 	password_fallback = getenv("LPASS_DISABLE_PINENTRY");
-	if (password_fallback && !strcmp(password_fallback, "1")) {
+	ssh_detected = getenv("SSH_CONNECTION");
+	if ((password_fallback && !strcmp(password_fallback, "1")) || ssh_detected) {
 		va_start(params, descfmt);
 		password_fallback = password_prompt_fallback(prompt, error, descfmt, params);
 		va_end(params);
