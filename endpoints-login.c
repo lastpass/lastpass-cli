@@ -312,7 +312,7 @@ static bool otp_login(const char *login_server, const unsigned char key[KDF_HASH
 	}
 }
 
-struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN], const unsigned char key[KDF_HASH_LEN], int iterations, char **error_message, bool trust)
+struct session *lastpass_login(const char *username, const char *fragment, const char hash[KDF_HEX_LEN], const unsigned char key[KDF_HASH_LEN], int iterations, char **error_message, bool trust)
 {
 	char *args[33];
 	_cleanup_free_ char *user_lower = NULL;
@@ -337,6 +337,10 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 	append_post(args, "includeprivatekeyenc", "1");
 	append_post(args, "method", "cli");
 	append_post(args, "outofbandsupported", "1");
+	if(fragment) {
+		append_post(args, "alpfragmentid", fragment);
+		append_post(args, "calculatedfragmentid", fragment);
+	}
 	if (trusted_id)
 		append_post(args, "uuid", trusted_id);
 
