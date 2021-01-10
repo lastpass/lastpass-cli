@@ -5,7 +5,7 @@ __lpass_complete_fieldname()
     local matches
 
     matches=$(lpass show $acct --format='%fn' --title-format=' ' | \
-              egrep -v '^ $')
+              grep -Ev '^ $')
 
     local IFS=$'\n'
     COMPREPLY=($(compgen -W "$matches" "$cur"))
@@ -20,9 +20,9 @@ __lpass_complete_name()
     local matches
 
     # matches on full path
-    matches=$(lpass ls | egrep "^$cur" | sed -e "s/ \[id.*//g")
+    matches=$(lpass ls | grep -E "^$cur" | sed -e "s/ \[id.*//g")
     # matches on leaves
-    matches+=$(lpass ls | egrep "/$cur" | sed -e "s/ \[id.*//g" | \
+    matches+=$(lpass ls | grep -E "/$cur" | sed -e "s/ \[id.*//g" | \
                awk -F '/' '{print $NF}')
 
     local IFS=$'\n'
@@ -36,7 +36,8 @@ __lpass_complete_group()
 {
     local cur=$1
     local matches
-    matches=$(lpass ls | egrep "^$cur.*/" | awk -F '/' '{print $1}')
+    matches=$(lpass ls 2>/dev/null| grep -E "^$cur.*/" | \
+	          awk -F '/' '{print $1}')
 
     local IFS=$'\n'
     COMPREPLY=($(compgen -W "$matches" "$cur"))
