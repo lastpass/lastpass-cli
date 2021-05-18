@@ -48,9 +48,11 @@ unsigned int lastpass_iterations(const char *username)
 {
 	_cleanup_free_ char *reply = NULL;
 	_cleanup_free_ char *user_lower = NULL;
+	_cleanup_free_ char *path = NULL;
 
 	user_lower = xstrlower(username);
-	reply = http_post_lastpass("iterations.php", NULL, NULL, "email", user_lower, NULL);
+	xasprintf(&path, "iterations.php?email=%s", user_lower);
+	reply = http_post_lastpass(path, NULL, NULL, NULL);
 
 	if (!reply)
 		return 0;
