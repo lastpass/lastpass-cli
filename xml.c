@@ -154,7 +154,9 @@ out:
 	if (doc)
 		xmlFreeDoc(doc);
 	if (!result)
-		result = xstrdup("unknown");
+		xasprintf(&result, "unknown XML error: %s", buf);
+	if (!result)
+		result = xstrdup("unknown xml_error_cause");
 
 	return result;
 }
