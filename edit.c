@@ -470,6 +470,8 @@ int edit_account(struct session *session,
 	} else if (choice == EDIT_FIELD)
 		die("Editing fields of entries that are not secure notes is currently not supported.");
 
+	printf("note_type: %s\n", notes_get_name(note_type));
+
 	switch(choice)
 	{
 	case EDIT_USERNAME:
@@ -584,7 +586,18 @@ int edit_account(struct session *session,
 		editable = notes_collapsed;
 		notes_collapsed = notes_collapse(notes_expansion);
 		account_free(notes_expansion);
-		account_set_note(editable, xstrdup(notes_collapsed->note), key);
+		if (note_type == NOTE_TYPE_GENERIC) {
+		    char *lf = strchr(notes_collapsed->note, '\n');
+		    if (lf) {
+		        _cleanup_free_ char *note = xstrndup(notes_collapsed->note, lf - notes_collapsed->note);
+		        printf("note: %s\n", note);
+		        account_set_note(editable, xstrdup(note), key);
+		    } else {
+		        account_set_note(editable, xstrdup(notes_collapsed->note), key);
+		    }
+		} else {
+		    account_set_note(editable, xstrdup(notes_collapsed->note), key);
+		}
 		account_set_fullname(editable, xstrdup(notes_collapsed->fullname), key);
 		editable->pwprotect = notes_collapsed->pwprotect;
 		account_free(notes_collapsed);
