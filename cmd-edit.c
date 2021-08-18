@@ -137,5 +137,5 @@ int cmd_edit(int argc, char **argv)
 		    editable->fullname, editable->share->name);
 
 	return edit_account(session, blob, sync, editable, choice, field,
-			    non_interactive, key);
+                        non_interactive, note_type, key);
 }

@@ -1293,7 +1293,10 @@ struct account *notes_collapse(struct account *acc)
 		if (!strcmp(field->name, "NoteType"))
 			xstrprependf(&collapse->note, "%s:%s\n", field->name, field->value);
 		else
-			xstrappendf(&collapse->note, "%s:%s\n", field->name, field->value);
+		    if (!strcmp(field->value, "generic"))
+		        xstrprependf(&collapse->note, "%s:%s\n", field->name, field->value);
+		    else
+		        xstrprependf(&collapse->note, "%s\n", field->value);
 	}
 	if (strlen(acc->username))
 		xstrappendf(&collapse->note, "%s:%s\n", "Username", trim(acc->username));

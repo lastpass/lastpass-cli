@@ -39,6 +39,10 @@
 
 /* Templates for shared note types */
 struct note_template note_templates[] = {
+    [ NOTE_TYPE_GENERIC ] = {
+            .name = "Generic",
+            .shortname = "generic",
+            .fields = { NULL }},
 	[ NOTE_TYPE_AMEX ] = {
 		.name = "American Express",
 		.shortname = "amex",

@@ -56,6 +56,7 @@ int edit_account(struct session *session,
 		 enum edit_choice choice,
 		 const char *field,
 		 bool non_interactive,
+		 enum note_type note_type,
 		 unsigned char key[KDF_HASH_LEN]);
 
 int edit_new_account(struct session *session,
