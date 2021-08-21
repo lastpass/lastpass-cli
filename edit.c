@@ -463,7 +463,7 @@ int edit_account(struct session *session,
 
 	struct share *old_share = editable->share;
 
-	notes_expansion = notes_expand(editable);
+	notes_expansion = notes_expand_by_type(editable, note_type);
 	if (notes_expansion) {
 		notes_collapsed = editable;
 		editable = notes_expansion;
@@ -584,17 +584,7 @@ int edit_account(struct session *session,
 		editable = notes_collapsed;
 		notes_collapsed = notes_collapse(notes_expansion);
 		account_free(notes_expansion);
-		if (note_type == NOTE_TYPE_GENERIC) {
-		    char *lf = strchr(notes_collapsed->note, '\n');
-		    if (lf) {
-		        _cleanup_free_ char *note = xstrndup(notes_collapsed->note, lf - notes_collapsed->note);
-		        account_set_note(editable, xstrdup(note), key);
-		    } else {
-		        account_set_note(editable, xstrdup(notes_collapsed->note), key);
-		    }
-		} else {
-		    account_set_note(editable, xstrdup(notes_collapsed->note), key);
-		}
+		account_set_note(editable, xstrdup(notes_collapsed->note), key);
 		account_set_fullname(editable, xstrdup(notes_collapsed->fullname), key);
 		editable->pwprotect = notes_collapsed->pwprotect;
 		account_free(notes_collapsed);
@@ -659,11 +649,6 @@ int edit_new_account(struct session *session,
 		xasprintf(&note_type_str, "NoteType:%s\n",
 			  notes_get_name(note_type));
 		account_set_note(account, note_type_str, key);
-	} else {
-	    char *note_type_str = NULL;
-	    xasprintf(&note_type_str, "NoteType:%s\n",
-                  notes_get_name(note_type));
-	    account_set_note(account, note_type_str, key);
 	}
 
 	return edit_account(session, blob, sync, account, choice, field,

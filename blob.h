@@ -173,6 +173,7 @@ void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH
 bool account_is_group(struct account *account);
 void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN]);
 struct account *notes_expand(struct account *acc);
+struct account *notes_expand_by_type(struct account *acc, enum note_type note_type);
 struct account *notes_collapse(struct account *acc);
 void share_free(struct share *share);
 struct share *find_unique_share(struct blob *blob, const char *name);
