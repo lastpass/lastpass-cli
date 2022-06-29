@@ -35,6 +35,16 @@ _lpass() {
                 has_sync=1
             ;;
 
+            history)
+				_arguments : \
+				  '(-c --clip)'{-c,--clip}'[Copy output to clipboard]' \
+				  '(-o --format)'{-o,--format}'[Format output with printf-style placeholders]'
+				  '(-t --title-format)'{-t,--title-format}'[Format title with printf-style placeholders]'
+				_lpass_complete_uniqenames
+				has_color=1
+				has_sync=1
+			;;
+
             ls)
                 _arguments : \
                   '(-l --long)'{-l,--long}'[Also list the last modification time and username]' \

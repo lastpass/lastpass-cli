@@ -76,6 +76,8 @@ int cmd_history(int argc, char **argv) {
     struct blob *blob = NULL;
     json_t pool[JSON_POOL_SIZE];
     static struct option long_options[] = {
+            {"clip",         no_argument,       NULL, 'c'},
+            {"color",        required_argument, NULL, 'C'},
             {"title-format", required_argument, NULL, 't'},
             {"format",       required_argument, NULL, 'o'},
             {"json",         no_argument,       NULL, 'j'},
@@ -92,8 +94,14 @@ int cmd_history(int argc, char **argv) {
     _cleanup_free_ char *title_format = NULL;
     _cleanup_free_ char *field_format = NULL;
 
-    while ((option = getopt_long(argc, argv, "toj", long_options, &option_index)) != -1) {
+    while ((option = getopt_long(argc, argv, "cCtoj", long_options, &option_index)) != -1) {
         switch (option) {
+            case 'c':
+                clip = true;
+                break;
+            case 'C':
+                terminal_set_color_mode(parse_color_mode_string(optarg));
+                break;
             case 'j':
                 json = true;
                 break;
@@ -130,9 +138,10 @@ int cmd_history(int argc, char **argv) {
 
     struct account *found_account = find_unique_account(blob, name);
 
-    char *result = lastpass_get_password_history_json(session, found_account, key);
+    if (!found_account)
+        die("Could not find specified account(s).");
 
-    print_header(title_format, found_account);
+    char *result = lastpass_get_password_history_json(session, found_account, key);
 
     if (clip)
         clipboard_open();
@@ -141,6 +150,8 @@ int cmd_history(int argc, char **argv) {
         puts(result);
         goto done;
     }
+
+    print_header(title_format, found_account);
 
     json_t const *parent = json_create(result, pool, JSON_POOL_SIZE);
     if (parent == NULL) die("Malformed JSON");
