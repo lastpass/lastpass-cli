@@ -12,3 +12,4 @@ version.h
 
 # IDE
 /.idea
+/cmake-build-debug

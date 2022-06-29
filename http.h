@@ -19,6 +19,7 @@ struct http_param_set
 
 int http_init();
 void http_post_add_params(struct http_param_set *params, ...);
+char *http_get_lastpass(const char *page, const struct session *session, size_t *len);
 char *http_post_lastpass(const char *page, const struct session *session, size_t *len, ...);
 char *http_post_lastpass_v(const char *server, const char *page, const struct session *session, size_t *len, char **argv);
 char *http_post_lastpass_param_set(const char *page, const struct session *session, size_t *len,

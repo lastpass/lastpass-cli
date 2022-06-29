@@ -213,6 +213,18 @@ void http_post_add_params(struct http_param_set *param_set, ...)
 	va_end(args);
 }
 
+char *http_get_lastpass(const char *page, const struct session *session, size_t *final_len)
+{
+    char* argv_ref = {0};
+    struct http_param_set params = {
+            .argv = &argv_ref,
+            .n_alloced = 0
+    };
+
+    char *result = http_post_lastpass_param_set(page, session, final_len, &params);
+    return result;
+}
+
 char *http_post_lastpass(const char *page, const struct session *session, size_t *final_len, ...)
 {
 	va_list args;
