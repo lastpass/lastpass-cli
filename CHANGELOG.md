@@ -1,3 +1,6 @@
+# Version 1.3.4
+* Updating post parameter (Gergely Der)
+
 # Version 1.3.3
  * Decrease the time for the cli app to do things (Wesley Schwengle)
  * 'blob_load' refactor (Wesley Schwengle)
