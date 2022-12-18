@@ -4,7 +4,7 @@
 # You can find the original at https://github.com/git/git/blob/master/GIT-VERSION-GEN
 
 LPVF=version.h
-DEF_VER=v1.3.3.GIT
+DEF_VER=v1.3.4.GIT
 
 LF='
 '
