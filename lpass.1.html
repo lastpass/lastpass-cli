@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<meta name="generator" content="AsciiDoc 8.6.9">
+<meta name="generator" content="AsciiDoc 9.0.0rc1">
 <title>LPASS(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -434,7 +434,7 @@ thead, p.table.header {
 p.table {
   margin-top: 0;
 }
-/* Because the table frame attribute is overriden by CSS in most browsers. */
+/* Because the table frame attribute is overridden by CSS in most browsers. */
 div.tableblock > table[frame="void"] {
   border-style: none;
 }
@@ -798,7 +798,7 @@ several subcommands:</p></div>
 <pre class="content">lpass <strong>login</strong> [--trust] [--plaintext-key [--force, -f]] [--color=auto|never|always] USERNAME
 lpass <strong>logout</strong> [--force, -f] [--color=auto|never|always]
 lpass <strong>passwd</strong>
-lpass <strong>show</strong> [--sync=auto|now|no] [--clip, -c] [--expand-multi, -x] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
+lpass <strong>show</strong> [--sync=auto|now|no] [--clip, -c] [--quiet, -q] [--expand-multi, -x] [--json, -j] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name|--attach=ATTACHID] [--basic-regexp, -G|--fixed-strings, -F] [--color=auto|never|always] {NAME|UNIQUEID}*
 lpass <strong>ls</strong> [--sync=auto|now|no] [--long, -l] [-m] [-u] [--color=auto|never|always] [GROUP]
 lpass <strong>mv</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID} GROUP
 lpass <strong>add</strong> [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD|--note-type=NOTETYPE} [--color=auto|never|always] {NAME|UNIQUEID}
@@ -808,8 +808,8 @@ lpass <strong>duplicate</strong> [--sync=auto|now|no] [--color=auto|never|always
 lpass <strong>rm</strong> [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
 lpass <strong>status</strong> [--quiet, -q] [--color=auto|never|always]
 lpass <strong>sync</strong> [--background, -b] [--color=auto|never|always]
-lpass <strong>import</strong> [--sync=auto|now|no] [FILENAME]
-lpass <strong>export</strong> [--sync=auto|now|no] [--color=auto|never|always]
+lpass <strong>import</strong> [--sync=auto|now|no] [--keep-dupes] [FILENAME]
+lpass <strong>export</strong> [--sync=auto|now|no] [--color=auto|never|always] [--fields=FIELDLIST]
 lpass <strong>share</strong> <strong>userls</strong> SHARE
 lpass <strong>share</strong> <strong>useradd</strong> [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
 lpass <strong>share</strong> <strong>usermod</strong> [--read-only=[true|false]] [--hidden=[true|false]] [--admin=[true|false]] SHARE USERNAME
@@ -851,8 +851,10 @@ variable <em>LPASS_AGENT_DISABLE</em> is set to 1, the agent will not be used.</
 </div>
 <div class="sect2">
 <h3 id="_password_entry">Password Entry</h3>
-<div class="paragraph"><p>If available, the <strong>pinentry</strong> program, part of <strong>gpg2</strong>(1), may be used for inputting
-passwords if it is installed. If unavailable, or if the <em>LPASS_DISABLE_PINENTRY</em>
+<div class="paragraph"><p>The <strong>pinentry</strong> program, part of <strong>gpg2</strong>(1), may be used for inputting
+passwords if it is installed. A custom path to the <strong>pinentry</strong> program can be
+provided by the <em>LPASS_PINENTRY</em> environment variable.</p></div>
+<div class="paragraph"><p>If <strong>pinentry</strong> program is unavailable, or if the <em>LPASS_DISABLE_PINENTRY</em>
 environment variable is set to 1, passwords will be read from standard input and a
 prompt will be displayed on standard error.</p></div>
 <div class="paragraph"><p>The program used for inputting passwords may also be configured by setting the
@@ -898,10 +900,92 @@ with the newly derived key.</p></div>
 <div class="sect2">
 <h3 id="_viewing">Viewing</h3>
 <div class="paragraph"><p>The <em>show</em> subcommand will display a password or selected field.</p></div>
+<div class="paragraph"><p>By default, the site you specify with the <em>show</em> subcommand must
+<strong>exactly</strong> match the name of the site.  If the <em>--fixed-strings</em> or <em>-F</em>
+option is set, then the <em>show</em> subcommand will find a site containing
+that <strong>exact</strong> substring; if the <em>--basic-regexp</em> or <em>-G</em> option is set,
+then the <em>show</em> subcommand will find a site matching a case-insensitive
+regular expression.</p></div>
+<div class="paragraph"><p>By default if your <em>show</em> subcommand matches more than one site, then
+the <em>show</em> subcommand will generate a warning and display the names of
+matching sites but no other information.  The <em>--expand-multi</em> or <em>-x</em>
+option will instead show the requested information from all of the
+matching sites.</p></div>
 <div class="paragraph"><p>The <em>ls</em> subcommand will list names in groups in a tree structure. If
 the <em>--long</em> or <em>-l</em> option is set, then also list the last modification
 time.  The <em>-u</em> option may be passed to show the last use (last touch) time
 instead, if available. Both times are in GMT.</p></div>
+<div class="paragraph"><p>Passing <em>--json</em> to <em>show</em> will generate json output instead of
+human-readable text.</p></div>
+<div class="paragraph"><p>In addition to using the built-in formats, both <em>show</em> and <em>ls</em> subcommands
+support printf-style format strings by using the <em>--format</em> option with
+the following placeholders:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+%ai: account id
+</p>
+</li>
+<li>
+<p>
+%an: account name
+</p>
+</li>
+<li>
+<p>
+%aN: account name including path
+</p>
+</li>
+<li>
+<p>
+%au: account user
+</p>
+</li>
+<li>
+<p>
+%ap: account password
+</p>
+</li>
+<li>
+<p>
+%am: account modification time
+</p>
+</li>
+<li>
+<p>
+%aU: account last touch time
+</p>
+</li>
+<li>
+<p>
+%as: account share name
+</p>
+</li>
+<li>
+<p>
+%ag: account group name
+</p>
+</li>
+<li>
+<p>
+%al: account URL
+</p>
+</li>
+<li>
+<p>
+%fn: field name (for <em>show</em>)
+</p>
+</li>
+<li>
+<p>
+%fv: field value (for <em>show</em>)
+</p>
+</li>
+</ul></div>
+<div class="paragraph"><p>A slash can be added between the <em>%</em> and the placeholder to indicate that a
+slash should be appended, only if the printed value is expanded to a non-empty
+string.  For example, this command will properly show the full path to
+an account: <span class="monospaced">lpass ls --format="%/as%/ag%an"</span>.</p></div>
 </div>
 <div class="sect2">
 <h3 id="_modifying">Modifying</h3>
@@ -920,7 +1004,14 @@ will create a duplicate entry of the one specified, but with a different <em>ID<
 <div class="sect2">
 <h3 id="_backup">Backup</h3>
 <div class="paragraph"><p>The <em>export</em> subcommand will dump all account information including
-passwords to stdout (unencrypted) in CSV format.</p></div>
+passwords to stdout (unencrypted) in CSV format.  The optional
+<em>--fields=FIELDLIST</em> argument may contain a comma-separated subset of the
+following fields:</p></div>
+<div class="literalblock">
+<div class="content monospaced">
+<pre>id, url, username, password, extra, name, fav, id, grouping, group,
+fullname, last_touch, last_modified_gmt, attachpresent</pre>
+</div></div>
 <div class="paragraph"><p>The <em>import</em> subcommand does the reverse: accounts from an unencrypted
 CSV file are uploaded to the server.</p></div>
 <div class="paragraph"><p>It is recommended that such backups be encrypted at rest, for example by
@@ -989,6 +1080,26 @@ VARIABLE2=VALUE2
 <div class="attribution">
 </div></div>
 </div>
+<div class="sect2">
+<h3 id="_aliases">Aliases</h3>
+<div class="paragraph"><p>Default options can be specified for any command by creating command aliases.
+Command aliases are stored in the configuration directory (see previous
+section) with files named <em>alias.<strong>command</strong></em>.  For example, to force the
+<em>ls</em> subcommand to never use color, make an <em>alias.ls</em> file with the
+appropriate option:</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>echo 'ls --color=never' &gt; ~/.config/lpass/alias.ls</pre>
+</div></div>
+<div class="paragraph"><p>Similarly, new subcommands can be created based on built-in subcommands with
+options.  Thus,</p></div>
+<div class="listingblock">
+<div class="content monospaced">
+<pre>echo 'show --password -c' &gt; ~/.config/lpass/alias.passclip</pre>
+</div></div>
+<div class="paragraph"><p>would create a <em>passclip</em> subcommand that copies your password onto the
+clipboard.</p></div>
+</div>
 </div>
 </div>
 <div class="sect1">
@@ -1015,6 +1126,11 @@ in the section above:</p></div>
 <li>
 <p>
 <em>LPASS_AGENT_DISABLE</em>
+</p>
+</li>
+<li>
+<p>
+<em>LPASS_PINENTRY</em>
 </p>
 </li>
 <li>
@@ -1075,6 +1191,19 @@ NoteType: Social Security
 Notes:
 Any notes I want to save go here.
 
+# Display a secure note attachment
+$ lpass show my-secure-note
+info/my-secure-note [id: 1426405543365295118]
+URL: http://sn
+att-1426405543365295118-94690: travel-flight.pdf
+$ lpass show my-secure-note --attach att-1426405543365295118-94690
+"travel-flight.pdf" is a binary file, print it anyway (or save)?  [y/n/S] s
+Wrote 122864 bytes to "travel-flight.pdf"
+
+# Display secure note attachment to standard output
+$ lpass show my-secure-note --attach att-1426405543365295118-94690 --quiet
+[... binary data on stdout ...]
+
 # Add an account non-interactively by creating the proper template
 printf "Username: wizard97\nPassword: vJwhFfBBtn8hj4" | \
     lpass add Facebook --non-interactive</pre>
@@ -1086,7 +1215,7 @@ printf "Username: wizard97\nPassword: vJwhFfBBtn8hj4" | \
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2016-09-22 16:58:41 EDT
+ 2023-08-30 19:02:59 CEST
 </div>
 </div>
 </body>
