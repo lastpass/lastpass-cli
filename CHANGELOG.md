@@ -1,3 +1,6 @@
+# Version 1.3.5
+* Updating certificate hashes (Béla Ormos)
+
 # Version 1.3.4
 * Updating post parameter (Gergely Der)
 
