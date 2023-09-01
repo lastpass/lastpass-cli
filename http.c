@@ -126,7 +126,9 @@ free_pkey:
 
 static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 {
-	int i, j;
+	int depth, i, j;
+	char    buf[256];
+	X509   *cert;
 
 	/*
 	 * Preverify checks the platform's certificate store; don't
@@ -136,6 +138,18 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 	if (!preverify_ok)
 		return 0;
 
+	/*
+	 * verify_callback is called for each cert in the chain, starting
+	 * with the deepest nesting level (the root CA certificate) and
+	 * working up to the peer/end-entity certificate (at depth 0).
+	 * Since we only require that at least one cert in the chain
+	 * matches our pinned hashes, we will only check pins at depth=0,
+	 * after every certificate has passed standard validation.
+	 */
+	depth = X509_STORE_CTX_get_error_depth(ctx);
+	if (depth > 0)
+		return preverify_ok;
+
 	/* check each certificate in the chain against our built-in pinlist. */
 	STACK_OF(X509) *chain = X509_STORE_CTX_get_chain(ctx);
 	if (!chain)
@@ -143,19 +157,26 @@ static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
 
 	bool found = false;
 	for (i=0; i < sk_X509_num(chain); i++) {
+		cert = sk_X509_value(chain, i);
+		X509_NAME_oneline(X509_get_subject_name(cert), buf, 256);
 		_cleanup_free_ char *spki_hash = NULL;
-		spki_hash = hash_subject_pubkey_info(sk_X509_value(chain, i));
-		if (!spki_hash)
+		spki_hash = hash_subject_pubkey_info(cert);
+		if (!spki_hash) {
+			lpass_log(LOG_WARNING, "Unable to get hash for cert: %s\n", buf);
 			continue;
+		}
+		lpass_log(LOG_DEBUG, "Checking for pinned hash matching '%s' for cert: %s\n", spki_hash, buf);
 
 		for (j=0; j < (int) ARRAY_SIZE(PK_PINS); j++) {
 			if (strcmp(PK_PINS[j], spki_hash) == 0) {
 				found = true;
+				lpass_log(LOG_DEBUG, "Found matching pinned hash '%s' for cert: %s\n", spki_hash, buf);
 				break;
 			}
 		}
 	}
-
+	if (!found)
+		lpass_log(LOG_WARNING, "No certificate in the chain matched any pinned hashes!\n");
 	return found;
 }
 
