@@ -53,6 +53,8 @@ complete -f -c lpass -n '__lpass_needs_command' -a share \
     -d 'Perform operations on a share'
 complete -f -c lpass -n '__lpass_needs_command' -a show \
     -d 'Show entry details'
+complete -f -c lpass -n '__lpass_needs_command' -a history \
+    -d 'Show password history of entry'
 complete -f -c lpass -n '__lpass_needs_command' -a status \
     -d 'Show status'
 complete -f -c lpass -n '__lpass_needs_command' -a sync \
@@ -60,7 +62,7 @@ complete -f -c lpass -n '__lpass_needs_command' -a sync \
 
 # {UNIQUENAME|UNIQUEID}
 complete -f -c lpass \
-    -n '__lpass_using_command show mv edit generate duplicate rm' \
+    -n '__lpass_using_command show history mv edit generate duplicate rm' \
     -a '(__lpass_entries)'
 
 # --all
@@ -84,13 +86,13 @@ complete -f -c lpass -n '__lpass_using_command show' \
     -d 'Search with regular expression'
 
 # --clip -c
-complete -f -c lpass -n '__lpass_using_command show generate' \
+complete -f -c lpass -n '__lpass_using_command show history generate' \
     -s c -l clip \
     -d 'Copy output to clipboard'
 
 # --color=COLOR
 complete -f -c lpass \
-    -n '__lpass_using_command login logout show ls mv add edit duplicate rm sync export status' \
+    -n '__lpass_using_command login logout show history ls mv add edit duplicate rm sync export status' \
     -r -l color \
     -a 'auto never always' \
     -d 'When to use colors'
@@ -121,7 +123,7 @@ complete -f -c lpass -n '__lpass_using_command login logout' \
     -d 'Do not ask for confirmation'
 
 # --format=FMTSTR
-complete -f -c lpass -n '__lpass_using_command show ls' \
+complete -f -c lpass -n '__lpass_using_command show history ls' \
     -l format \
     -d 'Format string'
 

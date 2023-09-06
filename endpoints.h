@@ -10,6 +10,7 @@ unsigned int lastpass_iterations(const char *username);
 struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN], const unsigned char key[KDF_HASH_LEN], int iterations, char **error_message, bool trust);
 void lastpass_logout(const struct session *session);
 struct blob *lastpass_get_blob(const struct session *session, const unsigned char key[KDF_HASH_LEN]);
+char *lastpass_get_password_history_json(const struct session *session, struct account *account, const unsigned char key[KDF_HASH_LEN]);
 unsigned long long lastpass_get_blob_version(struct session *session, unsigned const char key[KDF_HASH_LEN]);
 void lastpass_remove_account(enum blobsync sync, unsigned const char key[KDF_HASH_LEN], const struct session *session, const struct account *account, struct blob *blob);
 void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HASH_LEN], const struct session *session, const struct account *account, struct blob *blob);

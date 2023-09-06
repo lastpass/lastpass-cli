@@ -83,6 +83,9 @@ int cmd_passwd(int argc, char **argv);
 int cmd_show(int argc, char **argv);
 #define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--quiet, -q] [--expand-multi, -x] [--json, -j] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name|--attach=ATTACHID] [--basic-regexp, -G|--fixed-strings, -F] " color_usage " {UNIQUENAME|UNIQUEID}"
 
+int cmd_history(int argc, char **argv);
+#define cmd_history_usage "history [--clip, -c] [--json, -j] " color_usage " {UNIQUENAME|UNIQUEID}"
+
 int cmd_ls(int argc, char **argv);
 #define cmd_ls_usage "ls [--sync=auto|now|no] [--long, -l] [-m] [-u] " color_usage " [GROUP]"
 

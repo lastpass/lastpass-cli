@@ -74,6 +74,20 @@ struct blob *lastpass_get_blob(const struct session *session, const unsigned cha
 	return blob_parse((unsigned char *) blob, len, key, &session->private_key);
 }
 
+char *lastpass_get_password_history_json(const struct session *session, struct account *account, const unsigned char key[KDF_HASH_LEN])
+{
+    size_t len = 33 + strlen(account->id);
+    _cleanup_free_ char *page = calloc(len, 1);
+    sprintf(page, "lmiapi/accounts/%s/history/password", account->id);
+
+    char *json = http_get_lastpass(page, session, &len);
+
+    if (!json || !len)
+        return NULL;
+
+    return json;
+}
+
 void lastpass_remove_account(enum blobsync sync, unsigned const char key[KDF_HASH_LEN], const struct session *session, const struct account *account, struct blob *blob)
 {
 	struct http_param_set params = {

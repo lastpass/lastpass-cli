@@ -60,6 +60,7 @@ static struct {
 	CMD(logout),
 	CMD(passwd),
 	CMD(show),
+    CMD(history),
 	CMD(ls),
 	CMD(mv),
 	CMD(add),
