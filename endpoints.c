@@ -210,7 +210,7 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	}
 	http_post_add_params(&params,
 			     "aid", account->id,
-			     "url", url,
+			     "url", account->url_encrypted,
 			     "username", account->username_encrypted,
 			     "password", account->password_encrypted,
 			     "extra", account->note_encrypted,
@@ -401,9 +401,6 @@ int lastpass_upload(const struct session *session,
 		char *name_param, *grouping_param;
 		char *url_param, *username_param, *password_param;
 		char *fav_param, *extra_param;
-		char *url = NULL;
-		bytes_to_hex((unsigned char *) account->url, &url,
-			     strlen(account->url));
 
 		xasprintf(&name_param, "name%d", index);
 		xasprintf(&grouping_param, "grouping%d", index);
@@ -416,7 +413,7 @@ int lastpass_upload(const struct session *session,
 		http_post_add_params(&params,
 				     name_param, account->name_encrypted,
 				     grouping_param, account->group_encrypted,
-				     url_param, url,
+				     url_param, account->url_encrypted,
 				     username_param, account->username_encrypted,
 				     password_param, account->password_encrypted,
 				     fav_param, account->fav ? "1" : "0",
