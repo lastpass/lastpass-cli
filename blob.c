@@ -104,6 +104,7 @@ void account_free_contents(struct account *account)
 	free(account->note);
 	free(account->name_encrypted);
 	free(account->group_encrypted);
+	free(account->url_encrypted);
 	free(account->username_encrypted);
 	free(account->password_encrypted);
 	free(account->note_encrypted);
@@ -320,6 +321,10 @@ static int read_boolean(struct chunk *chunk)
 	return item.data[0] == '1';
 }
 
+static bool check_next_entry_encrypted(struct chunk *chunk) {
+	return (chunk->data + sizeof(uint32_t))[0] == '!';
+}
+
 #define entry_plain_at(base, var) do { \
 	char *__entry_val__ = read_plain_string(chunk); \
 	if (!__entry_val__) \
@@ -360,6 +365,9 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	entry_plain(id);
 	entry_crypt(name);
 	entry_crypt(group);
+ 	if (check_next_entry_encrypted(chunk))
+		entry_crypt(url);
+	else
 	entry_hex(url);
 	entry_crypt(note);
 	entry_boolean(fav);
