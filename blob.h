@@ -59,7 +59,7 @@ struct account {
 	char *name, *name_encrypted;
 	char *group, *group_encrypted;
 	char *fullname;
-	char *url;
+	char *url, *url_encrypted;
 	char *username, *username_encrypted;
 	char *password, *password_encrypted;
 	char *note, *note_encrypted;

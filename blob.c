@@ -104,6 +104,7 @@ void account_free_contents(struct account *account)
 	free(account->note);
 	free(account->name_encrypted);
 	free(account->group_encrypted);
+	free(account->url_encrypted);
 	free(account->username_encrypted);
 	free(account->password_encrypted);
 	free(account->note_encrypted);
@@ -320,6 +321,10 @@ static int read_boolean(struct chunk *chunk)
 	return item.data[0] == '1';
 }
 
+static bool check_next_entry_encrypted(struct chunk *chunk) {
+	return (chunk->data + sizeof(uint32_t))[0] == '!';
+}
+
 #define entry_plain_at(base, var) do { \
 	char *__entry_val__ = read_plain_string(chunk); \
 	if (!__entry_val__) \
@@ -360,7 +365,10 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	entry_plain(id);
 	entry_crypt(name);
 	entry_crypt(group);
-	entry_hex(url);
+ 	if (check_next_entry_encrypted(chunk))
+		entry_crypt(url);
+	else
+		entry_hex(url);
 	entry_crypt(note);
 	entry_boolean(fav);
 	skip(sharedfromaid);
@@ -806,7 +814,10 @@ static void write_account_chunk(struct buffer *buffer, struct account *account)
 	write_plain_string(&accbuf, account->id);
 	write_crypt_string(&accbuf, account->name_encrypted);
 	write_crypt_string(&accbuf, account->group_encrypted);
-	write_hex_string(&accbuf, account->url);
+	if (account->url_encrypted != NULL)
+		write_crypt_string(&accbuf, account->url_encrypted);
+	else
+		write_hex_string(&accbuf, account->url);
 	write_crypt_string(&accbuf, account->note_encrypted);
 	write_plain_string(&accbuf, "skipped");
 	write_plain_string(&accbuf, "skipped");
@@ -1006,8 +1017,7 @@ void account_set_note(struct account *account, char *note, unsigned const char k
 }
 void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN])
 {
-	UNUSED(key);
-	set_field(account, url);
+	set_encrypted_field(account, url);
 }
 void account_set_appname(struct account *account, char *appname, unsigned const char key[KDF_HASH_LEN])
 {
@@ -1038,6 +1048,7 @@ void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH
 
 	reencrypt_field(account, name);
 	reencrypt_field(account, group);
+	reencrypt_field(account, url);
 	reencrypt_field(account, username);
 	reencrypt_field(account, password);
 	reencrypt_field(account, note);
