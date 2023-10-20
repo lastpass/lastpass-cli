@@ -171,8 +171,10 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 		.n_alloced = 0
 	};
 
+	_cleanup_free_ char *url = NULL;
 	_cleanup_free_ char *fields = NULL;
 
+	bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
 	fields = stringify_fields(&account->field_head);
 
 	++blob->version;
