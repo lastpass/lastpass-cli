@@ -1,6 +1,6 @@
 # Vesion 1.3.7
 * Add support for reading encrypted URLs (Tibor Komlossy)
-* Fix build issue  (Tibor Komlossy)
+* Fix GCC 10 compatibility issue #532 (Tibor Komlossy)
 
 # Version 1.3.6
 * Fix version (Béla Ormos)
