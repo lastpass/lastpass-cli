@@ -1,3 +1,7 @@
+# Vesion 1.3.7
+* Add support for reading encrypted URLs (Tibor Komlossy)
+* Fix build issue  (Tibor Komlossy)
+
 # Version 1.3.6
 * Fix version (Béla Ormos)
 
