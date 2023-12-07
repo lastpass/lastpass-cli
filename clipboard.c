@@ -91,6 +91,7 @@ void clipboard_open(void)
 			exec_command(clipboard_command);
 			die("Unable to copy contents to clipboard. Please make sure you have `wl-clip`, `xclip`, `xsel`, `pbcopy`, or `putclip` installed.");
 		} else {
+			execlp("cb", "copy", NULL);
 			execlp("wl-copy", "wl-copy", NULL);
 			execlp("xclip", "xclip", "-selection", "clipboard", "-in", NULL);
 			execlp("xsel", "xsel", "--clipboard", "--input", NULL);
