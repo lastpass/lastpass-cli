@@ -49,6 +49,8 @@
 #define LP_PKEY_PREFIX "LastPassPrivateKey<"
 #define LP_PKEY_SUFFIX ">LastPassPrivateKey"
 
+char *cipher_bignum_sha256_hex_digest(BIGNUM *bignum);
+
 char *cipher_rsa_decrypt(const unsigned char *ciphertext, size_t len, const struct private_key *private_key)
 {
 	PKCS8_PRIV_KEY_INFO *p8inf = NULL;
@@ -531,4 +533,78 @@ char *cipher_sha256_b64(unsigned char *bytes, size_t len)
 	hash_hex = cipher_sha256_hex(bytes, len);
 	hex_to_bytes(hash_hex, &hash_raw);
 	return base64(hash_raw, strlen(hash_hex) / 2);
+}
+
+char *cipher_public_key_from_private_fingerprint_sha256_hex(const struct private_key *private_key)
+{
+	PKCS8_PRIV_KEY_INFO *p8inf = NULL;
+	EVP_PKEY *pkey = NULL;
+	RSA *rsa = NULL;
+	BIO *memory = NULL;
+	char *fingerprint = NULL;
+
+	memory = BIO_new(BIO_s_mem());
+	if (BIO_write(memory, private_key->key, private_key->len) < 0)
+		goto out;
+
+	p8inf = d2i_PKCS8_PRIV_KEY_INFO_bio(memory, NULL);
+	if (!p8inf)
+		goto out;
+	pkey = EVP_PKCS82PKEY(p8inf);
+	if (!pkey)
+		goto out;
+	rsa = EVP_PKEY_get1_RSA(pkey);
+	if (!rsa)
+		goto out;
+
+	fingerprint = cipher_bignum_sha256_hex_digest(rsa->n);
+
+out:
+	PKCS8_PRIV_KEY_INFO_free(p8inf);
+	EVP_PKEY_free(pkey);
+	RSA_free(rsa);
+	BIO_free_all(memory);
+
+	return fingerprint;
+}
+
+char *cipher_public_key_fingerprint_sha256_hex(const struct public_key *public_key)
+{
+	BIO *memory = NULL;
+	EVP_PKEY *pubkey = NULL;
+	RSA *rsa = NULL;
+	int ret;
+	char *fingerprint = NULL;
+
+	memory = BIO_new(BIO_s_mem());
+	ret = BIO_write(memory, public_key->key, public_key->len);
+	if (ret < 0)
+		goto out;
+
+	pubkey = d2i_PUBKEY_bio(memory, NULL);
+	if (!pubkey)
+		goto out;
+
+	rsa = EVP_PKEY_get1_RSA(pubkey);
+	if (!rsa)
+		goto out;
+
+	fingerprint = cipher_bignum_sha256_hex_digest(rsa->n);
+
+out:
+	EVP_PKEY_free(pubkey);
+	RSA_free(rsa);
+	BIO_free_all(memory);
+
+	return fingerprint;
+}
+
+char *cipher_bignum_sha256_hex_digest(BIGNUM *bignum)
+{
+	int pubkey_modulus_len = BN_num_bytes(bignum);
+
+	unsigned char pubkey_modulus_bytes[pubkey_modulus_len];
+	BN_bn2bin(bignum, pubkey_modulus_bytes);
+
+	return cipher_sha256_hex(pubkey_modulus_bytes, pubkey_modulus_len);
 }

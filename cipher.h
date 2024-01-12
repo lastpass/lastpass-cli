@@ -24,4 +24,6 @@ char *cipher_encrypt_private_key(struct private_key *private_key,
 				 unsigned const char key[KDF_HASH_LEN]);
 char *cipher_sha256_hex(unsigned char *bytes, size_t len);
 char *cipher_sha256_b64(unsigned char *bytes, size_t len);
+char *cipher_public_key_from_private_fingerprint_sha256_hex(const struct private_key *private_key);
+char *cipher_public_key_fingerprint_sha256_hex(const struct public_key *public_key);
 #endif
