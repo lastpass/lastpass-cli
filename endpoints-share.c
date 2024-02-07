@@ -66,13 +66,16 @@ int lastpass_share_get_user_by_uid(const struct session *session,
 				   struct share_user *user)
 {
 	_cleanup_free_ char *reply = NULL;
+	_cleanup_free_ char *uid_param;
 	size_t len;
+
+	xasprintf(&uid_param, "{\"%s\":{}}", uid);
 
 	/* get the pubkey for the user/group */
 	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "getpubkey", "1",
-				   "uid", uid,
+				   "uid", uid_param,
 				   "xmlr", "1", NULL);
 
 	return xml_parse_share_getpubkey(reply, user);
@@ -233,7 +236,8 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 	if (ret)
 		die("Unable to get pubkey for your user (%d)\n", ret);
 
-	xasprintf(&sf_username, "%s-%s", user.username, sharename);
+	xasprintf(&sf_fullname, "Shared-%s", sharename);
+	xasprintf(&sf_username, "%s-%s", user.username, sf_fullname);
 	for (i=0; i < strlen(sf_username); i++)
 		if (sf_username[i] == ' ')
 			sf_username[i] = '_';
@@ -266,7 +270,6 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 
 	bytes_to_hex(enc_share_key, &hex_enc_share_key, enc_share_key_len);
 
-	xasprintf(&sf_fullname, "Shared-%s", sharename);
 	enc_share_name = encrypt_and_base64(sf_fullname, key);
 
 	reply = http_post_lastpass("share.php", session, &len,
