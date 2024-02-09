@@ -223,6 +223,7 @@ char *http_post_lastpass(const char *page, const struct session *session, size_t
 
 	va_start(args, final_len);
 	vhttp_post_add_params(&params, args);
+	va_end(args);
 	char *result = http_post_lastpass_param_set(page, session, final_len, &params);
 	free(params.argv);
 	return result;
