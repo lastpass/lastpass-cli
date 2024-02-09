@@ -84,7 +84,7 @@ int cmd_show(int argc, char **argv);
 #define cmd_show_usage "show [--sync=auto|now|no] [--clip, -c] [--quiet, -q] [--expand-multi, -x] [--json, -j] [--all|--username|--password|--url|--notes|--field=FIELD|--id|--name|--attach=ATTACHID] [--basic-regexp, -G|--fixed-strings, -F] " color_usage " {UNIQUENAME|UNIQUEID}"
 
 int cmd_ls(int argc, char **argv);
-#define cmd_ls_usage "ls [--sync=auto|now|no] [--long, -l] [-m] [-u] " color_usage " [GROUP]"
+#define cmd_ls_usage "ls [--sync=auto|now|no] [--long, -l] [-m] [-u] [-j]" color_usage " [GROUP]"
 
 int cmd_add(int argc, char **argv);
 #define cmd_add_usage "add [--sync=auto|now|no] [--non-interactive] " color_usage " {--username|--password|--url|--notes|--field=FIELD|--note-type=NOTETYPE} NAME"
