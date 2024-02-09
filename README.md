@@ -9,12 +9,12 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 
 ## Dependencies
 
-* [LibreSSL](http://www.libressl.org/) or [OpenSSL](https://www.openssl.org/)
-* [libcurl](http://curl.haxx.se/)
+* [LibreSSL](https://www.libressl.org/) or [OpenSSL](https://www.openssl.org/)
+* [libcurl](https://curl.haxx.se/)
 * [libxml2](http://xmlsoft.org/)
 * [pinentry](https://www.gnupg.org/related_software/pinentry/index.en.html) (optional)
-* [AsciiDoc](http://www.methods.co.nz/asciidoc/) (build-time documentation generation only)
-* [xclip](http://sourceforge.net/projects/xclip/), [xsel](http://www.vergenet.net/~conrad/software/xsel/), [pbcopy](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/pbcopy.1.html), or [putclip from cygutils-extra](https://cygwin.com/cgi-bin2/package-grep.cgi?grep=cygutils-extra) for clipboard support (optional)
+* [AsciiDoc](https://asciidoc.org/) (build-time documentation generation only)
+* [xclip](https://github.com/astrand/xclip), [xsel](http://www.vergenet.net/~conrad/software/xsel/), [pbcopy](https://ss64.com/osx/pbcopy.html), or [putclip from cygutils-extra](https://cygwin.com/cgi-bin2/package-grep.cgi?grep=cygutils-extra) for clipboard support (optional)
 
 ### Installing on Linux
 #### Arch
@@ -37,7 +37,7 @@ packer -S lastpass-cli-git
 sudo dnf install lastpass-cli
 ```
 
-#### Red Hat/Centos
+#### Red Hat/CentOS
 
 * Packages are available in [EPEL](https://fedoraproject.org/wiki/EPEL) for RHEL/CentOS 7 and later.
 
@@ -61,7 +61,7 @@ sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-de
 * For Ubuntu 16.04 (xenial)
 
 ```
-apt-get --no-install-recommends -yqq install \
+apt-get --no-install-recommends -qq install \
   bash-completion \
   build-essential \
   cmake \
@@ -76,10 +76,10 @@ apt-get --no-install-recommends -yqq install \
   xclip
 ```
 
-* For Debian (stable/oldstable) and other Ubuntus < 18.04
+* For Debian (stable/oldstable) and Ubuntu releases < 18.04
 
 ```
-apt-get --no-install-recommends -yqq install \
+apt-get --no-install-recommends -qq install \
   bash-completion \
   build-essential \
   cmake \
@@ -97,7 +97,7 @@ apt-get --no-install-recommends -yqq install \
 * For Debian (testing/experimental) and Ubuntu >= 18.04
 
 ```
-apt-get --no-install-recommends -yqq install \
+apt-get --no-install-recommends -qq install \
   bash-completion \
   build-essential \
   cmake \
@@ -125,7 +125,7 @@ and then follow instructions in the 'Building' section.
 
 ### Installing on OS X
 
-#### With [Homebrew](http://brew.sh/) (easiest)
+#### With [Homebrew](https://brew.sh/) (easiest)
 * Install Homebrew, if necessary.
 * Update Homebrew's local formula cache:
 
