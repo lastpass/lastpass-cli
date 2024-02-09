@@ -47,7 +47,7 @@ if ! lpass status; then
 fi
 
 if [ -z ${id} ]; then
-  ids=$(lpass ls | sed -n "s/^.*id:\s*\([0-9]*\).*$/\1/p")
+  ids=$(lpass ls | sed -n "s/^.*id:[[:space:]]*\([0-9]*\).*$/\1/p")
 else
   ids=${id}
 fi
