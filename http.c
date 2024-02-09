@@ -276,6 +276,7 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 
 	memset(&result, 0, sizeof(result));
 	curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
 	curl_easy_setopt(curl, CURLOPT_USERAGENT, LASTPASS_CLI_USERAGENT);
 
 	/* TODO: Make this optional via either env vars and/or an option for
