@@ -47,6 +47,10 @@
 
 static bool long_listing = false;
 static bool show_mtime = true;
+static bool xml_listing = false;
+static bool firstPrinted = false;
+static int nodeCount = 0;
+static int nodesPrinted = 0;
 
 struct node {
 	char *name;
@@ -118,6 +122,7 @@ static void __insert_node(struct node *head,
 	child->name = xstrdup(account->name);
 	INIT_LIST_HEAD(&child->children);
 	list_add_tail(&child->list, &head->children);
+	nodeCount = nodeCount+1;
 }
 
 static void insert_node(struct node *head, const char *path, struct account *account)
@@ -188,23 +193,56 @@ static void print_node(struct node *head, char *fmt_str, int level)
 	struct node *node;
 
 	list_for_each_entry(node, &head->children, list) {
+	if (xml_listing){
 		if (node->name) {
-			for (int i = 0; i < level; ++i)
-				printf("    ");
 			if (node->account) {
 				struct buffer buf;
 
 				buffer_init(&buf);
 				format_account(&buf, fmt_str, node->account);
-				terminal_printf("%s\n", buf.bytes);
+				terminal_printf("%s", buf.bytes);
+				nodesPrinted = nodesPrinted+1;
 				free(buf.bytes);
 			}
-			else if (node->shared)
-				terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
-			else
-				terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
+			else if (node->shared && !firstPrinted && level==0) {
+				terminal_printf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<vault>\n    <folder name=\"" TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\">", node->name);
+				firstPrinted = true;
+			}
+			else if (node->shared && firstPrinted && level==0) {
+				terminal_printf("\n    </folder>\n    <folder name=\"" TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\">", node->name);
+			}
+			else if (!node->shared && !node->account && !firstPrinted && level==0) {
+				terminal_printf("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>\n<vault>\n    <folder name=\"" TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET "\">", node->name);
+				firstPrinted = true;
+			}
+			else if (!node->shared && !node->account && !firstPrinted && level==0) {
+				terminal_printf("\n    </folder>\n    <folder name=\"" TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET "\">", node->name);
+				firstPrinted = true;
+			}
 		}
 		print_node(node, fmt_str, level + 1);
+		if (nodesPrinted == nodeCount) {
+			printf("\n    </folder>\n</vault>\n");
+			nodesPrinted = nodesPrinted+1;
+		}
+	} else {
+		if (node->name) {
+            for (int i = 0; i < level; ++i)
+                printf("    ");
+            if (node->account) {
+                struct buffer buf;
+                buffer_init(&buf);
+                format_account(&buf, fmt_str, node->account);
+                terminal_printf("%s\n", buf.bytes);
+                free(buf.bytes);
+            }
+            else if (node->shared)
+                terminal_printf(TERMINAL_FG_CYAN TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
+            else
+                terminal_printf(TERMINAL_FG_BLUE TERMINAL_BOLD "%s" TERMINAL_RESET "\n", node->name);
+        }
+        print_node(node, fmt_str, level + 1);
+		}
 	}
 }
 
@@ -247,7 +285,7 @@ int cmd_ls(int argc, char **argv)
 
 	struct share *share;
 
-	while ((option = getopt_long(argc, argv, "lmu", long_options, &option_index)) != -1) {
+    while ((option = getopt_long(argc, argv, "lmux", long_options, &option_index)) != -1) {
 		switch (option) {
 			case 'S':
 				sync = parse_sync_string(optarg);
@@ -267,6 +305,9 @@ int cmd_ls(int argc, char **argv)
 			case 'u':
 				show_mtime = false;
 				break;
+			case 'x':
+                xml_listing = true;
+                break;
 			case '?':
 			default:
 				die_usage(cmd_ls_usage);
@@ -325,12 +366,25 @@ int cmd_ls(int argc, char **argv)
 	qsort(account_array, num_accounts, sizeof(struct account *),
 	      compare_account);
 
-	if (!fmt_str) {
+	if (!fmt_str && xml_listing==false) {
 		xasprintf(&fmt_str,
 			  TERMINAL_FG_CYAN "%s"
 			  TERMINAL_FG_GREEN TERMINAL_BOLD "%%a%c"
 			  TERMINAL_NO_BOLD
 			  " [id: %%ai]"
+			  "%s" TERMINAL_RESET,
+			  (long_listing) ?
+				((show_mtime) ?  "%am " : "%aU ") : "",
+			  (print_tree) ? 'n' : 'N',
+			  (long_listing) ? " [username: %au]" : "");
+	}
+
+	if (!fmt_str && xml_listing==true) {
+		xasprintf(&fmt_str,
+			  TERMINAL_FG_CYAN "%s"
+			  TERMINAL_FG_GREEN TERMINAL_BOLD "\n        <site>%%a%c</site>"
+			  TERMINAL_NO_BOLD
+			  "\n        <id>%%ai</id>"
 			  "%s" TERMINAL_RESET,
 			  (long_listing) ?
 				((show_mtime) ?  "%am " : "%aU ") : "",
