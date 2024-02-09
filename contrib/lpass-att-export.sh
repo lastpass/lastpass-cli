@@ -60,7 +60,7 @@ for id in ${ids}; do
   until [  ${attcount} -lt 1 ]; do
     att=`lpass show ${id} | grep att- | sed "${attcount}q;d" | tr -d :`
     attid=$(echo ${att} | awk '{print $1}')
-    attname=$(echo ${att} | awk '{print $2}')
+    attname=$(echo ${att} | cut -d' ' -f 2-)
 
     if [[ -z  ${attname}  ]]; then
       attname=${path#*/}
