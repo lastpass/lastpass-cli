@@ -127,12 +127,6 @@ and then follow instructions in the 'Building' section.
 
 #### With [Homebrew](http://brew.sh/) (easiest)
 * Install Homebrew, if necessary.
-* Update Homebrew's local formula cache:
-
-```
-brew update
-```
-
 * Install the lastpass-cli formula:
 
 ```
