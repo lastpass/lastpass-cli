@@ -47,7 +47,7 @@ if ! lpass status; then
 fi
 
 if [ -z ${id} ]; then
-  ids=$(lpass ls | sed -n "s/^.*id:\s*\([0-9]*\).*$/\1/p")
+  ids=$(lpass ls | awk -F'id: ' '{ print $2}'  | awk -F']' '{ print $1 }')
 else
   ids=${id}
 fi
@@ -56,11 +56,17 @@ for id in ${ids}; do
   show=$(lpass show ${id})
   attcount=$(echo "${show}" | grep -c "att-")
   path=$(lpass show --format="%/as%/ag%an" ${id} | uniq | tail -1)
+  if [  ${attcount} -eq 0 ]; then
+    echo "no attachments for id: $id";
+  fi
 
   until [  ${attcount} -lt 1 ]; do
+    echo "Found ${attcount} attachments for name: $path and id: $id";
     att=`lpass show ${id} | grep att- | sed "${attcount}q;d" | tr -d :`
     attid=$(echo ${att} | awk '{print $1}')
+    echo "Attachment id $attid"
     attname=$(echo ${att} | awk '{print $2}')
+    echo "Attachment name $attname"
 
     if [[ -z  ${attname}  ]]; then
       attname=${path#*/}
