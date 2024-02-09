@@ -48,14 +48,20 @@ unsigned int lastpass_iterations(const char *username)
 {
 	_cleanup_free_ char *reply = NULL;
 	_cleanup_free_ char *user_lower = NULL;
+	_cleanup_free_ char *path = NULL;
+	_cleanup_free_ char *iterationsbuf = NULL;
 
 	user_lower = xstrlower(username);
-	reply = http_post_lastpass("iterations.php", NULL, NULL, "email", user_lower, NULL);
+	reply = http_post_lastpass("login.php", NULL, NULL, "xml", "2", "username", user_lower, "hash", "0000000000000000000000000000000000000000000000000000000000000000", "iterations", "1", "method", "cli", NULL);
 
 	if (!reply)
 		return 0;
 
-	return strtoul(reply, NULL, 10);
+	iterationsbuf = xml_error_cause(reply, "iterations");
+	if (iterationsbuf)
+		return strtoul(iterationsbuf, NULL, 10);
+
+	return 0;
 }
 
 void lastpass_logout(const struct session *session)
