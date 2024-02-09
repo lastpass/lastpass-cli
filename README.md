@@ -94,7 +94,7 @@ apt-get --no-install-recommends -yqq install \
   xclip
 ```
 
-* For Debian (testing/experimental) and Ubuntu >= 18.04
+* For Debian (testing/experimental) and Ubuntu >= 18.04 && < 20.04
 
 ```
 apt-get --no-install-recommends -yqq install \
@@ -110,6 +110,12 @@ apt-get --no-install-recommends -yqq install \
   pkg-config \
   ca-certificates \
   xclip
+```
+
+* For Ubuntu >= 20.04
+
+```
+apt install -y lastpass-cli
 ```
 
 #### Gentoo
