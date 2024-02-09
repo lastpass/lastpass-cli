@@ -72,7 +72,7 @@ int edit_new_account(struct session *session,
 #define color_usage "[--color=auto|never|always]"
 
 int cmd_login(int argc, char **argv);
-#define cmd_login_usage "login [--trust] [--plaintext-key [--force, -f]] " color_usage " USERNAME"
+#define cmd_login_usage "login [--trust] [--sso] [--plaintext-key [--force, -f]] " color_usage " USERNAME"
 
 int cmd_logout(int argc, char **argv);
 #define cmd_logout_usage "logout [--force, -f] " color_usage
