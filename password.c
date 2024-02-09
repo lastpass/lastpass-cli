@@ -55,9 +55,10 @@ static char *password_prompt_askpass(const char *askpass, const char *prompt, co
 	FILE *output;
 	char *password = NULL, *lastlf;
 	size_t len;
+	char message[1024];
+	vsnprintf(message, sizeof(message), descfmt, params);
 	UNUSED(error);
-	UNUSED(descfmt);
-	UNUSED(params);
+	UNUSED(prompt);
 
 	if (pipe(write_fds) < 0 || pipe(read_fds) < 0)
 		die_errno("pipe");
@@ -73,7 +74,7 @@ static char *password_prompt_askpass(const char *askpass, const char *prompt, co
 		close(read_fds[1]);
 		close(write_fds[0]);
 		close(write_fds[1]);
-		execlp(askpass, "lpass-askpass", prompt, NULL);
+		execlp(askpass, "lpass-askpass", message, NULL);
 		_exit(76);
 	}
 	close(read_fds[1]);
