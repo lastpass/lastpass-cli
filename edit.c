@@ -447,6 +447,7 @@ int edit_account(struct session *session,
 		 enum edit_choice choice,
 		 const char *field,
 		 bool non_interactive,
+		 enum note_type note_type,
 		 unsigned char key[KDF_HASH_LEN])
 {
 	size_t len;
@@ -462,7 +463,7 @@ int edit_account(struct session *session,
 
 	struct share *old_share = editable->share;
 
-	notes_expansion = notes_expand(editable);
+	notes_expansion = notes_expand_by_type(editable, note_type);
 	if (notes_expansion) {
 		notes_collapsed = editable;
 		editable = notes_expansion;
@@ -643,7 +644,7 @@ int edit_new_account(struct session *session,
 	account_assign_share(blob, account, key);
 	list_add(&account->list, &blob->account_head);
 
-	if (note_type != NOTE_TYPE_NONE) {
+	if (note_type != NOTE_TYPE_NONE && note_type != NOTE_TYPE_GENERIC) {
 		char *note_type_str = NULL;
 		xasprintf(&note_type_str, "NoteType:%s\n",
 			  notes_get_name(note_type));
@@ -651,5 +652,5 @@ int edit_new_account(struct session *session,
 	}
 
 	return edit_account(session, blob, sync, account, choice, field,
-			    non_interactive, key);
+                        non_interactive, note_type, key);
 }

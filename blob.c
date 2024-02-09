@@ -1148,6 +1148,21 @@ reencrypt:
 
 struct account *notes_expand(struct account *acc)
 {
+    char *lf;
+    if (strncmp(acc->note, "NoteType:", 9))
+        return NULL;
+
+    enum note_type note_type = NOTE_TYPE_NONE;
+    lf = strchr(acc->note + 9, '\n');
+    if (lf) {
+        _cleanup_free_ char *type = xstrndup(acc->note + 9, lf - (acc->note + 9));
+        note_type = notes_get_type_by_name(type);
+    }
+    return notes_expand_by_type(acc, note_type);
+}
+
+struct account *notes_expand_by_type(struct account *acc, enum note_type note_type)
+{
 	struct account *expand;
 	struct field *field = NULL;
 	char *start, *lf, *colon, *name, *value;
@@ -1166,16 +1181,6 @@ struct account *notes_expand(struct account *acc)
 	expand->group = xstrdup(acc->group);
 	expand->fullname = xstrdup(acc->fullname);
 	expand->share = acc->share;
-
-	if (strncmp(acc->note, "NoteType:", 9))
-		return NULL;
-
-	enum note_type note_type = NOTE_TYPE_NONE;
-	lf = strchr(acc->note + 9, '\n');
-	if (lf) {
-		_cleanup_free_ char *type = xstrndup(acc->note + 9, lf - (acc->note + 9));
-		note_type = notes_get_type_by_name(type);
-	}
 
 	for (start = acc->note; ; ) {
 		name = value = NULL;
@@ -1301,7 +1306,10 @@ struct account *notes_collapse(struct account *acc)
 		if (!strcmp(field->name, "NoteType"))
 			xstrprependf(&collapse->note, "%s:%s\n", field->name, field->value);
 		else
-			xstrappendf(&collapse->note, "%s:%s\n", field->name, field->value);
+		    if (!strcmp(field->value, "generic"))
+		        xstrprependf(&collapse->note, "%s:%s\n", field->name, field->value);
+		    else
+		        xstrprependf(&collapse->note, "%s\n", field->value);
 	}
 	if (strlen(acc->username))
 		xstrappendf(&collapse->note, "%s:%s\n", "Username", trim(acc->username));

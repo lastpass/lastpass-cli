@@ -77,14 +77,6 @@ enum note_type parse_note_type_string(const char *extra)
 	enum note_type result;
 
 	result = notes_get_type_by_shortname(extra);
-	if (result == NOTE_TYPE_NONE) {
-		_cleanup_free_ char *params = NULL;
-		_cleanup_free_ char *usage = NULL;
-
-		params = note_type_usage();
-		xasprintf(&usage, "... %s", params);
-		die_usage(usage);
-	}
 
 	return result;
 }
