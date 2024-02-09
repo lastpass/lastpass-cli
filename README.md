@@ -97,7 +97,7 @@ apt-get --no-install-recommends -yqq install \
 * For Debian (testing/experimental) and Ubuntu >= 18.04
 
 ```
-apt-get --no-install-recommends -yqq install \
+apt --no-install-recommends -yqq install \
   bash-completion \
   build-essential \
   cmake \
