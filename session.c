@@ -1,7 +1,7 @@
 /*
  * session handling routines
  *
- * Copyright (C) 2014-2024 LastPass.
+ * Copyright (C) 2014-2018 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,6 @@
 #include "cipher.h"
 #include "agent.h"
 #include "upload-queue.h"
-#include "feature-flag.h"
 #include <sys/mman.h>
 #include <string.h>
 
