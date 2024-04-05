@@ -1,4 +1,3 @@
-
 /*
  * feature flag handling routines
  *
@@ -38,23 +37,8 @@
 #include "util.h"
 #include <string.h>
 
-void feature_flag_free(struct feature_flag *feature_flag)
-{
-	if (!feature_flag)
-		return;
-
-	free(feature_flag->url_encryption);
-}
-
 void feature_flag_load_xml_attr(struct feature_flag *feature_flag, xmlDoc *doc, xmlAttrPtr attr) {
-    if (!xmlStrcmp(attr->name, BAD_CAST "url_encryption")) {
-        feature_flag->url_encryption = (char *)xmlNodeListGetString(doc, attr->children, 1);
+    if (!xmlStrcmp(attr->name, BAD_CAST "url_encryptiona")) {
+        feature_flag->url_encryption_enabled = !strcmp((char *)xmlNodeListGetString(doc, attr->children, 1), "1");
     }
-}
-
-bool feature_flag_is_url_encryption_enabled(struct feature_flag *feature_flag)
-{
-    return feature_flag 
-        && feature_flag->url_encryption != NULL 
-        && !strcmp(feature_flag->url_encryption, "1");
 }

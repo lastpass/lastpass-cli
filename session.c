@@ -1,7 +1,7 @@
 /*
  * session handling routines
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,6 @@ void session_free(struct session *session)
 	free(session->token);
 	free(session->private_key.key);
 	free(session->server);
-	feature_flag_free(&session->feature_flag);
 	free(session);
 }
 bool session_is_valid(struct session *session)
