@@ -39,6 +39,7 @@
 #include "cipher.h"
 #include "agent.h"
 #include "upload-queue.h"
+#include "feature-flag.h"
 #include <sys/mman.h>
 #include <string.h>
 
@@ -55,6 +56,7 @@ void session_free(struct session *session)
 	free(session->token);
 	free(session->private_key.key);
 	free(session->server);
+	feature_flag_free(&session->feature_flag);
 	free(session);
 }
 bool session_is_valid(struct session *session)
