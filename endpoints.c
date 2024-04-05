@@ -1,7 +1,7 @@
 /*
  * https endpoints for LastPass services
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -174,7 +174,12 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	_cleanup_free_ char *url = NULL;
 	_cleanup_free_ char *fields = NULL;
 
-	bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
+	if (session->feature_flag.url_encryption_enabled) {
+		url = account->url_encrypted;
+	} else {
+		bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
+	}
+	
 	fields = stringify_fields(&account->field_head);
 
 	++blob->version;
@@ -402,8 +407,13 @@ int lastpass_upload(const struct session *session,
 		char *url_param, *username_param, *password_param;
 		char *fav_param, *extra_param;
 		char *url = NULL;
-		bytes_to_hex((unsigned char *) account->url, &url,
-			     strlen(account->url));
+
+		if (session->feature_flag.url_encryption_enabled) {
+			url = account->url_encrypted;
+		} else {
+			bytes_to_hex((unsigned char *) account->url, &url, 
+			     	strlen(account->url));
+		}
 
 		xasprintf(&name_param, "name%d", index);
 		xasprintf(&grouping_param, "grouping%d", index);

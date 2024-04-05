@@ -1,7 +1,7 @@
 /*
  * https endpoints for shared folder manipulation
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -325,8 +325,12 @@ int lastpass_share_move(const struct session *session,
 	if (!account->share && !orig_folder)
 		return 0;
 
-	bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
-
+	if (session->feature_flag.url_encryption_enabled) {
+		url = account->url_encrypted;
+	} else {
+		bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
+	}
+	
 	http_post_add_params(&params,
 			     "token", session->token,
 			     "cmd", "uploadaccounts",

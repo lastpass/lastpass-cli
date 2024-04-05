@@ -5,6 +5,7 @@
 #include "session.h"
 #include "list.h"
 #include "notes.h"
+#include "feature-flag.h"
 #include <stdbool.h>
 #include <stddef.h>
 
@@ -152,9 +153,9 @@ enum blobsync { BLOB_SYNC_AUTO, BLOB_SYNC_YES, BLOB_SYNC_NO };
 
 struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key);
 void blob_free(struct blob *blob);
-size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN], char **out);
+size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN], char **out, const struct feature_flag *feature_flag);
 struct blob *blob_load(enum blobsync sync, struct session *session, const unsigned char key[KDF_HASH_LEN]);
-void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]);
+void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 void field_free(struct field *field);
 struct app *account_to_app(const struct account *account);
 struct app *new_app();
@@ -165,11 +166,11 @@ void account_set_password(struct account *account, char *password, unsigned cons
 void account_set_group(struct account *account, char *group, unsigned const char key[KDF_HASH_LEN]);
 void account_set_name(struct account *account, char *name, unsigned const char key[KDF_HASH_LEN]);
 void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN]);
-void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN]);
+void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 void account_set_note(struct account *account, char *note, unsigned const char key[KDF_HASH_LEN]);
 void account_set_appname(struct account *account, char *appname, unsigned const char key[KDF_HASH_LEN]);
-void account_assign_share(struct blob *blob, struct account *account, unsigned const char key[KDF_HASH_LEN]);
-void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN]);
+void account_assign_share(struct blob *blob, struct account *account, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
+void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 bool account_is_group(struct account *account);
 void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN]);
 struct account *notes_expand(struct account *acc);

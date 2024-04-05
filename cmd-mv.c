@@ -1,7 +1,7 @@
 /*
  * command for moving vault entries
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,7 +97,7 @@ int cmd_mv(int argc, char **argv)
 	old_share = account->share;
 
 	account_set_fullname(account, new_fullname, key);
-	account_assign_share(blob, account, key);
+	account_assign_share(blob, account, key, &session->feature_flag);
 	if (account->share && account->share->readonly) {
 		die("You do not have access to move %s into %s",
 		    account->name, account->share->name);
@@ -117,7 +117,7 @@ int cmd_mv(int argc, char **argv)
 		/* standard case: account just changing group name */
 		lastpass_update_account(sync, key, session, account, blob);
 	}
-	blob_save(blob, key);
+	blob_save(blob, key, &session->feature_flag);
 
 	session_free(session);
 	blob_free(blob);

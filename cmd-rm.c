@@ -1,7 +1,7 @@
 /*
  * command for removing vault entries
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,7 +89,7 @@ int cmd_rm(int argc, char **argv)
 	list_del(&found->list);
 
 	lastpass_remove_account(sync, key, session, found, blob);
-	blob_save(blob, key);
+	blob_save(blob, key, &session->feature_flag);
 	account_free(found);
 
 	session_free(session);

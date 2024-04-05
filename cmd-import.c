@@ -1,7 +1,7 @@
 /*
  * command for importing vault entries from CSV file into the vault
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -191,11 +191,11 @@ static void csv_parse(FILE *fp, struct list_head *list)
 	free(record);
 }
 
-static struct account *new_import_account(unsigned char key[KDF_HASH_LEN])
+static struct account *new_import_account(unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
 	struct account *account = new_account();
 
-	account_set_url(account, xstrdup(""), key);
+	account_set_url(account, xstrdup(""), key, feature_flag);
 	account_set_username(account, xstrdup(""), key);
 	account_set_password(account, xstrdup(""), key);
 	account_set_note(account, xstrdup(""), key);
@@ -206,7 +206,7 @@ static struct account *new_import_account(unsigned char key[KDF_HASH_LEN])
 }
 
 static int csv_parse_accounts(FILE *fp, struct list_head *account_list,
-			      unsigned char key[KDF_HASH_LEN])
+			      unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
 	struct list_head items;
 	struct csv_record *record, *tmp_record, *first;
@@ -243,6 +243,14 @@ static int csv_parse_accounts(FILE *fp, struct list_head *account_list,
 		} \
 	} while (0)
 
+#define set_field_ff(x, fieldname, feature_flag) \
+	do { \
+		if (i == x ## _index) { \
+			account_set_ ## fieldname (account, field->value, key, feature_flag); \
+			set = true; \
+		} \
+	} while (0)
+
 	/*
 	 * first line should tell us the field matrix; if
 	 * it doesn't reveal anything useful then we won't
@@ -274,11 +282,11 @@ static int csv_parse_accounts(FILE *fp, struct list_head *account_list,
 		if (record == first)
 			continue;
 
-		account = new_import_account(key);
+		account = new_import_account(key, feature_flag);
 		i = 0;
 		list_for_each_entry(field, &record->field_head, list) {
 			bool set = false;
-			set_field(url, url);
+			set_field_ff(url, url, feature_flag);
 			set_field(username, username);
 			set_field(password, password);
 			set_field(name, name);
@@ -387,7 +395,7 @@ int cmd_import(int argc, char **argv)
 	init_all(sync, key, &session, &blob);
 
 	INIT_LIST_HEAD(&accounts);
-	count = csv_parse_accounts(fp, &accounts, key);
+	count = csv_parse_accounts(fp, &accounts, key, &session->feature_flag);
 
 	printf("Parsed %d accounts\n", count);
 

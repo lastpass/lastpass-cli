@@ -1,7 +1,7 @@
 /*
  * command for making copies of vault entries
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -110,7 +110,7 @@ int cmd_duplicate(int argc, char **argv)
 	list_add(&new->list, &blob->account_head);
 
 	lastpass_update_account(sync, key, session, new, blob);
-	blob_save(blob, key);
+	blob_save(blob, key, &session->feature_flag);
 
 	session_free(session);
 	blob_free(blob);
