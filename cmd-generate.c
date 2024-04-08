@@ -140,7 +140,7 @@ int cmd_generate(int argc, char **argv)
 		account_set_fullname(new, xstrdup(name), key);
 		account_set_username(new, username ? username : xstrdup(""), key);
 		account_set_note(new, xstrdup(""), key);
-		new->url = url ? url : xstrdup("");
+		account_set_url(new, url ? url : xstrdup(""), key, &session->feature_flag);
 		account_assign_share(blob, new, key, &session->feature_flag);
 
 		list_add(&new->list, &blob->account_head);

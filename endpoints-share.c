@@ -325,24 +325,35 @@ int lastpass_share_move(const struct session *session,
 	if (!account->share && !orig_folder)
 		return 0;
 
+	bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
+
 	if (session->feature_flag.url_encryption_enabled) {
-		url = account->url_encrypted;
+		http_post_add_params(&params,
+			"token", session->token,
+			"cmd", "uploadaccounts",
+			"aid0", account->id,
+			"name0", account->name_encrypted,
+			"grouping0", account->group_encrypted,
+			"url0", account->url_encrypted,
+			"username0", account->username_encrypted,
+			"password0", account->password_encrypted,
+			"pwprotect0", account->pwprotect ? "on" : "off",
+			"extra0", account->note_encrypted,
+			"todelete", account->id, NULL);
 	} else {
-		bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
+		http_post_add_params(&params,
+			"token", session->token,
+			"cmd", "uploadaccounts",
+			"aid0", account->id,
+			"name0", account->name_encrypted,
+			"grouping0", account->group_encrypted,
+			"url0", url,
+			"username0", account->username_encrypted,
+			"password0", account->password_encrypted,
+			"pwprotect0", account->pwprotect ? "on" : "off",
+			"extra0", account->note_encrypted,
+			"todelete", account->id, NULL);
 	}
-	
-	http_post_add_params(&params,
-			     "token", session->token,
-			     "cmd", "uploadaccounts",
-			     "aid0", account->id,
-			     "name0", account->name_encrypted,
-			     "grouping0", account->group_encrypted,
-			     "url0", url,
-			     "username0", account->username_encrypted,
-			     "password0", account->password_encrypted,
-			     "pwprotect0", account->pwprotect ? "on" : "off",
-			     "extra0", account->note_encrypted,
-			     "todelete", account->id, NULL);
 
 	if (account->share) {
 		http_post_add_params(&params,
