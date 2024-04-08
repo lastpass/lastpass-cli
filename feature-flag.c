@@ -35,10 +35,19 @@
  */
 #include "xml.h"
 #include "util.h"
+#include "config.h"
 #include <string.h>
 
 void feature_flag_load_xml_attr(struct feature_flag *feature_flag, xmlDoc *doc, xmlAttrPtr attr) {
-    if (!xmlStrcmp(attr->name, BAD_CAST "url_encryptiona")) {
+    if (!xmlStrcmp(attr->name, BAD_CAST "url_encryption")) {
         feature_flag->url_encryption_enabled = !strcmp((char *)xmlNodeListGetString(doc, attr->children, 1), "1");
     }
+}
+
+void feature_flag_save(const struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]) {
+    config_write_encrypted_string("session_ff_url_encryption", feature_flag->url_encryption_enabled ? "1" : "0", key);
+}
+
+void feature_flag_load(struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]) {
+    feature_flag->url_encryption_enabled = !strcmp(config_read_encrypted_string("session_ff_url_encryption", key), "1");
 }

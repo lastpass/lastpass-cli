@@ -9,5 +9,7 @@ struct feature_flag {
 };
 
 void feature_flag_load_xml_attr(struct feature_flag *feature_flag, xmlDoc *doc, xmlAttrPtr attr);
+void feature_flag_save(const struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]);
+void feature_flag_load(struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]);
 
 #endif
