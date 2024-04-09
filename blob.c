@@ -1021,17 +1021,17 @@ void account_set_note(struct account *account, char *note, unsigned const char k
 }
 void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
-	if (feature_flag && feature_flag->url_encryption_enabled) {
-		if (url != NULL && strstr(url, "://") == NULL) {
-			char *url_with_prefix;
-			if ((url_with_prefix = malloc(strlen(url) + strlen("http://") + 1)) != NULL) {
-				strcpy(url_with_prefix, "http://");
-				strcat(url_with_prefix, url);
-				free(url);
-				url = url_with_prefix;
-			}
+	if (url != NULL && strstr(url, "://") == NULL) {
+		char *url_with_prefix;
+		if ((url_with_prefix = malloc(strlen(url) + strlen("http://") + 1)) != NULL) {
+			strcpy(url_with_prefix, "http://");
+			strcat(url_with_prefix, url);
+			free(url);
+			url = url_with_prefix;
 		}
+	}
 
+	if (feature_flag && feature_flag->url_encryption_enabled) {
 		set_encrypted_field(account, url);
 	} else {
 		UNUSED(key);
