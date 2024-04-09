@@ -123,8 +123,7 @@ int cmd_generate(int argc, char **argv)
 		if (username)
 			account_set_username(found, username, key);
 		if (url) {
-			free(found->url);
-			found->url = url;
+			account_set_url(found, xstrdup(url), key, &session->feature_flag);
 		}
 		if (notes_expansion && notes_collapsed) {
 			found = notes_collapsed;
