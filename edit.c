@@ -645,9 +645,9 @@ int edit_new_account(struct session *session,
 	account_set_username(account, xstrdup(""), key);
 	account_set_note(account, xstrdup(""), key);
 	if (choice == EDIT_NOTES || note_type != NOTE_TYPE_NONE) {
-		account->url = xstrdup("http://sn");
+		account_set_url(account, xstrdup("http://sn"), key, &session->feature_flag);
 	} else {
-		account->url = xstrdup("");
+		account_set_url(account, xstrdup(""), key, &session->feature_flag);
 	}
 	account_assign_share(blob, account, key, &session->feature_flag);
 	list_add(&account->list, &blob->account_head);
