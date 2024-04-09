@@ -414,7 +414,7 @@ int lastpass_upload(const struct session *session,
 		char *fav_param, *extra_param;
 		char *url = NULL;
 		bytes_to_hex((unsigned char *) account->url, &url,
-			strlen(account->url));
+			     strlen(account->url));
 
 		xasprintf(&name_param, "name%d", index);
 		xasprintf(&grouping_param, "grouping%d", index);
