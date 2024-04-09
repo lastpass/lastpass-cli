@@ -95,7 +95,7 @@ int cmd_duplicate(int argc, char **argv)
 	account_set_password(new, xstrdup(found->password), key);
 	account_set_note(new, xstrdup(found->note), key);
 	new->fullname = xstrdup(found->fullname);
-	new->url = xstrdup(found->url);
+	account_set_url(new, xstrdup(found->url), key, &session->feature_flag);
 	new->pwprotect = found->pwprotect;
 
 	list_for_each_entry(field, &found->field_head, list) {
