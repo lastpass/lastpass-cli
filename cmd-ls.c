@@ -1,7 +1,7 @@
 /*
  * command for listing the vault
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -319,7 +319,7 @@ int cmd_ls(int argc, char **argv)
 		account->id = share->id;
 		account_set_name(account, xstrdup(""), key);
 		account_set_fullname(account, tmpname, key);
-		account_set_url(account, "http://group", key);
+		account_set_url(account, "http://group", key, &session->feature_flag);
 		account_array[i++] = account;
 	}
 	qsort(account_array, num_accounts, sizeof(struct account *),

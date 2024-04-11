@@ -1,7 +1,7 @@
 /*
  * https endpoints for LastPass services
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -208,13 +208,24 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 		upload_queue_enqueue(sync, key, session, "addapp.php", &params);
 		goto out_free_params;
 	}
-	http_post_add_params(&params,
-			     "aid", account->id,
-			     "url", url,
-			     "username", account->username_encrypted,
-			     "password", account->password_encrypted,
-			     "extra", account->note_encrypted,
-			     NULL);
+
+	if (session->feature_flag.url_encryption_enabled) {
+		http_post_add_params(&params,
+				"aid", account->id,
+				"url", account->url_encrypted,
+				"username", account->username_encrypted,
+				"password", account->password_encrypted,
+				"extra", account->note_encrypted,
+				NULL);
+	} else {
+		http_post_add_params(&params,
+				"aid", account->id,
+				"url", url,
+				"username", account->username_encrypted,
+				"password", account->password_encrypted,
+				"extra", account->note_encrypted,
+				NULL);
+	}
 
 	if (strlen(fields)) {
 		http_post_add_params(&params,
@@ -413,15 +424,28 @@ int lastpass_upload(const struct session *session,
 		xasprintf(&fav_param, "fav%d", index);
 		xasprintf(&extra_param, "extra%d", index);
 
-		http_post_add_params(&params,
-				     name_param, account->name_encrypted,
-				     grouping_param, account->group_encrypted,
-				     url_param, url,
-				     username_param, account->username_encrypted,
-				     password_param, account->password_encrypted,
-				     fav_param, account->fav ? "1" : "0",
-				     extra_param, account->note_encrypted,
-				     NULL);
+		if (session->feature_flag.url_encryption_enabled) {
+			http_post_add_params(&params,
+				name_param, account->name_encrypted,
+				grouping_param, account->group_encrypted,
+				url_param, account->url_encrypted,
+				username_param, account->username_encrypted,
+				password_param, account->password_encrypted,
+				fav_param, account->fav ? "1" : "0",
+				extra_param, account->note_encrypted,
+				NULL);
+		} else {
+			http_post_add_params(&params,
+				name_param, account->name_encrypted,
+				grouping_param, account->group_encrypted,
+				url_param, url,
+				username_param, account->username_encrypted,
+				password_param, account->password_encrypted,
+				fav_param, account->fav ? "1" : "0",
+				extra_param, account->note_encrypted,
+				NULL);
+		}
+
 		index++;
 	}
 

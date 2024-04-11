@@ -1,7 +1,7 @@
 /*
  * https endpoints for shared folder manipulation
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -327,18 +327,33 @@ int lastpass_share_move(const struct session *session,
 
 	bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
 
-	http_post_add_params(&params,
-			     "token", session->token,
-			     "cmd", "uploadaccounts",
-			     "aid0", account->id,
-			     "name0", account->name_encrypted,
-			     "grouping0", account->group_encrypted,
-			     "url0", url,
-			     "username0", account->username_encrypted,
-			     "password0", account->password_encrypted,
-			     "pwprotect0", account->pwprotect ? "on" : "off",
-			     "extra0", account->note_encrypted,
-			     "todelete", account->id, NULL);
+	if (session->feature_flag.url_encryption_enabled) {
+		http_post_add_params(&params,
+			"token", session->token,
+			"cmd", "uploadaccounts",
+			"aid0", account->id,
+			"name0", account->name_encrypted,
+			"grouping0", account->group_encrypted,
+			"url0", account->url_encrypted,
+			"username0", account->username_encrypted,
+			"password0", account->password_encrypted,
+			"pwprotect0", account->pwprotect ? "on" : "off",
+			"extra0", account->note_encrypted,
+			"todelete", account->id, NULL);
+	} else {
+		http_post_add_params(&params,
+			"token", session->token,
+			"cmd", "uploadaccounts",
+			"aid0", account->id,
+			"name0", account->name_encrypted,
+			"grouping0", account->group_encrypted,
+			"url0", url,
+			"username0", account->username_encrypted,
+			"password0", account->password_encrypted,
+			"pwprotect0", account->pwprotect ? "on" : "off",
+			"extra0", account->note_encrypted,
+			"todelete", account->id, NULL);
+	}
 
 	if (account->share) {
 		http_post_add_params(&params,

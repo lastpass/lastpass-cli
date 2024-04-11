@@ -1,7 +1,7 @@
 /*
  * session handling routines
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ void session_save(struct session *session, unsigned const char key[KDF_HASH_LEN]
 	config_write_encrypted_string("session_sessionid", session->sessionid, key);
 	config_write_encrypted_string("session_token", session->token, key);
 	config_write_encrypted_buffer("session_privatekey", (char *)session->private_key.key, session->private_key.len, key);
+	feature_flag_save(&session->feature_flag, key);
 
 	/*
 	 * existing sessions may not have a server yet; they will fall back
@@ -90,6 +91,7 @@ struct session *session_load(unsigned const char key[KDF_HASH_LEN])
 	session->server = config_read_string("session_server");
 	session->private_key.len = config_read_encrypted_buffer("session_privatekey", &session->private_key.key, key);
 	mlock(session->private_key.key, session->private_key.len);
+	feature_flag_load(&session->feature_flag, key);
 
 	if (session_is_valid(session))
 		return session;

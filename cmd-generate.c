@@ -1,7 +1,7 @@
 /*
  * command for generating passwords
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -123,8 +123,7 @@ int cmd_generate(int argc, char **argv)
 		if (username)
 			account_set_username(found, username, key);
 		if (url) {
-			free(found->url);
-			found->url = url;
+			account_set_url(found, xstrdup(url), key, &session->feature_flag);
 		}
 		if (notes_expansion && notes_collapsed) {
 			found = notes_collapsed;
@@ -140,14 +139,14 @@ int cmd_generate(int argc, char **argv)
 		account_set_fullname(new, xstrdup(name), key);
 		account_set_username(new, username ? username : xstrdup(""), key);
 		account_set_note(new, xstrdup(""), key);
-		new->url = url ? url : xstrdup("");
-		account_assign_share(blob, new, key);
+		account_set_url(new, url ? url : xstrdup(""), key, &session->feature_flag);
+		account_assign_share(blob, new, key, &session->feature_flag);
 
 		list_add(&new->list, &blob->account_head);
 	}
 
 	lastpass_update_account(sync, key, session, found ? found : new, blob);
-	blob_save(blob, key);
+	blob_save(blob, key, &session->feature_flag);
 
 	if (clip)
 		clipboard_open();

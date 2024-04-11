@@ -1,7 +1,7 @@
 /*
  * xml parsing routines
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@
 #include "xml.h"
 #include "util.h"
 #include "blob.h"
+#include "feature-flag.h"
 #include <string.h>
 #include <libxml/parser.h>
 #include <libxml/tree.h>
@@ -71,6 +72,8 @@ struct session *xml_ok_session(const char *buf, unsigned const char key[KDF_HASH
 				_cleanup_free_ char *private_key = (char *)xmlNodeListGetString(doc, attr->children, 1);
 				session_set_private_key(session, key, private_key);
 			}
+
+			feature_flag_load_xml_attr(&session->feature_flag, doc, attr);
 		}
 	}
 out:

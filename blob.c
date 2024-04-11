@@ -1,7 +1,7 @@
 /*
  * encrypted vault parsing
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -368,7 +368,7 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
  	if (check_next_entry_encrypted(chunk))
 		entry_crypt(url);
 	else
-	entry_hex(url);
+		entry_hex(url);
 	entry_crypt(note);
 	entry_boolean(fav);
 	skip(sharedfromaid);
@@ -800,7 +800,7 @@ static void write_app_chunk(struct buffer *buffer, struct account *account)
 	}
 }
 
-static void write_account_chunk(struct buffer *buffer, struct account *account)
+static void write_account_chunk(struct buffer *buffer, struct account *account, const struct feature_flag *feature_flag)
 {
 	struct buffer accbuf, fieldbuf;
 	struct field *field;
@@ -814,7 +814,14 @@ static void write_account_chunk(struct buffer *buffer, struct account *account)
 	write_plain_string(&accbuf, account->id);
 	write_crypt_string(&accbuf, account->name_encrypted);
 	write_crypt_string(&accbuf, account->group_encrypted);
-	write_hex_string(&accbuf, account->url);
+	if (feature_flag && feature_flag->url_encryption_enabled) {
+		if (account->url_encrypted != NULL)
+			write_crypt_string(&accbuf, account->url_encrypted);
+		else
+			write_hex_string(&accbuf, account->url);
+	} else {
+		write_hex_string(&accbuf, account->url);
+	}
 	write_crypt_string(&accbuf, account->note_encrypted);
 	write_plain_string(&accbuf, "skipped");
 	write_plain_string(&accbuf, "skipped");
@@ -868,7 +875,7 @@ static void write_share_chunk(struct buffer *buffer, struct share *share)
 	write_chunk(buffer, &sharebuf, "SHAR");
 }
 
-size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN], char **out)
+size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN], char **out, const struct feature_flag *feature_flag)
 {
 	struct buffer buffer;
 	struct share *last_share = NULL;
@@ -885,7 +892,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 
 	list_for_each_entry(account, &blob->account_head, list) {
 		if (!account->share)
-			write_account_chunk(&buffer, account);
+			write_account_chunk(&buffer, account, feature_flag);
 	}
 	list_for_each_entry(account, &blob->account_head, list) {
 		if (!account->share)
@@ -894,7 +901,7 @@ size_t blob_write(const struct blob *blob, const unsigned char key[KDF_HASH_LEN]
 			write_share_chunk(&buffer, account->share);
 			last_share = account->share;
 		}
-		write_account_chunk(&buffer, account);
+		write_account_chunk(&buffer, account, feature_flag);
 	}
 
 	*out = buffer.bytes;
@@ -964,12 +971,12 @@ struct blob *blob_load(enum blobsync sync, struct session *session, const unsign
 	return blob_get_latest(session, key);
 }
 
-void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN])
+void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
 	_cleanup_free_ char *bluffer = NULL;
 	size_t len;
 
-	len = blob_write(blob, key, &bluffer);
+	len = blob_write(blob, key, &bluffer, feature_flag);
 	if (!len)
 		die("Could not write blob.");
 
@@ -1012,10 +1019,24 @@ void account_set_note(struct account *account, char *note, unsigned const char k
 {
 	set_encrypted_field(account, note);
 }
-void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN])
+void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
-	UNUSED(key);
-	set_field(account, url);
+	if (url != NULL && strstr(url, "://") == NULL) {
+		char *url_with_prefix;
+		if ((url_with_prefix = malloc(strlen(url) + strlen("http://") + 1)) != NULL) {
+			strcpy(url_with_prefix, "http://");
+			strcat(url_with_prefix, url);
+			free(url);
+			url = url_with_prefix;
+		}
+	}
+
+	if (feature_flag && feature_flag->url_encryption_enabled) {
+		set_encrypted_field(account, url);
+	} else {
+		UNUSED(key);
+		set_field(account, url);
+	}
 }
 void account_set_appname(struct account *account, char *appname, unsigned const char key[KDF_HASH_LEN])
 {
@@ -1040,12 +1061,15 @@ static bool is_shared_folder_name(const char *fullname)
 	return !strncmp(fullname, "Shared-", 7) && strchr(fullname, '/');
 }
 
-void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN])
+void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
 	struct field *field;
 
 	reencrypt_field(account, name);
 	reencrypt_field(account, group);
+	if (feature_flag && feature_flag->url_encryption_enabled) {
+		reencrypt_field(account, url);
+	}
 	reencrypt_field(account, username);
 	reencrypt_field(account, password);
 	reencrypt_field(account, note);
@@ -1110,7 +1134,7 @@ struct share *find_unique_share(struct blob *blob, const char *name)
  * same folder is not available.
  */
 void account_assign_share(struct blob *blob, struct account *account,
-			  unsigned const char key[KDF_HASH_LEN])
+			  unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
 	struct share *share, *old_share;
 	_cleanup_free_ char *shared_name = NULL;
@@ -1143,7 +1167,7 @@ void account_assign_share(struct blob *blob, struct account *account,
 
 reencrypt:
 	if (old_share != account->share)
-		account_reencrypt(account, key);
+		account_reencrypt(account, key, feature_flag);
 }
 
 struct account *notes_expand(struct account *acc)

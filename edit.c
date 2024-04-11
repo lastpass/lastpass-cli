@@ -1,7 +1,7 @@
 /*
  * common routines for editing / adding accounts
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@
 #include <string.h>
 #include <errno.h>
 #include "util.h"
+#include "feature-flag.h"
 
 #define MAX_NOTE_LEN (unsigned long) 45000
 
@@ -134,13 +135,21 @@ static void assign_account_value(struct account *account,
 				 const char *label,
 				 char *value,
 				 int lineno,
-				 unsigned char key[KDF_HASH_LEN])
+				 unsigned char key[KDF_HASH_LEN],
+				 const struct feature_flag *feature_flag)
 {
 	struct field *editable_field = NULL;
 
 #define assign_if(title, field) do { \
 	if (!strcmp(label, title)) { \
 		account_set_##field(account, xstrdup(trim(value)), key); \
+		return; \
+	} \
+	} while (0)
+
+#define assign_if_ff(title, field, feature_flag) do { \
+	if (!strcmp(label, title)) { \
+		account_set_##field(account, xstrdup(trim(value)), key, feature_flag); \
 		return; \
 	} \
 	} while (0)
@@ -152,7 +161,7 @@ static void assign_account_value(struct account *account,
 	if (lineno == 1) {
 		assign_if("Name", fullname);
 	}
-	assign_if("URL", url);
+	assign_if_ff("URL", url, feature_flag);
 	assign_if("Username", username);
 	assign_if("Password", password);
 	assign_if("Application", appname);
@@ -326,7 +335,7 @@ static void parse_account_file(FILE *input, enum note_type note_type,
 }
 
 static void read_account_file(FILE *input, struct account *account,
-			      unsigned char key[KDF_HASH_LEN])
+			      unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
 	LIST_HEAD(fields);
 	struct parsed_name_value *entry, *tmp;
@@ -335,7 +344,7 @@ static void read_account_file(FILE *input, struct account *account,
 
 	list_for_each_entry_safe(entry, tmp, &fields, list) {
 		assign_account_value(account, entry->name, entry->value,
-				     entry->lineno, key);
+				     entry->lineno, key, feature_flag);
 		free(entry->name);
 		free(entry->value);
 		list_del(&entry->list);
@@ -542,7 +551,7 @@ int edit_account(struct session *session,
 		if (ret)
 			die_unlink_errno("fread(tmpfile)", tmppath, tmpdir);
 	} else if (choice == EDIT_ANY) {
-		read_account_file(tmpfile, editable, key);
+		read_account_file(tmpfile, editable, key, &session->feature_flag);
 		value = NULL;
 	} else {
 		ret = read_file_buf(tmpfile, &value, &len);
@@ -566,7 +575,7 @@ int edit_account(struct session *session,
 	else if (choice == EDIT_PASSWORD)
 		account_set_password(editable, value, key);
 	else if (choice == EDIT_URL)
-		account_set_url(editable, value, key);
+		account_set_url(editable, value, key, &session->feature_flag);
 	else if (choice == EDIT_NAME)
 		account_set_fullname(editable, value, key);
 	else if (choice == EDIT_NOTES)
@@ -589,13 +598,13 @@ int edit_account(struct session *session,
 		account_free(notes_collapsed);
 	}
 
-	account_assign_share(blob, editable, key);
+	account_assign_share(blob, editable, key, &session->feature_flag);
 	if (old_share != editable->share) {
 		die("Use lpass mv to move items to/from shared folders");
 	}
 
 	lastpass_update_account(sync, key, session, editable, blob);
-	blob_save(blob, key);
+	blob_save(blob, key, &session->feature_flag);
 
 	session_free(session);
 	blob_free(blob);
@@ -636,11 +645,11 @@ int edit_new_account(struct session *session,
 	account_set_username(account, xstrdup(""), key);
 	account_set_note(account, xstrdup(""), key);
 	if (choice == EDIT_NOTES || note_type != NOTE_TYPE_NONE) {
-		account->url = xstrdup("http://sn");
+		account_set_url(account, xstrdup("http://sn"), key, &session->feature_flag);
 	} else {
-		account->url = xstrdup("");
+		account_set_url(account, xstrdup(""), key, &session->feature_flag);
 	}
-	account_assign_share(blob, account, key);
+	account_assign_share(blob, account, key, &session->feature_flag);
 	list_add(&account->list, &blob->account_head);
 
 	if (note_type != NOTE_TYPE_NONE) {

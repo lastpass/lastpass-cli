@@ -1,7 +1,7 @@
 /*
- * command for removing vault entries
+ * feature flag handling routines
  *
- * Copyright (C) 2014-2024 LastPass.
+ * Copyright (C) 2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,66 +33,25 @@
  *
  * See LICENSE.OpenSSL for more details regarding this exception.
  */
-#include "cmd.h"
+#include "xml.h"
 #include "util.h"
 #include "config.h"
-#include "terminal.h"
-#include "kdf.h"
-#include "blob.h"
-#include "endpoints.h"
-#include <getopt.h>
-#include <stdio.h>
 #include <string.h>
 
-int cmd_rm(int argc, char **argv)
-{
-	unsigned char key[KDF_HASH_LEN];
-	struct session *session = NULL;
-	struct blob *blob = NULL;
-	static struct option long_options[] = {
-		{"sync", required_argument, NULL, 'S'},
-		{"color", required_argument, NULL, 'C'},
-		{0, 0, 0, 0}
-	};
-	int option;
-	int option_index;
-	char *name;
-	enum blobsync sync = BLOB_SYNC_AUTO;
-	struct account *found;
+void feature_flag_load_xml_attr(struct feature_flag *feature_flag, xmlDoc *doc, xmlAttrPtr attr) {
+    if (!xmlStrcmp(attr->name, BAD_CAST "url_encryption")) {
+        feature_flag->url_encryption_enabled = !strcmp((char *)xmlNodeListGetString(doc, attr->children, 1), "1");
+    }
+}
 
-	while ((option = getopt_long(argc, argv, "", long_options, &option_index)) != -1) {
-		switch (option) {
-			case 'S':
-				sync = parse_sync_string(optarg);
-				break;
-			case 'C':
-				terminal_set_color_mode(
-					parse_color_mode_string(optarg));
-				break;
-			case '?':
-			default:
-				die_usage(cmd_rm_usage);
-		}
-	}
+void feature_flag_save(const struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]) {
+    config_write_encrypted_string("session_ff_url_encryption", feature_flag->url_encryption_enabled ? "1" : "0", key);
+}
 
-	if (argc - optind != 1)
-		die_usage(cmd_rm_usage);
-	name = argv[optind];
+void feature_flag_load(struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]) {
+    char * ff_url_encryption = config_read_encrypted_string("session_ff_url_encryption", key);
 
-	init_all(sync, key, &session, &blob);
-	found = find_unique_account(blob, name);
-	if (!found)
-		die("Could not find specified account '%s'.", name);
-	if (found->share && found->share->readonly)
-		die("%s is a readonly shared entry from %s. It cannot be deleted.", found->fullname, found->share->name);
-
-	list_del(&found->list);
-
-	lastpass_remove_account(sync, key, session, found, blob);
-	blob_save(blob, key, &session->feature_flag);
-	account_free(found);
-
-	session_free(session);
-	blob_free(blob);
-	return 0;
+    if (ff_url_encryption != NULL) {
+        feature_flag->url_encryption_enabled = !strcmp(ff_url_encryption, "1");
+    }
 }

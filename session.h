@@ -2,6 +2,7 @@
 #define SESSION_H
 
 #include "kdf.h"
+#include "feature-flag.h"
 #include <stdbool.h>
 
 struct public_key {
@@ -18,6 +19,7 @@ struct session {
 	char *token;
 	char *server;
 	struct private_key private_key;
+	struct feature_flag feature_flag;
 };
 
 struct session *session_new();
