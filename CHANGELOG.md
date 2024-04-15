@@ -1,4 +1,9 @@
-# Vesion 1.3.7
+# Version 1.4.0
+* Add support for writting encrypted URLs
+* Add support for feature flags
+* Fix shared folder username
+
+# Version 1.3.7
 * Add support for reading encrypted URLs (Tibor Komlossy)
 * Fix GCC 10 compatibility issue #532 (Tibor Komlossy)
 
