@@ -55,3 +55,7 @@ void feature_flag_load(struct feature_flag *feature_flag, unsigned const char ke
         feature_flag->url_encryption_enabled = !strcmp(ff_url_encryption, "1");
     }
 }
+
+void feature_flag_cleanup() {
+    config_unlink("session_ff_url_encryption");
+}
