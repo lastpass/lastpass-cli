@@ -1,6 +1,8 @@
 #ifndef FEATUREFLAG_H
 #define FEATUREFLAG_H
 
+#define SESSION_FF_URL_ENCRYPTION "session_ff_url_encryption"
+
 #include <libxml/tree.h>
 #include <stdbool.h>
 
