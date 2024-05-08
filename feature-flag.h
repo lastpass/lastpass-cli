@@ -4,8 +4,6 @@
 #include <libxml/tree.h>
 #include <stdbool.h>
 
-#define SESSION_FF_URL_ENCRYPTION "session_ff_url_encryption"
-
 struct feature_flag {
 	bool url_encryption_enabled;
 };

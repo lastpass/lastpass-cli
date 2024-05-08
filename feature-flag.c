@@ -38,6 +38,8 @@
 #include "config.h"
 #include <string.h>
 
+#define SESSION_FF_URL_ENCRYPTION "session_ff_url_encryption"
+
 void feature_flag_load_xml_attr(struct feature_flag *feature_flag, xmlDoc *doc, xmlAttrPtr attr) {
     if (!xmlStrcmp(attr->name, BAD_CAST "url_encryption")) {
         feature_flag->url_encryption_enabled = !strcmp((char *)xmlNodeListGetString(doc, attr->children, 1), "1");
