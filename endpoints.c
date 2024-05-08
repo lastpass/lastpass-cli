@@ -86,6 +86,12 @@ void lastpass_remove_account(enum blobsync sync, unsigned const char key[KDF_HAS
 	if (account->share)
 		http_post_add_params(&params, "sharedfolderid", account->share->id, NULL);
 
+	_cleanup_free_ char *url = NULL;
+	if (session->feature_flag.url_logging_enabled) {
+		bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
+		http_post_add_params(&params, "recordUrl", url, NULL);
+	}
+
 	++blob->version;
 	upload_queue_enqueue(sync, key, session, "show_website.php", &params);
 }
@@ -233,6 +239,11 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 				     "data", fields,
 				     NULL);
 	}
+
+	if (session->feature_flag.url_logging_enabled) {
+		http_post_add_params(&params, "recordUrl", url, NULL);
+	}
+
 	upload_queue_enqueue(sync, key, session, "show_website.php", &params);
 
 out_free_params:
@@ -267,6 +278,12 @@ void lastpass_log_access(enum blobsync sync, const struct session *session, unsi
 
 	if (account->share)
 		http_post_add_params(&params, "sharedfolderid", account->share->id, NULL);
+
+	_cleanup_free_ char *url = NULL;
+	if (session->feature_flag.url_logging_enabled) {
+		bytes_to_hex((unsigned char *) account->url, &url, strlen(account->url));
+		http_post_add_params(&params, "recordUrl", url, NULL);
+	}
 
 	upload_queue_enqueue(sync, key, session, "loglogin.php", &params);
 
@@ -411,7 +428,7 @@ int lastpass_upload(const struct session *session,
 	list_for_each_entry(account, accounts, list) {
 		char *name_param, *grouping_param;
 		char *url_param, *username_param, *password_param;
-		char *fav_param, *extra_param;
+		char *fav_param, *extra_param, *record_url_param;
 		char *url = NULL;
 		bytes_to_hex((unsigned char *) account->url, &url,
 			     strlen(account->url));
@@ -423,6 +440,7 @@ int lastpass_upload(const struct session *session,
 		xasprintf(&password_param, "password%d", index);
 		xasprintf(&fav_param, "fav%d", index);
 		xasprintf(&extra_param, "extra%d", index);
+		xasprintf(&record_url_param, "recordUrl%d", index);
 
 		if (session->feature_flag.url_encryption_enabled) {
 			http_post_add_params(&params,
@@ -444,6 +462,10 @@ int lastpass_upload(const struct session *session,
 				fav_param, account->fav ? "1" : "0",
 				extra_param, account->note_encrypted,
 				NULL);
+		}
+
+		if (session->feature_flag.url_logging_enabled) {
+			http_post_add_params(&params, record_url_param, url, NULL);
 		}
 
 		index++;
