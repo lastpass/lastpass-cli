@@ -120,6 +120,8 @@ unsigned long long xml_login_check(const char *buf, struct session *session)
 				versionstr = (char *)xmlNodeListGetString(doc, attr->children, 1);
 				version = strtoull(versionstr, NULL, 10);
 			}
+
+			feature_flag_load_xml_attr(&session->feature_flag, doc, attr);
 		}
 	}
 out:

@@ -114,6 +114,9 @@ void session_kill()
 	config_unlink("session_privatekey");
 	config_unlink("session_server");
 	config_unlink("plaintext_key");
+	
+	feature_flag_cleanup();
+
 	agent_kill();
 	upload_queue_kill();
 }
