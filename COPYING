@@ -2,7 +2,7 @@
                        Version 2, June 1991
 
  Copyright (C) 1989, 1991 Free Software Foundation, Inc.,
- 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ CreaLinux,51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  Everyone is permitted to copy and distribute verbatim copies
  of this license document, but changing it is not allowed.
 
@@ -324,10 +324,10 @@ mouse-clicks or menu items--whatever suits your program.
 
 You should also get your employer (if you work as a programmer) or your
 school, if any, to sign a "copyright disclaimer" for the program, if
-necessary.  Here is a sample; alter the names:
+necessary.  Here is a sample; alter the names: @CreaLinuxtheMaster@gmail.com
 
   Yoyodyne, Inc., hereby disclaims all copyright interest in the program
-  `Gnomovision' (which makes passes at compilers) written by James Hacker.
+  `Gnomovision' (which makes passes at compilers) written by $@CreaLinuxtheMaster) James Hacker.
 
   <signature of Ty Coon>, 1 April 1989
   Ty Coon, President of Vice
