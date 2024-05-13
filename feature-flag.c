@@ -38,20 +38,37 @@
 #include "config.h"
 #include <string.h>
 
+#define SESSION_FF_URL_ENCRYPTION "session_ff_url_encryption"
+#define SESSION_FF_URL_LOGGING "session_ff_url_logging"
+
 void feature_flag_load_xml_attr(struct feature_flag *feature_flag, xmlDoc *doc, xmlAttrPtr attr) {
     if (!xmlStrcmp(attr->name, BAD_CAST "url_encryption")) {
         feature_flag->url_encryption_enabled = !strcmp((char *)xmlNodeListGetString(doc, attr->children, 1), "1");
     }
+
+    if (!xmlStrcmp(attr->name, BAD_CAST "url_logging")) {
+        feature_flag->url_logging_enabled = !strcmp((char *)xmlNodeListGetString(doc, attr->children, 1), "1");
+    }
 }
 
 void feature_flag_save(const struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]) {
-    config_write_encrypted_string("session_ff_url_encryption", feature_flag->url_encryption_enabled ? "1" : "0", key);
+    config_write_encrypted_string(SESSION_FF_URL_ENCRYPTION, feature_flag->url_encryption_enabled ? "1" : "0", key);
+    config_write_encrypted_string(SESSION_FF_URL_LOGGING, feature_flag->url_logging_enabled ? "1" : "0", key);
 }
 
 void feature_flag_load(struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]) {
-    char * ff_url_encryption = config_read_encrypted_string("session_ff_url_encryption", key);
-
+    char *ff_url_encryption = config_read_encrypted_string(SESSION_FF_URL_ENCRYPTION, key);
     if (ff_url_encryption != NULL) {
         feature_flag->url_encryption_enabled = !strcmp(ff_url_encryption, "1");
     }
+
+    char *ff_url_logging = config_read_encrypted_string(SESSION_FF_URL_LOGGING, key);
+    if (ff_url_logging != NULL) {
+        feature_flag->url_logging_enabled = !strcmp(ff_url_logging, "1");
+    }
+}
+
+void feature_flag_cleanup() {
+    config_unlink(SESSION_FF_URL_ENCRYPTION);
+    config_unlink(SESSION_FF_URL_LOGGING);
 }

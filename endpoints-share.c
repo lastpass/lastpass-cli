@@ -367,6 +367,10 @@ int lastpass_share_move(const struct session *session,
 				     NULL);
 	}
 
+	if (session->feature_flag.url_logging_enabled) {
+		http_post_add_params(&params, "recordUrl", url, NULL);
+	}
+
 	reply = http_post_lastpass_param_set("lastpass/api.php",
 					     session, NULL,
 					     &params);
