@@ -316,7 +316,7 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 	unset_interrupt_detect();
 
 	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, http_code);
-	//curl_easy_cleanup(curl);
+	curl_easy_cleanup(curl);
 	*curl_ret = ret;
 
 	if (ret != CURLE_OK) {

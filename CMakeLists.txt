@@ -1,15 +1,15 @@
-IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.1)
+if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.1)
   set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake > 2.8.4 is required
   cmake_minimum_required(VERSION 2.8)
-ELSE()
+else()
   cmake_minimum_required(VERSION 3.1)
-ENDIF()
+endif()
 
 project(lpass)
 include(GNUInstallDirs)
 find_package(PkgConfig REQUIRED)
 
-IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.4)
+if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.4)
   # pkg_get_variable is not available until CMake >= 3.4.0
   # Debian oldstable still packages CMake 3.0.2
   function(pkg_get_variable _output_name _pkg _name)
@@ -25,19 +25,64 @@ IF (${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.4)
     set(BASH_COMPLETION_FOUND TRUE)
   endif()
 
-ELSE()
+else()
 
   include(FindPkgConfig)
   pkg_search_module(BASH_COMPLETION bash-completion)
 
-ENDIF()
-
-if((APPLE) AND (NOT DEFINED OPENSSL_ROOT_DIR))
-  set(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
 endif()
 
-if((APPLE))
-  set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig")
+if(APPLE)
+  find_program(BREW_INSTALLED BREW)
+
+  if(BREW_INSTALLED)  
+    function(get_brew_packageconfig_path _package_name _output_variable)
+      execute_process(COMMAND brew --cellar ${_package_name}
+                      RESULT_VARIABLE _result_var_cellar
+                      OUTPUT_VARIABLE _output_variable_cellar
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+      if(_result_var_cellar AND NOT STATUS EQUAL 0)
+        message(STATUS "Unable to obtain homebrew cellar location for package ${_package_name}. Error: ${_result_var_cellar}")
+      else()
+        execute_process(COMMAND find "${_output_variable_cellar}/" -type d -name pkgconfig
+                        COMMAND tr -d '\n'
+                        COMMAND tr -s '/'
+                        RESULT_VARIABLE _brew_pkgconfig_c
+                        OUTPUT_VARIABLE _brew_pkgconfig_cellar
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+      endif()
+
+      execute_process(COMMAND brew --prefix ${_package_name}
+                      RESULT_VARIABLE _result_var_prefix
+                      OUTPUT_VARIABLE _output_variable_prefix
+                      OUTPUT_STRIP_TRAILING_WHITESPACE)
+      
+      if(_result_var_prefix AND NOT STATUS EQUAL 0)
+        message(STATUS "Unable to obtain homebrew prefix location for package ${_package_name}. Error: ${_result_var_cellar}")
+      else()
+        execute_process(COMMAND find "${_output_variable_prefix}/" -type d -name pkgconfig
+                        COMMAND tr -d '\n'
+                        COMMAND tr -s '/'
+                        RESULT_VARIABLE _brew_pkgconfig_p
+                        OUTPUT_VARIABLE _brew_pkgconfig_prefix
+                        OUTPUT_STRIP_TRAILING_WHITESPACE)
+      endif()
+
+      set("${_output_variable}" "${_brew_pkgconfig_cellar}:${_brew_pkgconfig_prefix}" CACHE STRING "pkg-config homebrew locations for ${_package_name}")
+
+    endfunction()
+
+    # Get pkg-config paths for curl/openssl installed via homebrew
+    get_brew_packageconfig_path("curl" BREW_CURL)
+    get_brew_packageconfig_path("openssl" BREW_OPENSSL)
+
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl:${BREW_CURL}:${BREW_OPENSSL}")
+    message(STATUS "PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
+  else()
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl")
+  endif()
+
 endif()
 
 find_package(LibXml2 REQUIRED)
