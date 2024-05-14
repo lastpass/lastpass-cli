@@ -373,11 +373,6 @@ static void upload_queue_run(const struct session *session, unsigned const char 
 		signal(SIGALRM, upload_queue_cleanup);
 		setvbuf(stdout, NULL, _IOLBF, 0);
 
-		if (http_init()) {
-			lpass_log(LOG_ERROR, "UQ: unable to restart curl\n");
-			_exit(EXIT_FAILURE);
-		}
-
 		lpass_log(LOG_DEBUG, "UQ: starting queue run\n");
 		upload_queue_upload_all(session, key);
 		lpass_log(LOG_DEBUG, "UQ: queue run complete\n");
