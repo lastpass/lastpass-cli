@@ -1,5 +1,11 @@
+# Version 1.5.0
+* Add support for URL logging
+* Fix segmentation faults on Mac OS X
+* Fix synchronization issues, which caused empty IDs
+* Fix feature flags file deletion on logout
+
 # Version 1.4.0
-* Add support for writting encrypted URLs
+* Add support for writing encrypted URLs
 * Add support for feature flags
 * Fix shared folder username
 
