@@ -1,7 +1,7 @@
 /*
  * encryption and decryption routines
  *
- * Copyright (C) 2014-2018 LastPass.
+ * Copyright (C) 2014-2024 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +44,9 @@
 #include <openssl/buffer.h>
 #include <openssl/x509.h>
 #include <string.h>
+#include <stdarg.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
 
 #define LP_PKEY_PREFIX "LastPassPrivateKey<"
 #define LP_PKEY_SUFFIX ">LastPassPrivateKey"
@@ -531,4 +533,44 @@ char *cipher_sha256_b64(unsigned char *bytes, size_t len)
 	hash_hex = cipher_sha256_hex(bytes, len);
 	hex_to_bytes(hash_hex, &hash_raw);
 	return base64(hash_raw, strlen(hash_hex) / 2);
+}
+
+/*
+ * Get hex-encoded sha256() for multiple arguments.
+ */
+char *cipher_multi_sha256_hex(int num_args, ...)
+{
+	va_list args;
+	char *hash_hex = NULL;
+	unsigned char hash[SHA256_DIGEST_LENGTH];
+	const EVP_MD *md_sha256;
+	EVP_MD_CTX *sha256_ctx;
+
+	va_start(args, num_args);
+
+	sha256_ctx = EVP_MD_CTX_create();
+	md_sha256 = EVP_sha256();
+	if (!md_sha256)
+		goto error;
+
+	if (!EVP_DigestInit_ex(sha256_ctx, md_sha256, NULL))
+		goto error;
+
+	for (int i = 0; i < num_args; i++) {
+		char *arg = va_arg(args, char *);
+		if (!EVP_DigestUpdate(sha256_ctx, arg, strlen(arg)))
+			goto error;
+	}
+	
+	if (!EVP_DigestFinal_ex(sha256_ctx, hash, 0))
+		goto error;
+
+	bytes_to_hex(hash, &hash_hex, sizeof(hash));
+	EVP_MD_CTX_free(sha256_ctx);
+
+	return hash_hex;
+
+error:
+	EVP_MD_CTX_free(sha256_ctx);
+	die("SHA-256 hash failed");
 }

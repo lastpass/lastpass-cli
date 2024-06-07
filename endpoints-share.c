@@ -219,10 +219,9 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 	_cleanup_free_ unsigned char *enc_share_key = NULL;
 	_cleanup_free_ char *sf_fullname = NULL;
 	_cleanup_free_ char *hex_enc_share_key = NULL;
+	_cleanup_free_ char *hex_hash = NULL;
 
-	unsigned char pw[KDF_HASH_LEN * 2];
-	unsigned char key[KDF_HASH_LEN];
-	char hash[KDF_HEX_LEN];
+	unsigned char key[SHA256_DIGEST_LENGTH];
 	struct share_user user;
 	size_t len;
 	unsigned int i;
@@ -242,20 +241,11 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 		if (sf_username[i] == ' ')
 			sf_username[i] = '_';
 
-	/*
-	 * generate random sharing key.  kdf_decryption_key wants a string so
-	 * we remove any zeroes except the terminator.
-	 */
-	get_random_bytes(pw, sizeof(pw));
-	pw[sizeof(pw)-1] = 0;
-	for (i=0; i < sizeof(pw)-1; i++) {
-		if (!pw[i])
-			pw[i] = (unsigned char) range_rand(1, 256);
-	}
-
-	kdf_decryption_key(sf_username, (char *) pw, 1, key);
-	kdf_login_key(sf_username, (char *) pw, 1, hash);
+	get_random_bytes(key, sizeof(key));
 	bytes_to_hex(key, &hex_share_key, sizeof(key));
+
+	hex_hash = cipher_multi_sha256_hex(2, xstrlower(sf_username), hex_share_key);
+	hex_hash = cipher_multi_sha256_hex(2, hex_hash, hex_share_key);
 
 	/*
 	 * Sharing key is hex-encoded then RSA-encrypted with our pubkey.
@@ -277,7 +267,7 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 				   "id", "0",
 				   "update", "1",
 				   "newusername", sf_username,
-				   "newhash", hash,
+				   "newhash", hex_hash,
 				   "sharekey", hex_enc_share_key,
 				   "name", sf_fullname,
 				   "sharename", enc_share_name,
