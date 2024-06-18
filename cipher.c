@@ -159,15 +159,10 @@ char *cipher_aes_decrypt(const unsigned char *ciphertext, size_t len, const unsi
 		return NULL;
 
 	plaintext = xcalloc(len + AES_BLOCK_SIZE + 1, 1);
-	if (len >= 33 && len % 16 == 1 && ciphertext[0] == '!') {
-		if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, (unsigned char *)(ciphertext + 1)))
-			goto error;
-		ciphertext += 17;
-		len -= 17;
-	} else {
-		if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL))
-			goto error;
-	}
+	if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, (unsigned char *)(ciphertext + 1)))
+		goto error;
+	ciphertext += 17;
+	len -= 17;
 	if (!EVP_DecryptUpdate(ctx, (unsigned char *)plaintext, &out_len, (unsigned char *)ciphertext, len))
 		goto error;
 	len = out_len;
