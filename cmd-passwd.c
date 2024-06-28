@@ -235,7 +235,7 @@ int cmd_passwd(int argc, char **argv)
 
 	_cleanup_free_ char *enc_username = encrypt_and_base64(username, new_key);
 	ret = lastpass_pwchange_complete(session, username, enc_username,
-					 new_hex, iterations, &info);
+					 hex, new_hex, iterations, &info);
 
 	if (ret)
 		die("Password change failed.");

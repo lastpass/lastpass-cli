@@ -314,6 +314,7 @@ int lastpass_pwchange_start(const struct session *session, const char *username,
 int lastpass_pwchange_complete(const struct session *session,
 			       const char *username,
 			       const char *enc_username,
+				   const char old_hash[KDF_HEX_LEN],
 			       const char new_hash[KDF_HEX_LEN],
 			       int new_iterations,
 			       struct pwchange_info *info)
@@ -365,6 +366,7 @@ int lastpass_pwchange_complete(const struct session *session,
 		"key_iterations", iterations_str,
 		"encrypted_username", enc_username,
 		"origusername", username,
+		"wxhash", old_hash,
 		NULL);
 
 	su_key_ind = 0;
