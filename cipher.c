@@ -478,7 +478,7 @@ char *cipher_encrypt_private_key(struct private_key *private_key,
 	unsigned char *key_ptext;
 	unsigned char *ctext = NULL;
 	char *key_hex_dst;
-	char *ctext_hex = NULL;
+	char *encrypted_base64 = NULL;
 	size_t len, ctext_len, hex_len;
 
 	if (!private_key->len)
@@ -495,12 +495,13 @@ char *cipher_encrypt_private_key(struct private_key *private_key,
 
 	memcpy(key_ptext + strlen(LP_PKEY_PREFIX) + hex_len,
 	       LP_PKEY_SUFFIX, strlen(LP_PKEY_SUFFIX));
+	
+	ctext_len = cipher_aes_encrypt(key_ptext, key, &ctext);
 
-	ctext_len = cipher_aes_encrypt_bytes(key_ptext, len, key, key, &ctext);
-	bytes_to_hex(ctext, &ctext_hex, ctext_len);
+	encrypted_base64 = cipher_base64(ctext, ctext_len);
 
 	free(ctext);
-	return ctext_hex;
+	return encrypted_base64;
 }
 
 /*
