@@ -501,6 +501,8 @@ char *cipher_encrypt_private_key(struct private_key *private_key,
 	encrypted_base64 = cipher_base64(ctext, ctext_len);
 
 	free(ctext);
+	free(key_ptext);
+
 	return encrypted_base64;
 }
 
