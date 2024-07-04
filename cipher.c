@@ -470,7 +470,7 @@ void cipher_decrypt_private_key(const char *key_hex,
 }
 
 /*
- * Encrypt RSA sharing key.  Encrypted key is returned as a hex-encoded string.
+ * Encrypt RSA sharing key.  Encrypted key is returned as a base64 string.
  */
 char *cipher_encrypt_private_key(struct private_key *private_key,
 				 unsigned const char key[KDF_HASH_LEN])
