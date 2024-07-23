@@ -96,5 +96,5 @@ void kdf_decryption_key(const char *username, const char *password, int iteratio
 }
 
 void fail_invalid_iteration_count() {
-	die("Invalid iteration count. Verify and update the iterations through another client that supports iteration number setting.");
+	die("Action required: increase the iterations count through another client that supports iteration number setting.");
 }
