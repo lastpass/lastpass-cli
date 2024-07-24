@@ -59,22 +59,8 @@ static void pbkdf2_hash(const char *username, size_t username_len, const char *p
 }
 #endif
 
-static void sha256_hash(const char *username, size_t username_len, const char *password, size_t password_len, unsigned char hash[KDF_HASH_LEN])
-{
-	SHA256_CTX sha256;
-
-	if (!SHA256_Init(&sha256))
-		goto die;
-	if (!SHA256_Update(&sha256, username, username_len))
-		goto die;
-	if (!SHA256_Update(&sha256, password, password_len))
-		goto die;
-	if (!SHA256_Final(hash, &sha256))
-		goto die;
-	return;
-
-die:
-	die("Failed to compute SHA256 for %s", username);
+static inline void fail_invalid_iteration_count() {
+	die("Action required: Your current iteration count does not meet the minimum number of %d iterations . Increase the iteration count on another client that supports iteration number setting.", MINIMUM_ITERATIONS);
 }
 
 void kdf_login_key(const char *username, const char *password, int iterations, char hex[KDF_HEX_LEN])
@@ -85,17 +71,11 @@ void kdf_login_key(const char *username, const char *password, int iterations, c
 
 	password_len = strlen(password);
 
-	if (iterations < 1)
-		iterations = 1;
+	if (iterations < MINIMUM_ITERATIONS)
+		fail_invalid_iteration_count();
 
-	if (iterations == 1) {
-		sha256_hash(user_lower, strlen(user_lower), password, password_len, hash);
-		bytes_to_hex(hash, &hex, KDF_HASH_LEN);
-		sha256_hash(hex, KDF_HEX_LEN - 1, password, password_len, hash);
-	} else {
-		pbkdf2_hash(user_lower, strlen(user_lower), password, password_len, iterations, hash);
-		pbkdf2_hash(password, password_len, (char *)hash, KDF_HASH_LEN, 1, hash);
-	}
+	pbkdf2_hash(user_lower, strlen(user_lower), password, password_len, iterations, hash);
+	pbkdf2_hash(password, password_len, (char *)hash, KDF_HASH_LEN, 1, hash);
 
 	bytes_to_hex(hash, &hex, KDF_HASH_LEN);
 	mlock(hex, KDF_HEX_LEN);
@@ -105,12 +85,9 @@ void kdf_decryption_key(const char *username, const char *password, int iteratio
 {
 	_cleanup_free_ char *user_lower = xstrlower(username);
 
-	if (iterations < 1)
-		iterations = 1;
+	if (iterations < MINIMUM_ITERATIONS)
+		fail_invalid_iteration_count();
 
-	if (iterations == 1)
-		sha256_hash(user_lower, strlen(user_lower), password, strlen(password), hash);
-	else
-		pbkdf2_hash(user_lower, strlen(user_lower), password, strlen(password), iterations, hash);
+	pbkdf2_hash(user_lower, strlen(user_lower), password, strlen(password), iterations, hash);
 	mlock(hash, KDF_HASH_LEN);
 }
