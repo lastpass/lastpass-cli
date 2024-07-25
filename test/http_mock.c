@@ -151,7 +151,7 @@ static char *getaccts(char **argv, size_t *len)
 	struct feature_flag *feature_flag = new0(struct feature_flag, 1);
 
 	if (len)
-		*len = blob_write(&test_data.blob, NULL, &data, &feature_flag);
+		*len = blob_write(&test_data.blob, NULL, &data, feature_flag);
 	return data;
 }
 
