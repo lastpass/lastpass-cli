@@ -46,7 +46,7 @@
 
 static char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890`~!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?";
 #define ALL_CHARS_LEN (sizeof(chars) - 1)
-#define NICE_CHARS_LEN 62
+#define MIN_PW_LENGTH 12
 
 int cmd_generate(int argc, char **argv)
 {
@@ -57,7 +57,6 @@ int cmd_generate(int argc, char **argv)
 		{"sync", required_argument, NULL, 'S'},
 		{"username", required_argument, NULL, 'U'},
 		{"url", required_argument, NULL, 'L'},
-		{"no-symbols", no_argument, NULL, 'X'},
 		{"clip", no_argument, NULL, 'c'},
 		{0, 0, 0, 0}
 	};
@@ -65,7 +64,6 @@ int cmd_generate(int argc, char **argv)
 	int option_index;
 	char *username = NULL;
 	char *url = NULL;
-	bool no_symbols = false;
 	unsigned long length;
 	char *name;
 	enum blobsync sync = BLOB_SYNC_AUTO;
@@ -85,9 +83,6 @@ int cmd_generate(int argc, char **argv)
 			case 'L':
 				url = xstrdup(optarg);
 				break;
-			case 'X':
-				no_symbols = true;
-				break;
 			case 'c':
 				clip = true;
 				break;
@@ -101,14 +96,18 @@ int cmd_generate(int argc, char **argv)
 		die_usage(cmd_generate_usage);
 	name = argv[optind];
 	length = strtoul(argv[optind + 1], NULL, 10);
+
 	if (!length)
 		die_usage(cmd_generate_usage);
+
+	if (length < MIN_PW_LENGTH) 
+		die("Minimum password length is %d characters.", MIN_PW_LENGTH);
 
 	init_all(sync, key, &session, &blob);
 
 	password = xcalloc(length + 1, 1);
 	for (size_t i = 0; i < length; ++i)
-		password[i] = chars[range_rand(0, no_symbols ? NICE_CHARS_LEN : ALL_CHARS_LEN)];
+		password[i] = chars[range_rand(0, ALL_CHARS_LEN)];
 
 	found = find_unique_account(blob, name);
 	if (found) {

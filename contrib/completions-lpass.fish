@@ -150,11 +150,6 @@ complete -f -c lpass -n '__lpass_using_command add edit' \
     -l non-interactive \
     -d 'Use standard input instead of $EDITOR'
 
-# --no-symbols
-complete -f -c lpass -n '__lpass_using_command generate' \
-    -l no-symbols \
-    -d 'No symbols'
-
 # --note-type=NOTETYPE
 complete -f -c lpass -n '__lpass_using_command add' \
     -r -l note-type \
