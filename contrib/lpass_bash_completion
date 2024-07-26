@@ -72,7 +72,7 @@ __lpass_complete_opt()
             opts="--sync --non-interactive --name --username --password --url --notes --field --color"
             ;;
         generate)
-            opts="--sync --clip --username --url --no-symbols --color"
+            opts="--sync --clip --username --url --color"
             ;;
         share)
             opts="--read_only --hidden --admin"

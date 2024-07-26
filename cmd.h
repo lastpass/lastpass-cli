@@ -93,7 +93,7 @@ int cmd_edit(int argc, char **argv);
 #define cmd_edit_usage "edit [--sync=auto|now|no] [--non-interactive] " color_usage " {--name|--username|--password|--url|--notes|--field=FIELD} {NAME|UNIQUEID}"
 
 int cmd_generate(int argc, char **argv);
-#define cmd_generate_usage "generate [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] {NAME|UNIQUEID} LENGTH"
+#define cmd_generate_usage "generate [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] {NAME|UNIQUEID} LENGTH"
 
 int cmd_duplicate(int argc, char **argv);
 #define cmd_duplicate_usage "duplicate [--sync=auto|now|no] " color_usage " {UNIQUENAME|UNIQUEID}"
