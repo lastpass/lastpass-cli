@@ -87,7 +87,7 @@ static void init_test_data()
 	account_set_group(account, "test-group", key);
 	account_set_username(account, "xyz@example.com", key);
 	account_set_password(account, "test-account-password", key);
-	account_set_url(account, "https://test-url.example.com/", key, &feature_flag);
+	account_set_url(account, "https://test-url.example.com/", key, feature_flag);
 	account_set_note(account, "", key);
 	list_add_tail(&account->list, &test_data.blob.account_head);
 
@@ -97,7 +97,7 @@ static void init_test_data()
 	account_set_group(account, "test-group", key);
 	account_set_username(account, xstrdup(""), key);
 	account_set_password(account, xstrdup(""), key);
-	account_set_url(account, "http://sn", key, &feature_flag);
+	account_set_url(account, "http://sn", key, feature_flag);
 	account_set_note(account,
 		"NoteType: Server\n"
 		"Hostname: foo.example.com\n"
@@ -111,7 +111,7 @@ static void init_test_data()
 	account_set_group(account, "test-group", key);
 	account_set_username(account, "xyz@example.com", key);
 	account_set_password(account, "test-account-password", key);
-	account_set_url(account, "https://test-url.example.com/", key, &feature_flag);
+	account_set_url(account, "https://test-url.example.com/", key, feature_flag);
 	account_set_note(account, "", key);
 	account->pwprotect = true;
 	list_add_tail(&account->list, &test_data.blob.account_head);
@@ -122,7 +122,7 @@ static void init_test_data()
 	account_set_group(account, "test-group", key);
 	account_set_username(account, xstrdup(""), key);
 	account_set_password(account, xstrdup(""), key);
-	account_set_url(account, "http://sn", key, &feature_flag);
+	account_set_url(account, "http://sn", key, feature_flag);
 	account_set_note(account,
 		"NoteType: Server\n"
 		"Hostname: foo.example.com\n"
@@ -151,7 +151,7 @@ static char *getaccts(char **argv, size_t *len)
 	struct feature_flag *feature_flag = new0(struct feature_flag, 1);
 
 	if (len)
-		*len = blob_write(&test_data.blob, NULL, &data, &feature_flag);
+		*len = blob_write(&test_data.blob, NULL, &data, feature_flag);
 	return data;
 }
 
