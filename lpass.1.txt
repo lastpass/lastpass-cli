@@ -29,7 +29,7 @@ several subcommands:
  lpass *mv* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID} GROUP
  lpass *add* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD|--note-type=NOTETYPE} [--color=auto|never|always] {NAME|UNIQUEID}
  lpass *edit* [--sync=auto|now|no] [--non-interactive] {--name|--username, -u|--password, -p|--url|--notes|--field=FIELD} [--color=auto|never|always] {NAME|UNIQUEID}
- lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
+ lpass *generate* [--sync=auto|now|no] [--clip, -c] [--username=USERNAME] [--url=URL] [--no-symbols] [--color=auto|never|always] {NAME|UNIQUEID} LENGTH
  lpass *duplicate* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
  lpass *rm* [--sync=auto|now|no] [--color=auto|never|always] {UNIQUENAME|UNIQUEID}
  lpass *status* [--quiet, -q] [--color=auto|never|always]

@@ -73,7 +73,8 @@ _lpass() {
                 _arguments : \
                   '(-c --clip)'{-c,--clip}'[Copy output to clipboard]' \
                   '--username=[USERNAME]' \
-                  '--url=[URL]'
+                  '--url=[URL]' \
+                  '--no-symbols[Do not use symbols]'
                 has_sync=1
             ;;
             status)
