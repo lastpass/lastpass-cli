@@ -1,3 +1,9 @@
+lastpass-cli (1.6.0) unstable; urgency=medium
+
+  * New upstream 1.6.0
+
+ -- Mateus Martins <mateus.martins@lastpass.com>  Mon, 12 Aug 2024 21:09:42 +0000
+
 lastpass-cli (1.5.0) unstable; urgency=medium
 
   * New upstream 1.5.0
