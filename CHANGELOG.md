@@ -1,3 +1,10 @@
+# Version 1.6.0
+* Improve sharing key generation
+* Remove SHA-256 support for login hashes
+* Fix password change failure
+* Replace logic of reusing key as IV
+* Fix incorrect pointer-to-pointer argument passing that would yield compilation errors on GCC-14
+
 # Version 1.5.0
 * Add support for URL logging
 * Fix segmentation faults on Mac OS X
