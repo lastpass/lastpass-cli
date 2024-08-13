@@ -1,5 +1,5 @@
 # Version 1.6.0
-* Add key generation function to `lpass share create`
+* Improve sharing key generation
 * Remove SHA-256 support for login hashes
 * Fix password change failure
 * Replace logic of reusing key as IV
