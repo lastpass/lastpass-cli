@@ -94,7 +94,7 @@ apt-get --no-install-recommends -yqq install \
   xclip
 ```
 
-* For Debian (testing/experimental) and Ubuntu >= 18.04 and < 22.04
+* For Debian (testing/experimental), Ubuntu >= 18.04 and < 22.04
 
 ```
 apt-get --no-install-recommends -yqq install \
