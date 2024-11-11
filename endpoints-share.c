@@ -133,32 +133,54 @@ int lastpass_share_user_add(const struct session *session,
 		bytes_to_hex(share->key, &hex_share_key, sizeof(share->key));
 
 		size_t enc_share_key_len = share_user->sharing_key.len;
-		enc_share_key = xmalloc(enc_share_key_len);
 
-		ret = cipher_rsa_encrypt(hex_share_key, &share_user->sharing_key,
-					 enc_share_key, &enc_share_key_len);
-		if (ret)
-			die("Unable to encrypt sharing key with pubkey (%d)\n",
-			     ret);
+		if (enc_share_key_len) {
+			enc_share_key = xmalloc(enc_share_key_len);
 
-		bytes_to_hex(enc_share_key, &hex_enc_share_key,
-			     enc_share_key_len);
+			ret = cipher_rsa_encrypt(hex_share_key, &share_user->sharing_key,
+						enc_share_key, &enc_share_key_len);
+			if (ret)
+				die("Unable to encrypt sharing key with pubkey (%d)\n",
+					ret);
 
-		reply = http_post_lastpass("share.php", session, &len,
-					   "token", session->token,
-					   "id", share->id,
-					   "update", "1",
-					   "add", "1",
-					   "notify", "1",
-					   "username0", share_user->username,
-					   "cgid0", share_user->cgid ? share_user->cgid : "",
-					   "sharekey0", hex_enc_share_key,
-					   "sharename", enc_share_name,
-					   "name", share->name,
-					   "readonly", bool_str(user->read_only),
-					   "give", bool_str(!user->hide_passwords),
-					   "canadminister", bool_str(user->admin),
-					   "xmlr", "1", NULL);
+			bytes_to_hex(enc_share_key, &hex_enc_share_key,
+					enc_share_key_len);
+
+			reply = http_post_lastpass("share.php", session, &len,
+						"token", session->token,
+						"id", share->id,
+						"update", "1",
+						"add", "1",
+						"notify", "1",
+						"username0", share_user->username,
+						"cgid0", share_user->cgid ? share_user->cgid : "",
+						"sharekey0", hex_enc_share_key,
+						"sharename", enc_share_name,
+						"name", share->name,
+						"readonly", bool_str(user->read_only),
+						"give", bool_str(!user->hide_passwords),
+						"canadminister", bool_str(user->admin),
+						"xmlr", "1", NULL);
+		} else {
+			reply = http_post_lastpass("share.php", session, &len,
+						"token", session->token,
+						"id", share->id,
+						"update", "1",
+						"add", "1",
+						"notify", "1",
+						"msfusername0", share_user->username,
+						"msfcgid0", share_user->cgid ? share_user->cgid : "",
+						"msfreadonly0", bool_str(user->read_only),
+						"msfcanadminister0", bool_str(user->admin),
+						"msfgive0", bool_str(!user->hide_passwords),
+						"sharename", enc_share_name,
+						"name", share->name,
+						"readonly", bool_str(user->read_only),
+						"give", bool_str(!user->hide_passwords),
+						"canadminister", bool_str(user->admin),
+						"xmlr", "1", NULL);
+		}
+
 		free(share_user);
 	}
 
