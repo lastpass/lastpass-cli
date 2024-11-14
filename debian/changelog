@@ -1,3 +1,9 @@
+lastpass-cli (1.6.1) unstable; urgency=medium
+
+  * New upstream 1.6.1
+
+ -- Rui Rafael <rui.rafael@lastpass.com>  Thu, 14 November 2024 08:30:00 +0000
+
 lastpass-cli (1.6.0) unstable; urgency=medium
 
   * New upstream 1.6.0

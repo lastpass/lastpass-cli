@@ -1,3 +1,6 @@
+# Version 1.6.1
+* Fixed a bug that prevented groups from being added to shared folders whenever any of the users did not have a public key
+
 # Version 1.6.0
 * Improve sharing key generation
 * Remove SHA-256 support for login hashes
