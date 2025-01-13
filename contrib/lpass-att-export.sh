@@ -47,7 +47,9 @@ if ! lpass status; then
 fi
 
 if [ -z "${id}" ]; then
-  ids=$(lpass ls | sed -n "s/^.*id:[[:space:]]*\([0-9]*\).*$/\1/p")
+  # Get the ids of items that might have an attachment
+  # remove trailing carriage return if it's there
+  ids=$(lpass export --fields=id,attachpresent | grep ',1' | sed 's/,1\r\{0,1\}//')
 else
   ids=${id}
 fi
