@@ -33,6 +33,14 @@ fi
 
 command -v lpass >/dev/null 2>&1 || { echo >&2 "I require lpass but it's not installed.  Aborting."; exit 1; }
 
+# shellcheck disable=SC2034   # ignore unused version variables
+IFS='.' read -r lpass_ver_major lpass_ver_minor lpass_ver_patch lpass_ver_vcs <<< "$(lpass --version | sed 's/LastPass CLI v//')"
+if [ "${lpass_ver_major}" -gt 1 ] || [ "${lpass_ver_major}" -eq 1 ] && [ "${lpass_ver_minor}" -gt 6 ]; then
+  path_format="%/_as%/_ag%_an"
+else
+  path_format="%/as%/ag%an"
+fi
+
 if [ ! -d "${outdir}" ]; then
   echo "${outdir} does not exist. Exiting."
   exit 1
@@ -57,7 +65,7 @@ fi
 for id in ${ids}; do
   show=$(lpass show "${id}")
   attcount=$(echo "${show}" | grep -c "att-")
-  path=$(lpass show --format="%/as%/ag%an" "${id}" | uniq | tail -1)
+  path=$(lpass show --format="${path_format}" "${id}" | uniq | tail -1)
 
   until [ "${attcount}" -lt 1 ]; do
     # switch to read because the original way truncated filenames containing spaces
