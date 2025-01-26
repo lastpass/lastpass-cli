@@ -60,9 +60,8 @@ for id in ${ids}; do
   path=$(lpass show --format="%/as%/ag%an" "${id}" | uniq | tail -1)
 
   until [ "${attcount}" -lt 1 ]; do
-    att=$(lpass show "${id}" | grep att- | sed "${attcount}q;d" | tr -d :)
-    attid=$(echo "${att}" | awk '{print $1}')
-    attname=$(echo "${att}" | awk '{print $2}')
+    # switch to read because the original way truncated filenames containing spaces
+    read -r attid attname <<< "$(lpass show "${id}" | grep att- | sed "${attcount}q;d" | tr -d :)"
 
     if [[ -z  ${attname}  ]]; then
       attname=${path#*/}
