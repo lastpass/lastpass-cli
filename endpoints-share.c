@@ -219,6 +219,17 @@ int lastpass_share_user_del(const struct session *session, const char *shareid,
 {
 	char *reply = NULL;
 	size_t len;
+	
+	_cleanup_free_ char *user_id = NULL;
+
+	if (user->is_group)
+	{
+		xasprintf(&user_id, "group:%s", user->uid);
+	}
+	else
+	{
+		xasprintf(&user_id, "%s", user->uid);
+	}
 
 	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
