@@ -236,7 +236,7 @@ int lastpass_share_user_del(const struct session *session, const char *shareid,
 				   "id", shareid,
 				   "update", "1",
 				   "delete", "1",
-				   "uid", user->uid,
+				   "uid", user_id,
 				   "xmlr", "1", NULL);
 
 	free(reply);
