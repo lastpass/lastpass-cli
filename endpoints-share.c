@@ -44,6 +44,18 @@
 #include <errno.h>
 #include <curl/curl.h>
 
+static inline void get_share_user_id(struct share_user *user, char **user_id)
+{ 
+	if (user->is_group)
+	{
+		xasprintf(user_id, "group:%s", user->uid);
+	}
+	else
+	{
+		xasprintf(user_id, "%s", user->uid);
+	}
+}
+
 int lastpass_share_getinfo(const struct session *session, const char *shareid,
 			   struct list_head *users)
 {
@@ -197,17 +209,21 @@ int lastpass_share_user_mod(const struct session *session,
 	_cleanup_free_ char *reply = NULL;
 	size_t len;
 
+	_cleanup_free_ char *user_id = NULL;
+
+	get_share_user_id(user, &user_id);
+
 	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "id", share->id,
 				   "up", "1",
 				   "edituser", "1",
-				   "uid", user->uid,
+				   "uid", user_id,
 				   "readonly", user->read_only ? "on" : "",
 				   "give", !user->hide_passwords ? "on" : "",
 				   "canadminister", user->admin ? "on" : "",
 				   "xmlr", "1", NULL);
-
+		   
 	if (!reply)
 		return -EPERM;
 
@@ -222,15 +238,8 @@ int lastpass_share_user_del(const struct session *session, const char *shareid,
 	
 	_cleanup_free_ char *user_id = NULL;
 
-	if (user->is_group)
-	{
-		xasprintf(&user_id, "group:%s", user->uid);
-	}
-	else
-	{
-		xasprintf(&user_id, "%s", user->uid);
-	}
-
+	get_share_user_id(user, &user_id);
+	
 	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,
 				   "id", shareid,
