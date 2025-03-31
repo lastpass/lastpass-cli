@@ -80,19 +80,28 @@ char *format_timestamp(char *timestamp, bool utc)
 }
 
 static
-void append_str(struct buffer *buf, char *str, bool add_slash)
+void append_str(struct buffer *buf, char *str, bool add_slash, bool make_fs_safe)
 {
+	char *fs_parse_point = NULL;
+	/* can't set fs_parse_point here since the buffer might get reallocated by buffer_append_str */
+	size_t orignal_len = buf->len;
+
 	if (!str || !strlen(str))
 		return;
 
 	buffer_append_str(buf, str);
+	if (make_fs_safe) {
+		fs_parse_point = buf->bytes + orignal_len;
+		while ( (fs_parse_point = strpbrk(fs_parse_point, "/\r\n\t")) )
+			*fs_parse_point = '_';
+	}
 	if (add_slash)
 		buffer_append_char(buf, '/');
 }
 
 static
 void format_account_item(struct buffer *buf, char fmt,
-			 struct account *account, bool add_slash)
+			 struct account *account, bool add_slash, bool make_fs_safe)
 {
 	_cleanup_free_ char *name = NULL;
 	_cleanup_free_ char *ts = NULL;
@@ -100,47 +109,47 @@ void format_account_item(struct buffer *buf, char fmt,
 	switch (fmt) {
 	case 'i':
 		/* id */
-		append_str(buf, account->id, add_slash);
+		append_str(buf, account->id, add_slash, make_fs_safe);
 		break;
 	case 'n':
 		/* shortname */
-		append_str(buf, account->name, add_slash);
+		append_str(buf, account->name, add_slash, make_fs_safe);
 		break;
 	case 'N':
 		/* fullname */
 		name = get_display_fullname(account);
-		append_str(buf, name, add_slash);
+		append_str(buf, name, add_slash, make_fs_safe);
 		break;
 	case 'u':
 		/* username */
-		append_str(buf, account->username, add_slash);
+		append_str(buf, account->username, add_slash, make_fs_safe);
 		break;
 	case 'p':
 		/* password */
-		append_str(buf, account->password, add_slash);
+		append_str(buf, account->password, add_slash, make_fs_safe);
 		break;
 	case 'm':
 		/* mtime */
 		ts = format_timestamp(account->last_modified_gmt, true);
-		append_str(buf, ts, add_slash);
+		append_str(buf, ts, add_slash, make_fs_safe);
 		break;
 	case 'U':
 		/* last touch time */
 		ts = format_timestamp(account->last_touch, false);
-		append_str(buf, ts, add_slash);
+		append_str(buf, ts, add_slash, make_fs_safe);
 		break;
 	case 's':
 		/* sharename */
 		if (account->share)
-			append_str(buf, account->share->name, add_slash);
+			append_str(buf, account->share->name, add_slash, make_fs_safe);
 		break;
 	case 'g':
 		/* group name */
-		append_str(buf, account->group, add_slash);
+		append_str(buf, account->group, add_slash, make_fs_safe);
 		break;
 	case 'l':
 		/* URL */
-		append_str(buf, account->url, add_slash);
+		append_str(buf, account->url, add_slash, make_fs_safe);
 		break;
 	default:
 		break;
@@ -149,12 +158,12 @@ void format_account_item(struct buffer *buf, char fmt,
 
 void format_field_item(struct buffer *buf, char fmt,
 		       char *field_name, char *field_value,
-		       bool add_slash)
+		       bool add_slash, bool make_fs_safe)
 {
 	if (fmt == 'n' && field_name) {
-		append_str(buf, field_name, add_slash);
+		append_str(buf, field_name, add_slash, make_fs_safe);
 	} else if (fmt == 'v' && field_value) {
-		append_str(buf, field_value, add_slash);
+		append_str(buf, field_value, add_slash, make_fs_safe);
 	}
 }
 
@@ -165,6 +174,7 @@ void format_field(struct buffer *buf, const char *format_str,
 	const char *p = format_str;
 	bool in_format = false;
 	bool add_slash = false;
+	bool make_fs_safe = false;
 
 	while (*p) {
 		char ch = *p++;
@@ -188,6 +198,10 @@ void format_field(struct buffer *buf, const char *format_str,
 			/* append trailing slash, if nonempty */
 			add_slash = true;
 			continue;
+		case '_':
+			/* transform slashes to underscores in field value */
+			make_fs_safe = true;
+			continue;
 		case 'f':
 			/* field name/value */
 			if (!*p) {
@@ -196,7 +210,7 @@ void format_field(struct buffer *buf, const char *format_str,
 				break;
 			}
 			ch = *p++;
-			format_field_item(buf, ch, field_name, field_value, add_slash);
+			format_field_item(buf, ch, field_name, field_value, add_slash, make_fs_safe);
 			break;
 		case 'a':
 			/* account item */
@@ -206,13 +220,14 @@ void format_field(struct buffer *buf, const char *format_str,
 				break;
 			}
 			ch = *p++;
-			format_account_item(buf, ch, account, add_slash);
+			format_account_item(buf, ch, account, add_slash, make_fs_safe);
 			break;
 		default:
 			buffer_append_char(buf, '%');
 			buffer_append_char(buf, ch);
 		}
 		add_slash = false;
+		make_fs_safe = false;
 		in_format = false;
 	}
 }
