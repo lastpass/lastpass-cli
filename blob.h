@@ -172,6 +172,7 @@ void account_set_appname(struct account *account, char *appname, unsigned const 
 void account_assign_share(struct blob *blob, struct account *account, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 bool account_is_group(struct account *account);
+bool account_is_secure_note(const struct account *account);
 void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN]);
 struct account *notes_expand(struct account *acc);
 struct account *notes_collapse(struct account *acc);
