@@ -1,7 +1,7 @@
 /*
  * https endpoints for LastPass services
  *
- * Copyright (C) 2014-2024 LastPass.
+ * Copyright (C) 2014-2025 LastPass.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #include "config.h"
 #include "util.h"
 #include "upload-queue.h"
+#include "blob.h"
 #include <string.h>
 #include <errno.h>
 #include <curl/curl.h>
@@ -214,23 +215,18 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 		upload_queue_enqueue(sync, key, session, "addapp.php", &params);
 		goto out_free_params;
 	}
+	
+	http_post_add_params(&params,
+		"aid", account->id,
+		"username", account->username_encrypted,
+		"password", account->password_encrypted,
+		"extra", account->note_encrypted,
+		NULL);
 
-	if (session->feature_flag.url_encryption_enabled) {
-		http_post_add_params(&params,
-				"aid", account->id,
-				"url", account->url_encrypted,
-				"username", account->username_encrypted,
-				"password", account->password_encrypted,
-				"extra", account->note_encrypted,
-				NULL);
+	if (session->feature_flag.url_encryption_enabled && !account_is_secure_note(account)) {
+		http_post_add_params(&params, "url", account->url_encrypted, NULL);
 	} else {
-		http_post_add_params(&params,
-				"aid", account->id,
-				"url", url,
-				"username", account->username_encrypted,
-				"password", account->password_encrypted,
-				"extra", account->note_encrypted,
-				NULL);
+		http_post_add_params(&params, "url", url, NULL);
 	}
 
 	if (strlen(fields)) {
