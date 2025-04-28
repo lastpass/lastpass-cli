@@ -40,6 +40,7 @@
 #include "password.h"
 #include "terminal.h"
 #include "process.h"
+#include <stdio.h>
 #include <unistd.h>
 #include <string.h>
 #include <fcntl.h>
@@ -156,7 +157,7 @@ int _setup_agent_socket(struct sockaddr_un *sa, char *path)
 	return fd;
 }
 
-static void agent_run(unsigned const char key[KDF_HASH_LEN])
+static void agent_run(unsigned const char key[KDF_HASH_LEN], int status_event_fd)
 {
 	char *agent_timeout_str;
 	unsigned int agent_timeout;
@@ -164,6 +165,7 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 	struct ucred cred;
 	int fd, listenfd;
 	socklen_t len;
+	char status_event[64];
 
 	signal(SIGHUP, agent_cleanup);
 	signal(SIGINT, agent_cleanup);
@@ -188,8 +190,21 @@ static void agent_run(unsigned const char key[KDF_HASH_LEN])
 		close(fd);
 		unlink(path);
 		errno = listenfd;
+
+		strcpy(status_event, "FAILED"); // send that we failed to successfully spawn to the process
+		if (write(status_event_fd, status_event, 64) < 0) {
+			fprintf(stderr, "Failed to send the error status to parent process.\n");
+		}
+
 		die_errno("bind|listen");
 	}
+
+	strcpy(status_event, "READY"); // notify to the calling process that we're in a ready state - they're free to exit.
+	if (write(status_event_fd, status_event, 64) < 0) {
+		fprintf(stderr, "Failed to notify the parent process that we are listening. Continuing anyways.\n");
+	}
+
+	close(status_event_fd);
 
 	for (len = sizeof(listensa); (listenfd = accept(fd, (struct sockaddr *)&listensa, &len)) > 0; len = sizeof(listensa)) {
 		if (agent_socket_get_cred(listenfd, &cred) < 0) {
@@ -288,6 +303,11 @@ static void agent_start(unsigned const char key[KDF_HASH_LEN])
 		return;
 	}
 
+	int agent_status_pipe[2];
+	if(pipe(agent_status_pipe) < 0) {
+		die("Failed to make pipe for agent process.");
+	}
+
 	child = fork();
 	if (child < 0)
 		die_errno("fork(agent)");
@@ -306,8 +326,24 @@ static void agent_start(unsigned const char key[KDF_HASH_LEN])
 		process_disable_ptrace();
 		process_set_name("lpass [agent]");
 
-		agent_run(key);
+		close(agent_status_pipe[0]);
+		agent_run(key, agent_status_pipe[1]);
 		_exit(EXIT_FAILURE);
+	}
+
+	if (child > 0) {
+		close(agent_status_pipe[1]);
+
+		char status[64];
+		if (read(agent_status_pipe[0], status, 64) < 0) { // wait for agent to spawn successfully before exiting.
+			die("Failed to read bringup status from agent");
+		}
+
+		if(strcmp(status, "FAILED") == 0) {
+			die("Failed to bringup agent.");
+		}
+		return;
+		close(agent_status_pipe[0]);
 	}
 }
 
