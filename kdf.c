@@ -42,8 +42,15 @@
 #include <openssl/opensslv.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
+#include <AvailabilityMacros.h>
+#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070
 #include <CommonCrypto/CommonCryptor.h>
 #include <CommonCrypto/CommonKeyDerivation.h>
+#define USE_APPLE_COMMONCRYPTO
+#endif
+#endif
+
+#ifdef USE_APPLE_COMMONCRYPTO
 static void pbkdf2_hash(const char *username, size_t username_len, const char *password, size_t password_len, int iterations, unsigned char hash[KDF_HASH_LEN])
 {
 	if (CCKeyDerivationPBKDF(kCCPBKDF2, password, password_len, (const uint8_t *)username, username_len, kCCPRFHmacAlgSHA256, iterations, hash, KDF_HASH_LEN) == kCCParamError)
