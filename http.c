@@ -282,6 +282,7 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 	 *       lpass -4 or lpass -6
 	 */
 	curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+	curl_easy_setopt(curl, CURLOPT_SSL_CIPHER_LIST, CIPHERS);
 
 	if (lpass_log_level() >= LOG_VERBOSE) {
 		logstream = lpass_log_open();
