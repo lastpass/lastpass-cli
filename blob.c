@@ -406,7 +406,7 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	if (parsed->group[0] == 16)
 		parsed->group[0] = '\0';
 
-	if (strlen(parsed->attachkey_encrypted)) {
+	if ((strlen(parsed->attachkey_encrypted) && strcmp(parsed->attachkey_encrypted, "skipped") != 0)) {
 		parsed->attachkey = cipher_aes_decrypt_base64(
 			parsed->attachkey_encrypted, key);
 	}
