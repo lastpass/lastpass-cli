@@ -37,14 +37,11 @@
 #include "log.h"
 #include "util.h"
 #include "version.h"
-#include "pins.h"
-#include "cipher.h"
 #include <stdarg.h>
 #include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include <signal.h>
-#include <openssl/ssl.h>
 #include <curl/curl.h>
 
 struct mem_chunk {
@@ -101,71 +98,6 @@ static size_t write_data(char *ptr, size_t size, size_t nmemb, void *data)
 	mem->ptr[mem->len] = '\0';
 
 	return len;
-}
-
-static char *hash_subject_pubkey_info(X509 *cert)
-{
-	_cleanup_free_ unsigned char *spki = NULL;
-	char *hash = NULL;
-	EVP_PKEY *pkey;
-	int len;
-
-	pkey = X509_get_pubkey(cert);
-	if (!pkey)
-		return NULL;
-
-	len = i2d_PUBKEY(pkey, &spki);
-	if (len <= 0)
-		goto free_pkey;
-
-	hash = cipher_sha256_b64(spki, len);
-free_pkey:
-	EVP_PKEY_free(pkey);
-	return hash;
-}
-
-static int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
-{
-	int i, j;
-
-	/*
-	 * Preverify checks the platform's certificate store; don't
-	 * allow any chain that doesn't already validate according to
-	 * that.
-	 */
-	if (!preverify_ok)
-		return 0;
-
-	/* check each certificate in the chain against our built-in pinlist. */
-	STACK_OF(X509) *chain = X509_STORE_CTX_get_chain(ctx);
-	if (!chain)
-		die("No certificate chain available");
-
-	bool found = false;
-	for (i=0; i < sk_X509_num(chain); i++) {
-		_cleanup_free_ char *spki_hash = NULL;
-		spki_hash = hash_subject_pubkey_info(sk_X509_value(chain, i));
-		if (!spki_hash)
-			continue;
-
-		for (j=0; j < (int) ARRAY_SIZE(PK_PINS); j++) {
-			if (strcmp(PK_PINS[j], spki_hash) == 0) {
-				found = true;
-				break;
-			}
-		}
-	}
-
-	return found;
-}
-
-static CURLcode pin_keys(CURL *curl, void *sslctx, void *parm)
-{
-	UNUSED(curl);
-	UNUSED(parm);
-	SSL_CTX_set_verify((SSL_CTX *)sslctx, SSL_VERIFY_PEER,
-			   verify_callback);
-	return CURLE_OK;
 }
 #endif
 
@@ -297,7 +229,6 @@ char *http_post_lastpass_v_noexit(const char *server, const char *page, const st
 #else
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2);
 	curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1);
-	curl_easy_setopt(curl, CURLOPT_SSL_CTX_FUNCTION, pin_keys);
 #endif
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
 	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &result);
