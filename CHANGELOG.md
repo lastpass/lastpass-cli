@@ -1,3 +1,10 @@
+# Version 1.6.2
+* Remove certificate pinning; TLS now relies on the system trust store. Older versions fail to connect once LastPass certificates move to the GlobalSign R46/E46 chain, so upgrade is required.
+* Fixed `share userdel` failing to remove groups from shared folders.
+* Fixed `share usermod` failing to update groups in shared folders.
+* Fixed `Error: Could not unbase64 the given bytes` when showing a password (GitHub issues #703, #706).
+* Fixed `add --note-type` always creating a Secure Note instead of the specified note type.
+
 # Version 1.6.1
 * Fixed a bug that prevented groups from being added to shared folders whenever any of the users did not have a public key
 
