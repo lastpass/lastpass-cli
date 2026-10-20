@@ -94,7 +94,7 @@ apt-get --no-install-recommends -yqq install \
   xclip
 ```
 
-* For Debian (testing/experimental) and Ubuntu >= 18.04
+* For Debian (testing/experimental), Ubuntu >= 18.04 and < 22.04
 
 ```
 apt-get --no-install-recommends -yqq install \
@@ -107,6 +107,24 @@ apt-get --no-install-recommends -yqq install \
   libxml2 \
   libxml2-dev  \
   libssl1.1 \
+  pkg-config \
+  ca-certificates \
+  xclip
+```
+
+* For Ubuntu  >= 22.04
+
+```
+apt-get --no-install-recommends -yqq install \
+  bash-completion \
+  build-essential \
+  cmake \
+  libcurl4  \
+  libcurl4-openssl-dev  \
+  libssl-dev  \
+  libxml2 \
+  libxml2-dev  \
+  libssl3 \
   pkg-config \
   ca-certificates \
   xclip
