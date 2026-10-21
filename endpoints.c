@@ -229,6 +229,19 @@ void lastpass_update_account(enum blobsync sync, unsigned const char key[KDF_HAS
 		http_post_add_params(&params, "url", url, NULL);
 	}
 
+	/*
+	 * The redesigned web vault classifies an item as a secure note via a
+	 * plaintext "notetype" param, not the legacy url=http://sn marker.
+	 * Without it, CLI-created notes render as logins. Echo back the type the
+	 * server gave us (preserving structured types on edit), defaulting to a
+	 * generic note for newly created notes that have none yet.
+	 */
+	if (account_is_secure_note(account)) {
+		const char *notetype = (account->notetype && *account->notetype)
+				       ? account->notetype : "Generic";
+		http_post_add_params(&params, "notetype", notetype, NULL);
+	}
+
 	if (strlen(fields)) {
 		http_post_add_params(&params,
 				     "save_all", "1",
