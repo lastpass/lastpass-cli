@@ -33,34 +33,43 @@ fi
 
 command -v lpass >/dev/null 2>&1 || { echo >&2 "I require lpass but it's not installed.  Aborting."; exit 1; }
 
-if [ ! -d ${outdir} ]; then
+# shellcheck disable=SC2034   # ignore unused version variables
+IFS='.' read -r lpass_ver_major lpass_ver_minor lpass_ver_patch lpass_ver_vcs <<< "$(lpass --version | sed 's/LastPass CLI v//')"
+if [ "${lpass_ver_major}" -gt 1 ] || [ "${lpass_ver_major}" -eq 1 ] && [ "${lpass_ver_minor}" -gt 6 ]; then
+  path_format="%/_as%/_ag%_an"
+else
+  path_format="%/as%/ag%an"
+fi
+
+if [ ! -d "${outdir}" ]; then
   echo "${outdir} does not exist. Exiting."
   exit 1
 fi
 
 if ! lpass status; then
-  if [ -z ${email} ]; then
+  if [ -z "${email}" ]; then
     echo "No login data found, Please login with -l or use lpass login before."
     exit 1;
   fi
-  lpass login ${email}
+  lpass login "${email}"
 fi
 
-if [ -z ${id} ]; then
-  ids=$(lpass ls | sed -n "s/^.*id:\s*\([0-9]*\).*$/\1/p")
+if [ -z "${id}" ]; then
+  # Get the ids of items that might have an attachment
+  # remove trailing carriage return if it's there
+  ids=$(lpass export --fields=id,attachpresent | grep ',1' | sed 's/,1\r\{0,1\}//')
 else
   ids=${id}
 fi
 
 for id in ${ids}; do
-  show=$(lpass show ${id})
+  show=$(lpass show "${id}")
   attcount=$(echo "${show}" | grep -c "att-")
-  path=$(lpass show --format="%/as%/ag%an" ${id} | uniq | tail -1)
+  path=$(lpass show --format="${path_format}" "${id}" | uniq | tail -1)
 
-  until [  ${attcount} -lt 1 ]; do
-    att=`lpass show ${id} | grep att- | sed "${attcount}q;d" | tr -d :`
-    attid=$(echo ${att} | awk '{print $1}')
-    attname=$(echo ${att} | awk '{print $2}')
+  until [ "${attcount}" -lt 1 ]; do
+    # switch to read because the original way truncated filenames containing spaces
+    read -r attid attname <<< "$(lpass show "${id}" | grep att- | sed "${attcount}q;d" | tr -d :)"
 
     if [[ -z  ${attname}  ]]; then
       attname=${path#*/}
@@ -74,11 +83,11 @@ for id in ${ids}; do
         out=${outdir}/${path}/${attcount}_${attname}
     fi
 
-    echo ${id} - ${path} ": " ${attid} "-" ${attname} " > " ${out}
+    echo "${id} - ${path} :  ${attid} - ${attname}  >  ${out}"
 
-    lpass show --attach=${attid} ${id} --quiet > "${out}"
+    lpass show "--attach=${attid}" "${id}" --quiet > "${out}"
 
-    let attcount-=1
+    (( attcount-=1 )) || true
   done
 done
 
