@@ -92,7 +92,8 @@ static void reencrypt(struct session *session,
 	show_status_bar("Re-encrypting", i++, n_fields);
 
 	/* decrypt and re-encrypt RSA sharing key */
-	cipher_decrypt_private_key(info->privkey_encrypted, key, &tmp);
+	if (!cipher_decrypt_private_key(info->privkey_encrypted, key, &tmp))
+		die("Could not decrypt server private key!");
 	if (tmp.len != session->private_key.len ||
 	    memcmp(session->private_key.key, tmp.key, session->private_key.len)) {
 		die("Server and session private key don't match! Try lpass sync first.");

@@ -131,6 +131,17 @@ static void init_test_data()
 	account->pwprotect = true;
 	list_add_tail(&account->list, &test_data.blob.account_head);
 
+	/* AES-256-GCM fields written by another client */
+	account = new_account();
+	account->id = xstrdup("0005");
+	account->name_encrypted = xstrdup("#EBAQEBAQEBAQEBAQ|TQxU3iO1cnw+UTY6w9G4QQRHTAE41EA2vMN68WHET6M=");
+	account->group_encrypted = xstrdup("#ERERERERERERERER|XUB7m/yX/zchx2/l9quxrnWv5Lchzr9jWn8=");
+	account->username_encrypted = xstrdup("#EhISEhISEhISEhIS|GU9542lNwLjS4hHOUUA3+iws7Ndlv6uRDvFcCbfbCw==");
+	account->password_encrypted = xstrdup("#ExMTExMTExMTExMT|yjI68i+tqKXdCXKKuX9tugbMXeFJNh8fGiPlIHU7DNx8");
+	account->note_encrypted = xstrdup("#FBQUFBQUFBQUFBQU|AUbZH6dQqa/UnkoJVaPDJfIoY+YElkJ4");
+	account_set_url(account, "https://gcm.example.com/", key, feature_flag);
+	list_add_tail(&account->list, &test_data.blob.account_head);
+
 	is_initialized = true;
 }
 

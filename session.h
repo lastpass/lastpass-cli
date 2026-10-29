@@ -27,7 +27,7 @@ void session_free(struct session *session);
 bool session_is_valid(struct session *session);
 struct session *session_load(unsigned const char key[KDF_HASH_LEN]);
 void session_save(struct session *session, unsigned const char key[KDF_HASH_LEN]);
-void session_set_private_key(struct session *session, unsigned const char key[KDF_HASH_LEN], const char *key_hex);
+bool session_set_private_key(struct session *session, unsigned const char key[KDF_HASH_LEN], const char *key_hex);
 void session_kill();
 
 #endif

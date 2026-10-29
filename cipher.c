@@ -35,6 +35,8 @@
  */
 #include "cipher.h"
 #include "util.h"
+#include "log.h"
+#include <stdbool.h>
 #include <sys/mman.h>
 #include <openssl/evp.h>
 #include <openssl/aes.h>
@@ -145,44 +147,199 @@ int cipher_rsa_encrypt(const char *plaintext,
 					public_key, out_crypttext, out_len);
 }
 
-char *cipher_aes_decrypt(const unsigned char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
+struct aes_layout {
+	enum cipher_aes_mode mode;
+	unsigned char marker;
+	size_t iv_len;
+	size_t min_data_len;
+	size_t data_multiple;
+};
+
+/* marker + iv + data; legacy ECB has no marker and is handled separately */
+static const struct aes_layout aes_layouts[] = {
+	{ CIPHER_AES_GCM, CIPHER_MARKER_GCM, AES_GCM_IV_LEN, AES_GCM_TAG_LEN, 1 },
+	{ CIPHER_AES_CBC, CIPHER_MARKER_CBC, AES_BLOCK_SIZE, AES_BLOCK_SIZE, AES_BLOCK_SIZE },
+};
+
+static const struct aes_layout *layout_of_marker(unsigned char marker)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(aes_layouts); i++) {
+		if (aes_layouts[i].marker == marker)
+			return &aes_layouts[i];
+	}
+	return NULL;
+}
+
+bool cipher_is_marker(unsigned char byte)
+{
+	return layout_of_marker(byte) != NULL;
+}
+
+/* structural match on raw bytes: marker, then iv, then whole data */
+static const struct aes_layout *layout_fitting(const unsigned char *ciphertext, size_t len)
+{
+	size_t i;
+
+	for (i = 0; i < ARRAY_SIZE(aes_layouts); i++) {
+		const struct aes_layout *layout = &aes_layouts[i];
+		size_t header = 1 + layout->iv_len;
+
+		if (len >= header + layout->min_data_len &&
+		    ciphertext[0] == layout->marker &&
+		    (len - header) % layout->data_multiple == 0)
+			return layout;
+	}
+	return NULL;
+}
+
+static bool is_aes256_ecb(size_t len)
+{
+	return len && len % AES_BLOCK_SIZE == 0;
+}
+
+/*
+ * Structural guess only. An undecryptable legacy ECB item starting with '#'
+ * is labelled GCM and re-encoded as '#iv|data' (accepted cross-client risk).
+ */
+static enum cipher_aes_mode cipher_aes_mode_of(const unsigned char *ciphertext, size_t len)
+{
+	const struct aes_layout *layout = layout_fitting(ciphertext, len);
+
+	return layout ? layout->mode : CIPHER_AES_ECB;
+}
+
+static char *aes256_padded_decrypt(const EVP_CIPHER *cipher, const unsigned char *iv,
+				   const unsigned char *data, size_t len,
+				   const unsigned char key[KDF_HASH_LEN])
 {
 	EVP_CIPHER_CTX *ctx;
 	char *plaintext;
+	size_t buf_len = len + AES_BLOCK_SIZE + 1;
+	size_t ptext_len;
 	int out_len;
-
-	if (!len)
-		return NULL;
 
 	ctx = EVP_CIPHER_CTX_new();
 	if (!ctx)
 		return NULL;
 
-	plaintext = xcalloc(len + AES_BLOCK_SIZE + 1, 1);
-	if (len >= 33 && len % 16 == 1 && ciphertext[0] == '!') {
-		if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, (unsigned char *)(ciphertext + 1)))
-			goto error;
-		ciphertext += 17;
-		len -= 17;
-	} else {
-		if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_ecb(), NULL, key, NULL))
-			goto error;
-	}
-	if (!EVP_DecryptUpdate(ctx, (unsigned char *)plaintext, &out_len, (unsigned char *)ciphertext, len))
+	plaintext = xcalloc(buf_len, 1);
+	if (!EVP_DecryptInit_ex(ctx, cipher, NULL, key, iv))
 		goto error;
-	len = out_len;
-	if (!EVP_DecryptFinal_ex(ctx, (unsigned char *)(plaintext + out_len), &out_len))
+	if (!EVP_DecryptUpdate(ctx, (unsigned char *)plaintext, &out_len, data, len))
 		goto error;
-	len += out_len;
-	plaintext[len] = '\0';
+	ptext_len = out_len;
+	if (!EVP_DecryptFinal_ex(ctx, (unsigned char *)(plaintext + ptext_len), &out_len))
+		goto error;
+	ptext_len += out_len;
+	plaintext[ptext_len] = '\0';
 	EVP_CIPHER_CTX_free(ctx);
 	return plaintext;
 
 error:
 	EVP_CIPHER_CTX_free(ctx);
-	secure_clear(plaintext, len + AES_BLOCK_SIZE + 1);
+	secure_clear(plaintext, buf_len);
 	free(plaintext);
 	return NULL;
+}
+
+static char *aes256_gcm_decrypt(const unsigned char *ciphertext, size_t len,
+				const unsigned char key[KDF_HASH_LEN], bool *auth_failed)
+{
+	const unsigned char *iv = ciphertext + 1;
+	const unsigned char *data = iv + AES_GCM_IV_LEN;
+	const unsigned char *tag;
+	size_t data_len;
+	EVP_CIPHER_CTX *ctx;
+	char *plaintext;
+	size_t ptext_len;
+	int out_len;
+
+	*auth_failed = false;
+	if (len < AES_GCM_MIN_LEN)
+		return NULL;
+	data_len = len - AES_GCM_MIN_LEN;
+	tag = data + data_len;
+
+	ctx = EVP_CIPHER_CTX_new();
+	if (!ctx)
+		return NULL;
+
+	plaintext = xcalloc(data_len + 1, 1);
+	if (!EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL))
+		goto error;
+	if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, AES_GCM_IV_LEN, NULL) <= 0)
+		goto error;
+	if (!EVP_DecryptInit_ex(ctx, NULL, NULL, key, iv))
+		goto error;
+	if (!EVP_DecryptUpdate(ctx, (unsigned char *)plaintext, &out_len, data, data_len))
+		goto error;
+	ptext_len = out_len;
+	if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, AES_GCM_TAG_LEN, (void *)tag) <= 0)
+		goto error;
+	if (EVP_DecryptFinal_ex(ctx, (unsigned char *)(plaintext + ptext_len), &out_len) <= 0) {
+		*auth_failed = true;
+		goto error;
+	}
+	ptext_len += out_len;
+	plaintext[ptext_len] = '\0';
+	EVP_CIPHER_CTX_free(ctx);
+	return plaintext;
+
+error:
+	EVP_CIPHER_CTX_free(ctx);
+	secure_clear(plaintext, data_len + 1);
+	free(plaintext);
+	return NULL;
+}
+
+static char *aes256_decrypt(const unsigned char *ciphertext, size_t len,
+			    const unsigned char key[KDF_HASH_LEN],
+			    bool allow_ecb, enum cipher_aes_mode *mode)
+{
+	const struct aes_layout *layout = layout_fitting(ciphertext, len);
+	enum cipher_aes_mode found = layout ? layout->mode : CIPHER_AES_ECB;
+	bool auth_failed = false;
+	char *plaintext = NULL;
+
+	if (layout && layout->mode == CIPHER_AES_GCM)
+		plaintext = aes256_gcm_decrypt(ciphertext, len, key, &auth_failed);
+	else if (layout)
+		plaintext = aes256_padded_decrypt(EVP_aes_256_cbc(), ciphertext + 1,
+						  ciphertext + 1 + layout->iv_len,
+						  len - 1 - layout->iv_len, key);
+	if (!plaintext && allow_ecb && is_aes256_ecb(len)) {
+		plaintext = aes256_padded_decrypt(EVP_aes_256_ecb(), NULL, ciphertext, len, key);
+		if (plaintext)
+			found = CIPHER_AES_ECB;
+	}
+	if (!plaintext && auth_failed)
+		lpass_log(LOG_WARNING, "AES-GCM authentication failed\n");
+
+	if (mode)
+		*mode = found;
+	return plaintext;
+}
+
+/*
+ * The binary blob carries raw ciphertext, where legacy ECB data may start
+ * with '#' or '!', so try each structurally possible mode in turn.
+ *
+ * A '#' item failing the GCM tag is retried as ECB when len % 16 == 0, like
+ * web and mobile do (accepted risk, no way to disambiguate). Such a failure
+ * decrypts to garbage ~1/256 of the time, without the auth failure warning.
+ */
+char *cipher_aes_decrypt_mode(const unsigned char *ciphertext, size_t len,
+			      const unsigned char key[KDF_HASH_LEN],
+			      enum cipher_aes_mode *mode)
+{
+	return aes256_decrypt(ciphertext, len, key, true, mode);
+}
+
+char *cipher_aes_decrypt(const unsigned char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
+{
+	return cipher_aes_decrypt_mode(ciphertext, len, key, NULL);
 }
 
 static
@@ -243,7 +400,7 @@ size_t cipher_aes_encrypt(const char *plaintext,
 	in_len = strlen(plaintext);
 
 	ciphertext = xcalloc(in_len + AES_BLOCK_SIZE * 2 + 1, 1);
-	ciphertext[0] = '!';
+	ciphertext[0] = CIPHER_MARKER_CBC;
 	len = 1;
 
 	memcpy(ciphertext + len, iv, AES_BLOCK_SIZE);
@@ -286,53 +443,73 @@ error:
 	die("Could not base64 the given bytes.");
 }
 
-char *cipher_base64(const unsigned char *bytes, size_t len)
+static char *base64_with_iv(const unsigned char *bytes, size_t len, size_t iv_len)
 {
-	_cleanup_free_ char *iv = NULL;
-	_cleanup_free_ char *data = NULL;
+	_cleanup_free_ char *iv = base64(bytes + 1, iv_len);
+	_cleanup_free_ char *data = base64(bytes + 1 + iv_len, len - 1 - iv_len);
 	char *output;
 
-	if (len >= 33 && bytes[0] == '!' && len % 16 == 1) {
-		iv = base64(bytes + 1, 16);
-		data = base64(bytes + 17, len - 17);
-		xasprintf(&output, "!%s|%s", iv, data);
-		return output;
-	}
+	xasprintf(&output, "%c%s|%s", bytes[0], iv, data);
+	return output;
+}
+
+char *cipher_base64_mode(const unsigned char *bytes, size_t len, enum cipher_aes_mode mode)
+{
+	const struct aes_layout *layout = layout_fitting(bytes, len);
+
+	if (layout && layout->mode == mode)
+		return base64_with_iv(bytes, len, layout->iv_len);
 	return base64(bytes, len);
 }
 
-size_t unbase64(const char *bytes, unsigned char **unbase64)
+char *cipher_base64(const unsigned char *bytes, size_t len)
+{
+	return cipher_base64_mode(bytes, len, cipher_aes_mode_of(bytes, len));
+}
+
+static size_t unbase64_noexit(const char *bytes, unsigned char **unbase64)
 {
 	size_t len;
+	int nread;
 	BIO *memory, *b64;
 	unsigned char *buffer;
 
 	len = strlen(bytes);
 	if (!len)
-		goto error;
+		return 0;
 	b64 = BIO_new(BIO_f_base64());
 	memory = BIO_new_mem_buf((char *)bytes, len);
-	if (!b64 || !memory)
-		goto error;
+	if (!b64 || !memory) {
+		BIO_free_all(b64);
+		BIO_free_all(memory);
+		return 0;
+	}
 	b64 = BIO_push(b64, memory);
-	if (!b64)
-		goto error;
 	BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL);
 	buffer = xcalloc(len + 1, 1);
-	len = BIO_read(b64, buffer, len);
-	if ((int)len <= 0)
-		goto error;
-	buffer[len] = '\0';
-
+	nread = BIO_read(b64, buffer, len);
 	BIO_free_all(b64);
-	*unbase64 = buffer;
-	return len;
+	if (nread <= 0) {
+		free(buffer);
+		return 0;
+	}
+	buffer[nread] = '\0';
 
-error:
-	die("Could not unbase64 the given bytes.");
+	*unbase64 = buffer;
+	return nread;
 }
 
-size_t cipher_unbase64(const char *ciphertext, unsigned char **b64data)
+size_t unbase64(const char *bytes, unsigned char **unbase64)
+{
+	size_t len = unbase64_noexit(bytes, unbase64);
+
+	if (!len)
+		die("Could not unbase64 the given bytes.");
+	return len;
+}
+
+static size_t unbase64_with_iv(const char *ciphertext, const struct aes_layout *layout,
+			       unsigned char **b64data)
 {
 	_cleanup_free_ char *copy = NULL;
 	_cleanup_free_ unsigned char *iv = NULL;
@@ -341,27 +518,40 @@ size_t cipher_unbase64(const char *ciphertext, unsigned char **b64data)
 	char *pipe;
 	size_t iv_len, data_len, len;
 
-	if (!strlen(ciphertext))
-		return 0;
-
-	if (ciphertext[0] != '!')
-		return unbase64(ciphertext, b64data);
-
 	copy = xstrdup(&ciphertext[1]);
 	pipe = strchr(copy, '|');
 	if (!pipe)
 		return 0;
 	*pipe = '\0';
-	iv_len = unbase64(copy, &iv);
-	data_len = unbase64(pipe + 1, &data);
-	len = iv_len + data_len + 1 /* '!' */;
+	if (!*copy || !pipe[1])
+		return 0;
+	iv_len = unbase64_noexit(copy, &iv);
+	if (iv_len != layout->iv_len)
+		return 0;
+	data_len = unbase64_noexit(pipe + 1, &data);
+	if (data_len < layout->min_data_len || data_len % layout->data_multiple)
+		return 0;
+	len = 1 + iv_len + data_len;
 	unbase64_ciphertext = xcalloc(len, 1);
-	unbase64_ciphertext[0] = '!';
+	unbase64_ciphertext[0] = ciphertext[0];
 	memcpy(&unbase64_ciphertext[1], iv, iv_len);
 	memcpy(&unbase64_ciphertext[1 + iv_len], data, data_len);
 
 	*b64data = unbase64_ciphertext;
 	return len;
+}
+
+size_t cipher_unbase64(const char *ciphertext, unsigned char **b64data)
+{
+	const struct aes_layout *layout;
+
+	if (!strlen(ciphertext))
+		return 0;
+
+	layout = layout_of_marker(ciphertext[0]);
+	if (layout)
+		return unbase64_with_iv(ciphertext, layout, b64data);
+	return unbase64(ciphertext, b64data);
 }
 
 char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[KDF_HASH_LEN])
@@ -373,7 +563,9 @@ char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[
 	if (!len)
 		return NULL;
 
-	return cipher_aes_decrypt(unbase64_ciphertext, len, key);
+	/* a marker in text form fixes the mode, so never retry as ECB */
+	return aes256_decrypt(unbase64_ciphertext, len, key,
+			      !cipher_is_marker(ciphertext[0]), NULL);
 }
 
 char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
@@ -400,9 +592,10 @@ char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
  *
  * On success, the resulting key is stored in out_key and mlock()ed.
  * If there is a non-fatal error (or no key), the resulting structure
- * will have len = 0.
+ * will have len = 0.  Returns false on such an error, true on success
+ * or when there is no key.
  */
-void cipher_decrypt_private_key(const char *key_hex,
+bool cipher_decrypt_private_key(const char *key_hex,
 				unsigned const char key[KDF_HASH_LEN],
 				struct private_key *out_key)
 {
@@ -421,10 +614,10 @@ void cipher_decrypt_private_key(const char *key_hex,
 
 	len = strlen(key_hex);
 	if (!len)
-		return;
+		return true;
 
-	if (key_hex[0] == '!') {
-		/* v2 format */
+	if (cipher_is_marker(key_hex[0])) {
+		/* v2 (CBC) / v3 (GCM) format */
 		decrypted_key = cipher_aes_decrypt_base64(
 			key_hex, key);
 	} else {
@@ -435,7 +628,7 @@ void cipher_decrypt_private_key(const char *key_hex,
 		/* v1 format */
 		len += 16 /* IV */ + 1 /* bang symbol */;
 		encrypted_key = xcalloc(len + 1, 1);
-		encrypted_key[0] = '!';
+		encrypted_key[0] = CIPHER_MARKER_CBC;
 		memcpy(&encrypted_key[1], key, 16);
 		encrypted_key_start = &encrypted_key[17];
 		hex_to_bytes(key_hex, &encrypted_key_start);
@@ -444,14 +637,14 @@ void cipher_decrypt_private_key(const char *key_hex,
 
 	if (!decrypted_key) {
 		warn("Could not decrypt private key.");
-		return;
+		return false;
 	}
 
 	start = strstr(decrypted_key, start_str);
 	end = strstr(decrypted_key, end_str);
 	if (!start || !end || end <= start) {
 		warn("Could not decode decrypted private key.");
-		return;
+		return false;
 	}
 
 	start += strlen(start_str);
@@ -467,6 +660,7 @@ void cipher_decrypt_private_key(const char *key_hex,
 
 	#undef start_str
 	#undef end_str
+	return true;
 }
 
 /*

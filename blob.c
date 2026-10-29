@@ -37,6 +37,7 @@
 #include "config.h"
 #include "endpoints.h"
 #include "cipher.h"
+#include "log.h"
 #include "util.h"
 #include "upload-queue.h"
 #include "version.h"
@@ -287,23 +288,27 @@ static char *read_plain_string(struct chunk *chunk)
 	return xstrndup((char *) item.data, item.len);
 }
 
-static char *read_crypt_string(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN], char **stored_base64)
+static char *read_crypt_string(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN], char **stored_base64,
+			       unsigned int *undecryptable)
 {
 	struct item item;
+	enum cipher_aes_mode mode;
 	char *ptext;
 
 	if (!read_item(chunk, &item))
 		return NULL;
+
+	ptext = cipher_aes_decrypt_mode(item.data, item.len, key, &mode);
+	/* mode is the one that decrypted, so ECB values starting with '#' keep plain base64 */
 	if (stored_base64)
-		*stored_base64 = cipher_base64(item.data, item.len);
+		*stored_base64 = cipher_base64_mode(item.data, item.len, mode);
 
-	if (item.len == 0)
-		return xstrdup("");
-
-	ptext = cipher_aes_decrypt(item.data, item.len, key);
-	if (!ptext)
+	if (!ptext) {
 		/* don't fail whole blob if this item cannot be decrypted */
+		if (item.len)
+			(*undecryptable)++;
 		return xstrdup("");
+	}
 
 	return ptext;
 }
@@ -321,7 +326,13 @@ static int read_boolean(struct chunk *chunk)
 }
 
 static bool check_next_entry_encrypted(struct chunk *chunk) {
-	return (chunk->data + sizeof(uint32_t))[0] == '!';
+	unsigned char marker;
+
+	if (chunk->len <= sizeof(uint32_t))
+		return false;
+	marker = (chunk->data + sizeof(uint32_t))[0];
+
+	return cipher_is_marker(marker);
 }
 
 #define entry_plain_at(base, var) do { \
@@ -345,7 +356,7 @@ static bool check_next_entry_encrypted(struct chunk *chunk) {
 	parsed->var = __entry_val__; \
 	} while (0)
 #define entry_crypt_at(base, var) do { \
-	char *__entry_val__ = read_crypt_string(chunk, key, &base->var##_encrypted); \
+	char *__entry_val__ = read_crypt_string(chunk, key, &base->var##_encrypted, undecryptable); \
 	if (!__entry_val__) \
 		goto error; \
 	base->var = __entry_val__; \
@@ -357,7 +368,8 @@ static bool check_next_entry_encrypted(struct chunk *chunk) {
 		goto error; \
 	} while (0)
 
-static struct account *account_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN])
+static struct account *account_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN],
+				     unsigned int *undecryptable)
 {
 	struct account *parsed = new_account();
 
@@ -427,7 +439,8 @@ error:
 	return NULL;
 }
 
-static struct field *field_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN])
+static struct field *field_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN],
+				 unsigned int *undecryptable)
 {
 	struct field *parsed = new0(struct field, 1);
 
@@ -446,7 +459,8 @@ error:
 	return NULL;
 }
 
-static struct field *app_field_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN])
+static struct field *app_field_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN],
+				     unsigned int *undecryptable)
 {
 	struct field *parsed = new0(struct field, 1);
 
@@ -511,7 +525,8 @@ error:
 	return NULL;
 }
 
-static struct app *app_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN])
+static struct app *app_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN],
+			     unsigned int *undecryptable)
 {
 	struct app *app = new_app();
 	struct account *parsed = &app->account;
@@ -600,6 +615,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 	struct attach *attach;
 	struct blob *parsed;
 	_cleanup_free_ char *versionstr = NULL;
+	unsigned int undecryptable = 0;
 
 	parsed = new0(struct blob, 1);
 	parsed->local_version = false;
@@ -611,7 +627,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 			versionstr = xstrndup((char *) chunk.data, chunk.len);
 			parsed->version = strtoull(versionstr, NULL, 10);
 		} else if (!strcmp(chunk.name, "ACCT")) {
-			account = account_parse(&chunk, last_share ? last_share->key : key);
+			account = account_parse(&chunk, last_share ? last_share->key : key, &undecryptable);
 			if (!account)
 				goto error;
 
@@ -629,7 +645,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 			if (!account)
 				goto error;
 
-			field = field_parse(&chunk, last_share ? last_share->key : key);
+			field = field_parse(&chunk, last_share ? last_share->key : key, &undecryptable);
 			if (!field)
 				goto error;
 
@@ -642,13 +658,13 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 			if (share)
 				list_add_tail(&share->list, &parsed->share_head);
 		} else if (!strcmp(chunk.name, "AACT")) {
-			app = app_parse(&chunk, last_share ? last_share->key : key);
+			app = app_parse(&chunk, last_share ? last_share->key : key, &undecryptable);
 			if (app)
 				list_add_tail(&app->account.list, &parsed->account_head);
 		} else if (!strcmp(chunk.name, "AACF")) {
 			if (!app)
 				goto error;
-			field = app_field_parse(&chunk, last_share ? last_share->key : key);
+			field = app_field_parse(&chunk, last_share ? last_share->key : key, &undecryptable);
 			if (!field)
 				goto error;
 			list_add_tail(&field->list, &app->account.field_head);
@@ -675,6 +691,8 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 
 	if (!versionstr)
 		goto error;
+	if (undecryptable)
+		lpass_log(LOG_WARNING, "%u encrypted field(s) could not be decrypted.\n", undecryptable);
 	return parsed;
 
 error:
@@ -746,6 +764,8 @@ static void write_crypt_string(struct buffer *buffer, char *enc_str)
 	 * the saved blob, so un-base64.
 	 */
 	len = cipher_unbase64(enc_str, &encrypted);
+	if (!len && *enc_str)
+		die("Malformed encrypted field, cannot write blob.");
 	write_item(buffer, (char *) encrypted, len);
 }
 
