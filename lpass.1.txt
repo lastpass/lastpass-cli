@@ -113,7 +113,8 @@ Logging In
 The 'login' subcommand will initialize a local cache and configuration folder,
 then attempt to authenticate itself with the LastPass servers, using the
 provided command line credentials or by interactively prompting (in the case of
-multifactor or an unprovided password). The '--trust' option will cause
+multifactor or an unprovided password). FIDO2 multifactor login is supported
+with a compatible authenticator such as a YubiKey. The '--trust' option will cause
 subsequent logins to not require multifactor authentication. If the
 '--plaintext-key' option is specified, the decryption key will be saved to the
 hard disk in plaintext.  Please note that use of this option is discouraged
