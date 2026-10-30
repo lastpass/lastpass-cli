@@ -113,7 +113,9 @@ int cmd_login(int argc, char **argv)
 		error = NULL;
 		session = lastpass_login(username, hex, key, iterations, &error, trust);
 		if (!session_is_valid(session) && error &&
-		    !strcmp(error, "Aborted FIDO2 authentication.")) {
+		    (!strcmp(error, "Aborted FIDO2 authentication.") ||
+		     !strcmp(error, "LastPass returned a non-XML response during login.") ||
+		     !strcmp(error, "LastPass returned a non-XML response during FIDO2 authentication."))) {
 			terminal_fprintf(stderr, TERMINAL_FG_RED TERMINAL_BOLD
 					 "Error" TERMINAL_RESET ": %s\n", error);
 			secure_clear(password, strlen(password));

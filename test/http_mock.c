@@ -219,6 +219,9 @@ static char *login(char **argv, size_t *len)
 				"fido2AuthToken=\"" TEST_FIDO_TOKEN "\" "
 				"assertionOptions=\"{&quot;challenge&quot;:&quot;AQID&quot;,&quot;timeout&quot;:300000,&quot;rpId&quot;:&quot;lastpass.com&quot;,&quot;allowCredentials&quot;:[{&quot;type&quot;:&quot;public-key&quot;,&quot;id&quot;:&quot;AQID&quot;}],&quot;userVerification&quot;:&quot;preferred&quot;}\"/>"
 				"</response>");
+		} else if (getenv("LPASS_TEST_FIDO_HTML_RESPONSE")) {
+			response = xstrdup("<!DOCTYPE html><html><head><link></head>"
+				"<body><header><img></header></body></html>");
 		} else if (strcmp(credential, TEST_FIDO_CREDENTIAL) ||
 			   !param_is(argv, "provider", "lastpassauth") ||
 			   !param_is(argv, "otp", "") ||

@@ -16,6 +16,20 @@ function test_fido2_login
 	assertz $?
 }
 
+function test_fido2_html_response
+{
+	local output status
+	LPASS_HOME="$(cd "$(dirname "$0")/.." && pwd)/tmp/fido2-html-test-home"
+	export LPASS_HOME
+	output=$(LPASS_TEST_FIDO_HTML_RESPONSE=1 LPASS_ASKPASS=./askpass.sh \
+		lpass login --trust fido@example.com 2>&1)
+	status=$?
+	assert_ne $status 0 || return 1
+	[[ "$output" == *"LastPass returned a non-XML response during FIDO2 authentication."* ]] || return 1
+	[[ "$output" != *"parser error"* ]] || return 1
+	[[ "$output" != *"double free"* ]]
+}
+
 function test_fido2_cancel
 {
 	local output status

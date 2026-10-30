@@ -43,6 +43,7 @@
 #include "version.h"
 #include "terminal.h"
 #include "fido2.h"
+#include <ctype.h>
 #include <sys/utsname.h>
 #include <string.h>
 
@@ -101,6 +102,14 @@ static inline void append_post(char **args, const char *name, const char *val)
 		++last;
 	*last = (char *)name;
 	*(last + 1) = (char *)val;
+}
+
+static bool is_xml_login_response(const char *reply)
+{
+	while (*reply && isspace((unsigned char)*reply))
+		++reply;
+	return !strncmp(reply, "<response", sizeof("<response") - 1) ||
+		!strncmp(reply, "<?xml", sizeof("<?xml") - 1);
 }
 
 static char *calculate_trust_id(bool force)
@@ -171,6 +180,9 @@ static bool ordinary_login(const char *login_server, const unsigned char key[KDF
 	*reply = http_post_lastpass_v(login_server, "login.php", NULL, NULL, args);
 	if (!*reply)
 		return error_post(message, session);
+	if (!is_xml_login_response(*reply))
+		return error_other(message, session,
+				   "LastPass returned a non-XML response during login.");
 
 	*session = xml_ok_session(*reply, key);
 	if (*session) {
@@ -302,6 +314,9 @@ static bool fido2_login(const char *login_server, const unsigned char key[KDF_HA
 	*reply = http_post_lastpass_v(login_server, "login.php", NULL, NULL, args);
 	if (!*reply)
 		return error_post(message, session);
+	if (!is_xml_login_response(*reply))
+		return error_other(message, session,
+				   "LastPass returned a non-XML response during FIDO2 authentication.");
 
 	*session = xml_ok_session(*reply, key);
 	if (*session) {
