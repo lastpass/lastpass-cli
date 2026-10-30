@@ -45,6 +45,8 @@ char *fido2_login_credential(const char *assertion_options, const char *origin,
 }
 #elif defined(HAVE_LIBFIDO2)
 
+#include <errno.h>
+
 static void fido_dev_freep(fido_dev_t **device)
 {
 	if (*device)
@@ -350,6 +352,55 @@ static char *assertion_for_device(const char *path, fido_assert_t *assertion,
 	return xstrdup("ok");
 }
 
+static bool select_authenticator(const fido_dev_info_t *devices,
+				 size_t n_devices, size_t *selected,
+				 char **error)
+{
+	_cleanup_free_ char *input = NULL;
+	char *end;
+	unsigned long choice;
+
+	if (n_devices == 1) {
+		*selected = 0;
+		return true;
+	}
+
+	terminal_fprintf(stderr, "Multiple FIDO2 authenticators were found:\n");
+	for (size_t i = 0; i < n_devices; ++i) {
+		const fido_dev_info_t *info = fido_dev_info_ptr(devices, i);
+		const char *manufacturer = fido_dev_info_manufacturer_string(info);
+		const char *product = fido_dev_info_product_string(info);
+
+		terminal_fprintf(stderr, "  %zu) %s%s%s\n", i + 1,
+				 manufacturer ? manufacturer : "",
+				 manufacturer && product ? " " : "",
+				 product ? product :
+				 manufacturer ? "" : "Unknown authenticator");
+	}
+
+	for (;;) {
+		free(input);
+		input = password_prompt("FIDO2 authenticator", NULL,
+				       "Enter the number of the authenticator to use (1-%zu).",
+				       n_devices);
+		if (!input) {
+			if (error)
+				*error = xstrdup("Aborted FIDO2 authenticator selection.");
+			return false;
+		}
+
+		errno = 0;
+		choice = strtoul(input, &end, 10);
+		if (errno != ERANGE && end != input && *end == '\0' &&
+		    choice >= 1 && choice <= n_devices) {
+			*selected = choice - 1;
+			return true;
+		}
+		terminal_fprintf(stderr, "Please enter a number from 1 to %zu.\n",
+				 n_devices);
+	}
+}
+
 char *fido2_login_credential(const char *assertion_options, const char *origin,
 			     char **error)
 {
@@ -369,7 +420,7 @@ char *fido2_login_credential(const char *assertion_options, const char *origin,
 	_cleanup_fido_dev_info_free_ fido_dev_info_t *devices = NULL;
 	_cleanup_fido_assert_free_ fido_assert_t *assertion = NULL;
 	const char *server_origin;
-	size_t challenge_len, n_devices = 0, n_credentials = 0;
+	size_t challenge_len, n_devices = 0, n_credentials = 0, selected_device;
 	fido_opt_t uv_required;
 	char *result;
 
@@ -461,8 +512,11 @@ char *fido2_login_credential(const char *assertion_options, const char *origin,
 		}
 	}
 
+	if (!select_authenticator(devices, n_devices, &selected_device, error))
+		return NULL;
 	{
-		const fido_dev_info_t *info = fido_dev_info_ptr(devices, 0);
+		const fido_dev_info_t *info = fido_dev_info_ptr(devices,
+								 selected_device);
 		_cleanup_free_ char *device_error = NULL;
 		_cleanup_free_ char *result = assertion_for_device(
 			fido_dev_info_path(info), assertion, uv_required,
