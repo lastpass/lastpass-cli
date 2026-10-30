@@ -41,7 +41,10 @@
 
 #define TEST_USER "user@example.com"
 #define TEST_PASS "123456"
+#define TEST_FIDO_USER "fido@example.com"
 #define TEST_UID "57747756"
+#define TEST_FIDO_TOKEN "fido-test-token"
+#define TEST_FIDO_CREDENTIAL "{\"id\":\"AQID\",\"extensions\":{},\"type\":\"public-key\",\"rawId\":\"AQID\",\"response\":{\"authenticatorData\":\"AQID\",\"clientDataJson\":\"AQID\",\"signature\":\"AQID\",\"userHandle\":null}}"
 
 struct test_data
 {
@@ -51,6 +54,7 @@ struct test_data
 	int iterations;
 	unsigned char key[KDF_HASH_LEN];
 	char login_hash[KDF_HEX_LEN];
+	char fido_login_hash[KDF_HEX_LEN];
 	struct blob blob;
 };
 
@@ -72,6 +76,8 @@ static void init_test_data()
 	test_data.iterations = 1000;
 
 	kdf_login_key(test_data.username, test_data.password, test_data.iterations, test_data.login_hash);
+	kdf_login_key(TEST_FIDO_USER, test_data.password, test_data.iterations,
+		       test_data.fido_login_hash);
 	kdf_decryption_key(test_data.username, test_data.password, test_data.iterations, test_data.key);
 
 	test_data.blob.version = 1;
@@ -155,6 +161,17 @@ static char *get_param(char **argv, char *name)
 	return NULL;
 }
 
+static bool param_is(char **argv, char *name, const char *expected)
+{
+	char *value = get_param(argv, name);
+	return value && !strcmp(value, expected);
+}
+
+static bool param_has_value(char **argv, char *name)
+{
+	return get_param(argv, name) != NULL;
+}
+
 static char *getaccts(char **argv, size_t *len)
 {
 	UNUSED(argv);
@@ -191,8 +208,33 @@ static char *login(char **argv, size_t *len)
 	char *hash = get_param(argv, "hash");
 	char *response;
 
-	if (strcmp(username, test_data.username) ||
-	    strcmp(hash, test_data.login_hash)) {
+	if (!strcmp(username, TEST_FIDO_USER)) {
+		char *credential = get_param(argv, "fido2credential");
+		if (strcmp(hash, test_data.fido_login_hash)) {
+			response = xstrdup("<response><error message=\"invalid password\"/></response>");
+		} else if (!credential) {
+			response = xstrdup("<response><error message=\"MFA required\" "
+				"cause=\"outofbandrequired\" outofbandname=\"LastPass Authenticator\" "
+				"capabilities=\"yubikey,fido2\" primary=\"fido2\" "
+				"fido2AuthToken=\"" TEST_FIDO_TOKEN "\" "
+				"assertionOptions=\"{&quot;challenge&quot;:&quot;AQID&quot;,&quot;timeout&quot;:300000,&quot;rpId&quot;:&quot;lastpass.com&quot;,&quot;allowCredentials&quot;:[{&quot;type&quot;:&quot;public-key&quot;,&quot;id&quot;:&quot;AQID&quot;}],&quot;userVerification&quot;:&quot;preferred&quot;}\"/>"
+				"</response>");
+		} else if (strcmp(credential, TEST_FIDO_CREDENTIAL) ||
+			   !param_is(argv, "provider", "lastpassauth") ||
+			   !param_is(argv, "otp", "") ||
+			   !param_is(argv, "outofbandrequest", "1") ||
+			   !param_is(argv, "outofbandretry", "0") ||
+			   !param_is(argv, "outofbandretryid", TEST_FIDO_TOKEN) ||
+			   !param_is(argv, "voicecall", "0") ||
+			   !param_has_value(argv, "uuid")) {
+			response = xstrdup("<response><error message=\"invalid FIDO request\" "
+				"cause=\"fido2failed\"/></response>");
+		} else {
+			response = xstrdup("<response><ok uid=\"" TEST_UID "\" "
+				"sessionid=\"1234\" token=\"abcd\"/></response>");
+		}
+	} else if (strcmp(username, test_data.username) ||
+		   strcmp(hash, test_data.login_hash)) {
 		response = xstrdup("<response>"
 			"<error message=\"invalid password\"/>"
 			"</response>");

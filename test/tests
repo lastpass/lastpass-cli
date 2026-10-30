@@ -8,6 +8,26 @@ function test_login
 	assertz $?
 }
 
+function test_fido2_login
+{
+	LPASS_HOME="$(cd "$(dirname "$0")/.." && pwd)/tmp/fido2-test-home"
+	export LPASS_HOME
+	LPASS_ASKPASS=./askpass.sh lpass login fido@example.com >/dev/null 2>&1
+	assertz $?
+}
+
+function test_fido2_cancel
+{
+	local output status
+	LPASS_HOME="$(cd "$(dirname "$0")/.." && pwd)/tmp/fido2-cancel-test-home"
+	export LPASS_HOME
+	output=$(LPASS_TEST_FIDO_ABORT=1 LPASS_ASKPASS=./askpass.sh \
+		lpass login fido@example.com 2>&1)
+	status=$?
+	assert_ne $status 0 || return 1
+	[[ "$output" == *"Error: Aborted FIDO2 authentication."* ]]
+}
+
 function test_login_wrong_pw_should_fail
 {
 	LPASS_ASKPASS=./askpass-wrong.sh login

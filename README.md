@@ -12,6 +12,7 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 * [LibreSSL](http://www.libressl.org/) or [OpenSSL](https://www.openssl.org/)
 * [libcurl](http://curl.haxx.se/)
 * [libxml2](http://xmlsoft.org/)
+* [libfido2](https://github.com/Yubico/libfido2/) (optional build dependency; enables FIDO2 MFA)
 * [pinentry](https://www.gnupg.org/related_software/pinentry/index.en.html) (optional)
 * [AsciiDoc](http://www.methods.co.nz/asciidoc/) (build-time documentation generation only)
 * [xclip](http://sourceforge.net/projects/xclip/), [xsel](http://www.vergenet.net/~conrad/software/xsel/), [pbcopy](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/pbcopy.1.html), or [putclip from cygutils-extra](https://cygwin.com/cgi-bin2/package-grep.cgi?grep=cygutils-extra) for clipboard support (optional)
@@ -49,7 +50,7 @@ sudo yum install lastpass-cli
   the 'Building' section.
 
 ```
-sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-devel libcurl-devel gcc gcc-c++ make cmake
+sudo yum install openssl libcurl libxml2 libfido2 pinentry xclip openssl-devel libxml2-devel libcurl-devel libfido2-devel gcc gcc-c++ make cmake
 ```
 
 
@@ -69,6 +70,7 @@ apt-get --no-install-recommends -yqq install \
   libcurl3-openssl-dev  \
   libssl1.0.0 \
   libssl-dev \
+  libfido2-dev \
   libxml2 \
   libxml2-dev  \
   pkg-config \
@@ -87,6 +89,7 @@ apt-get --no-install-recommends -yqq install \
   libcurl3-openssl-dev  \
   libssl1.0 \
   libssl1.0-dev \
+  libfido2-dev \
   libxml2 \
   libxml2-dev  \
   pkg-config \
@@ -104,6 +107,7 @@ apt-get --no-install-recommends -yqq install \
   libcurl4  \
   libcurl4-openssl-dev  \
   libssl-dev  \
+  libfido2-dev \
   libxml2 \
   libxml2-dev  \
   libssl1.1 \
@@ -131,6 +135,12 @@ and then follow instructions in the 'Building' section.
 
 ```
 brew update
+```
+
+For source builds with FIDO2 MFA, also install `libfido2`:
+
+```
+brew install libfido2
 ```
 
 * Install the lastpass-cli formula:
