@@ -227,6 +227,31 @@ __EOM__
 	assert_str_eq "$expected" "$out"
 }
 
+function test_show_gcm
+{
+	login || return 1
+	read -r -d '' expected <<__EOM__
+test-group/test-gcm-account [id: 0005]
+Username: gcm@example.com
+Password: test-gcm-password
+URL: https://gcm.example.com/
+Notes: gcm note
+__EOM__
+	local out=$(lpass show --sync=no test-gcm-account)
+	assert_str_eq "$expected" "$out"
+}
+
+function test_edit_gcm
+{
+	login || return 1
+	local password="new-gcm-password"
+	echo $password | lpass edit --password --non-interactive test-gcm-account
+	assertz $? || return 1
+	assert_str_eq "$(lpass show --sync=no --password test-gcm-account)" $password || return 1
+	assert_str_eq "$(lpass show --sync=no --username test-gcm-account)" "gcm@example.com" || return 1
+	assert_str_eq "$(lpass show --sync=no --notes test-gcm-account)" "gcm note"
+}
+
 function test_show_json
 {
 	login || return 1
@@ -285,6 +310,7 @@ function test_ls
 	login || return 1
 	read -r -d '' expected <<__EOM__
 test-group/test-account [id: 0001]
+test-group/test-gcm-account [id: 0005]
 test-group/test-note [id: 0002]
 test-group/test-reprompt-account [id: 0003]
 test-group/test-reprompt-note [id: 0004]
@@ -298,6 +324,7 @@ function test_export
 	login || return 1
 	read -r -d '' expected <<__EOM__
 url,username,password,extra,name,grouping,fav
+https://gcm.example.com/,gcm@example.com,test-gcm-password,gcm note,test-gcm-account,test-group,0
 http://sn,,,"NoteType: Server
 Hostname: foo.example.com
 Username: test-note-user
@@ -318,6 +345,7 @@ function test_export_extended
 	login || return 1
 	read -r -d '' expected <<__EOM__
 grouping,url,username,password,extra,name,fav,id,group,fullname,last_touch,last_modified_gmt,unknown,attachpresent
+test-group,https://gcm.example.com/,gcm@example.com,test-gcm-password,gcm note,test-gcm-account,0,0005,test-group,test-group/test-gcm-account,skipped,skipped,,0
 test-group,http://sn,,,"NoteType: Server
 Hostname: foo.example.com
 Username: test-note-user

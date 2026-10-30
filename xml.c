@@ -70,7 +70,8 @@ struct session *xml_ok_session(const char *buf, unsigned const char key[KDF_HASH
 				session->token = (char *)xmlNodeListGetString(doc, attr->children, 1);
 			if (!xmlStrcmp(attr->name, BAD_CAST "privatekeyenc")) {
 				_cleanup_free_ char *private_key = (char *)xmlNodeListGetString(doc, attr->children, 1);
-				session_set_private_key(session, key, private_key);
+				if (!session_set_private_key(session, key, private_key))
+					warn("Shared folders will be unavailable.");
 			}
 
 			feature_flag_load_xml_attr(&session->feature_flag, doc, attr);

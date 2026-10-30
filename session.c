@@ -62,9 +62,9 @@ bool session_is_valid(struct session *session)
 	return session && session->uid && session->sessionid && session->token;
 }
 
-void session_set_private_key(struct session *session, unsigned const char key[KDF_HASH_LEN], const char *key_hex)
+bool session_set_private_key(struct session *session, unsigned const char key[KDF_HASH_LEN], const char *key_hex)
 {
-	cipher_decrypt_private_key(key_hex, key, &session->private_key);
+	return cipher_decrypt_private_key(key_hex, key, &session->private_key);
 }
 
 void session_save(struct session *session, unsigned const char key[KDF_HASH_LEN])

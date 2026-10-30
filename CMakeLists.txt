@@ -142,19 +142,34 @@ if(BASH_COMPLETION_FOUND)
   install(FILES contrib/lpass_bash_completion DESTINATION ${BASH_COMPLETION_COMPLETIONSDIR} RENAME lpass)
 endif()
 
+function(add_test_executable name flags)
+  add_executable(${name} EXCLUDE_FROM_ALL ${PROJECT_HEADERS} ${ARGN})
+  set_target_properties(${name} PROPERTIES
+    C_STANDARD 99
+    COMPILE_FLAGS "${flags}"
+    COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
+  )
+  target_link_libraries(${name} ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
+  if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+    target_link_libraries(${name} "-lkvm")
+  endif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+endfunction(add_test_executable)
+
 # Test lpass executable with mock server, link against test versions first
 file(GLOB LPTEST_SOURCES test/*.c *.c)
-add_executable(lpass-test EXCLUDE_FROM_ALL ${PROJECT_HEADERS} ${LPTEST_SOURCES})
-set_target_properties(lpass-test PROPERTIES
-  C_STANDARD 99
-  COMPILE_FLAGS "${PROJECT_FLAGS} -DTEST_BUILD"
-  COMPILE_DEFINITIONS ${PROJECT_DEFINITIONS}
-)
-target_link_libraries(lpass-test ${LIBXML2_LIBRARIES} ${OPENSSL_LIBRARIES} ${CURL_LIBRARIES})
-if (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
-  target_link_libraries(lpass-test "-lkvm")
-endif (CMAKE_SYSTEM_NAME MATCHES "OpenBSD")
+add_test_executable(lpass-test "${PROJECT_FLAGS} -DTEST_BUILD" ${LPTEST_SOURCES})
+
+# Unit tests: all sources except lpass.c (main), plus test/unit
+file(GLOB LPUNIT_SOURCES test/unit/*.c *.c)
+list(REMOVE_ITEM LPUNIT_SOURCES ${CMAKE_SOURCE_DIR}/lpass.c)
+add_test_executable(lpass-unit-test "${PROJECT_FLAGS}" ${LPUNIT_SOURCES})
+
 enable_testing()
+add_test(NAME build_unit_test
+  COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target lpass-unit-test)
+add_test(test_unit ${CMAKE_BINARY_DIR}/lpass-unit-test)
+set_tests_properties(build_unit_test PROPERTIES FIXTURES_SETUP unit_test_binary)
+set_tests_properties(test_unit PROPERTIES FIXTURES_REQUIRED unit_test_binary)
 add_test(test_login ${CMAKE_SOURCE_DIR}/test/tests test_login)
 add_test(test_login_wrong_pw_should_fail ${CMAKE_SOURCE_DIR}/test/tests test_login_wrong_pw_should_fail)
 add_test(test_add_account ${CMAKE_SOURCE_DIR}/test/tests test_add_account)
@@ -170,6 +185,8 @@ add_test(test_edit_reprompt ${CMAKE_SOURCE_DIR}/test/tests test_edit_reprompt)
 add_test(test_duplicate ${CMAKE_SOURCE_DIR}/test/tests test_duplicate)
 add_test(test_generate ${CMAKE_SOURCE_DIR}/test/tests test_generate)
 add_test(test_show ${CMAKE_SOURCE_DIR}/test/tests test_show)
+add_test(test_show_gcm ${CMAKE_SOURCE_DIR}/test/tests test_show_gcm)
+add_test(test_edit_gcm ${CMAKE_SOURCE_DIR}/test/tests test_edit_gcm)
 add_test(test_show_json ${CMAKE_SOURCE_DIR}/test/tests test_show_json)
 add_test(test_show_note ${CMAKE_SOURCE_DIR}/test/tests test_show_note)
 add_test(test_show_reprompt ${CMAKE_SOURCE_DIR}/test/tests test_show_reprompt)
