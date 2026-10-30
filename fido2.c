@@ -288,12 +288,13 @@ static bool add_allow_credentials(fido_assert_t *assertion, const char *options,
 }
 
 static char *assertion_for_device(const char *path, fido_assert_t *assertion,
-				 bool uv_required,
+				 fido_opt_t uv_option,
 				 char **error)
 {
 	_cleanup_fido_dev_free_ fido_dev_t *device = NULL;
 	_cleanup_free_ char *pin = NULL;
 	const char *retry_message = NULL;
+	bool pin_required = false;
 	int result;
 
 	device = fido_dev_new();
@@ -304,30 +305,40 @@ static char *assertion_for_device(const char *path, fido_assert_t *assertion,
 	}
 
 	if (fido_assert_set_up(assertion, FIDO_OPT_TRUE) != FIDO_OK ||
-	    fido_assert_set_uv(assertion, uv_required ? FIDO_OPT_TRUE : FIDO_OPT_FALSE) != FIDO_OK ||
+	    fido_assert_set_uv(assertion, uv_option) != FIDO_OK ||
 	    fido_assert_set_count(assertion, 1) != FIDO_OK) {
 		if (error)
 			*error = xstrdup("Could not configure the FIDO2 assertion.");
 		return NULL;
 	}
 	for (;;) {
-		free(pin);
-		pin = password_prompt("YubiKey PIN", retry_message,
-				      "Please enter your YubiKey FIDO2 PIN.");
-		if (!pin) {
-			if (error)
-				*error = xstrdup("Aborted FIDO2 authentication.");
-			return NULL;
+		if (pin_required) {
+			free(pin);
+			pin = password_prompt("YubiKey PIN", retry_message,
+					      "Please enter your FIDO2 authenticator PIN.");
+			if (!pin) {
+				if (error)
+					*error = xstrdup("Aborted FIDO2 authentication.");
+				return NULL;
+			}
 		}
 
 		terminal_fprintf(stderr, TERMINAL_FG_YELLOW TERMINAL_BOLD
-				 "Touch your YubiKey to complete FIDO2 authentication."
+				 "Touch your FIDO2 authenticator to complete authentication."
 				 TERMINAL_RESET "\n");
-		result = fido_dev_get_assert(device, assertion, pin);
-		secure_clear(pin, strlen(pin));
+		result = fido_dev_get_assert(device, assertion,
+					     pin_required ? pin : NULL);
+		if (pin)
+			secure_clear(pin, strlen(pin));
 		if (result == FIDO_OK)
 			break;
-		if (result != FIDO_ERR_PIN_INVALID && result != FIDO_ERR_PIN_AUTH_INVALID) {
+		if (!pin_required && result == FIDO_ERR_PIN_REQUIRED) {
+			pin_required = true;
+			retry_message = NULL;
+			continue;
+		}
+		if (!pin_required || (result != FIDO_ERR_PIN_INVALID &&
+				      result != FIDO_ERR_PIN_AUTH_INVALID)) {
 			if (error)
 				xasprintf(error, "FIDO2 authentication failed: %s.",
 					  fido_strerr(result));
@@ -359,7 +370,7 @@ char *fido2_login_credential(const char *assertion_options, const char *origin,
 	_cleanup_fido_assert_free_ fido_assert_t *assertion = NULL;
 	const char *server_origin;
 	size_t challenge_len, n_devices = 0, n_credentials = 0;
-	bool uv_required;
+	fido_opt_t uv_required;
 	char *result;
 
 	if (error)
@@ -411,7 +422,12 @@ char *fido2_login_credential(const char *assertion_options, const char *origin,
 			*error = xstrdup("Could not prepare the FIDO2 assertion.");
 		return NULL;
 	}
-	uv_required = strcmp(verification, "discouraged") != 0;
+	if (!strcmp(verification, "required"))
+		uv_required = FIDO_OPT_TRUE;
+	else if (!strcmp(verification, "discouraged"))
+		uv_required = FIDO_OPT_FALSE;
+	else
+		uv_required = FIDO_OPT_OMIT;
 
 	fido_init(0);
 	for (;;) {
