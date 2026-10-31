@@ -103,6 +103,7 @@ void account_free_contents(struct account *account)
 	free(account->username);
 	free(account->password);
 	free(account->note);
+	free(account->notetype);
 	free(account->name_encrypted);
 	free(account->group_encrypted);
 	free(account->url_encrypted);
@@ -405,7 +406,7 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 	entry_plain(attachkey_encrypted);
 	entry_boolean(attachpresent);
 	skip(individualshare);
-	skip(notetype);
+	entry_plain(notetype);
 	skip(noalert);
 	entry_plain(last_modified_gmt);
 	skip(hasbeenshared);

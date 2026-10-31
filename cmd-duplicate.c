@@ -97,6 +97,8 @@ int cmd_duplicate(int argc, char **argv)
 	new->fullname = xstrdup(found->fullname);
 	account_set_url(new, xstrdup(found->url), key, &session->feature_flag);
 	new->pwprotect = found->pwprotect;
+	if (found->notetype)
+		new->notetype = xstrdup(found->notetype);
 
 	list_for_each_entry(field, &found->field_head, list) {
 		copy_field = new0(struct field, 1);
