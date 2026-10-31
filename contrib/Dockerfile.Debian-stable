@@ -12,11 +12,13 @@ RUN apt-get update \
 		build-essential \
 		cmake \
 		libcurl3-openssl-dev  \
+		libfido2-dev \
 		libssl1.0-dev  \
 		libxml2-dev  \
 		pkg-config \
 		# Run time dependencies
 		libcurl3  \
+		libfido2-1 \
 		libssl1.0 \
 		libxml2 \
 		# Optionals handy for testing within the container
@@ -29,6 +31,7 @@ RUN apt-get update \
 	&& apt-get autoremove --purge -yqq \
 		bash-completion \
 		libcurl3-openssl-dev  \
+		libfido2-dev \
 		libssl1.0-dev  \
 		libxml2-dev  \
 		pkg-config \

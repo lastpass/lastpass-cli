@@ -45,6 +45,7 @@
 #include "agent.h"
 #include "terminal.h"
 #include <getopt.h>
+#include <string.h>
 
 int cmd_login(int argc, char **argv)
 {
@@ -111,6 +112,17 @@ int cmd_login(int argc, char **argv)
 		free(error);
 		error = NULL;
 		session = lastpass_login(username, hex, key, iterations, &error, trust);
+		if (!session_is_valid(session) && error &&
+		    (!strcmp(error, "Aborted FIDO2 authentication.") ||
+		     !strcmp(error, "LastPass returned a non-XML response during login.") ||
+		     !strcmp(error, "LastPass returned a non-XML response during FIDO2 authentication."))) {
+			terminal_fprintf(stderr, TERMINAL_FG_RED TERMINAL_BOLD
+					 "Error" TERMINAL_RESET ": %s\n", error);
+			secure_clear(password, strlen(password));
+			secure_clear(key, sizeof(key));
+			secure_clear(hex, sizeof(hex));
+			return 1;
+		}
 	} while (!session_is_valid(session));
 
 	config_unlink("plaintext_key");
