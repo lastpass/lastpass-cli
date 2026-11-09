@@ -132,6 +132,7 @@ _noreturn_ static inline void die_unlink_errno(const char *str, const char *file
 }
 
 static void assign_account_value(struct account *account,
+				 enum note_type note_type,
 				 const char *label,
 				 char *value,
 				 int lineno,
@@ -180,6 +181,10 @@ static void assign_account_value(struct account *account,
 			return;
 		}
 	}
+
+	if (note_type != NOTE_TYPE_NONE && !note_has_field(note_type, label))
+		die("Unknown field '%s' for %s note", label,
+		    notes_get_name(note_type));
 
 	/* Some other name: value pair -- treat like a new field */
 	editable_field = new0(struct field, 1);
@@ -339,12 +344,14 @@ static void read_account_file(FILE *input, struct account *account,
 {
 	LIST_HEAD(fields);
 	struct parsed_name_value *entry, *tmp;
+	enum note_type note_type = get_note_type(account);
 
-	parse_account_file(input, get_note_type(account), &fields);
+	parse_account_file(input, note_type, &fields);
 
 	list_for_each_entry_safe(entry, tmp, &fields, list) {
-		assign_account_value(account, entry->name, entry->value,
-				     entry->lineno, key, feature_flag);
+		assign_account_value(account, note_type,
+				     entry->name, entry->value, entry->lineno,
+				     key, feature_flag);
 		free(entry->name);
 		free(entry->value);
 		list_del(&entry->list);

@@ -69,6 +69,17 @@ __EOM__
 	assertz $? || return 1
 
 	assert_str_eq "$(lpass show --sync=no --field=Number $name)" "000-00-0000"
+
+	local invalid_name="test-add-note-invalid-field"
+	local output
+	if output=$(printf 'Name: %s\nNetwork Name: MyNetwork\nPassword: hunter2\n' \
+		"$invalid_name" | lpass add --sync=no --note-type=wifi \
+		--non-interactive "$invalid_name" 2>&1); then
+		echo "expected unknown typed-note field to be rejected"
+		return 1
+	fi
+	assert_str_neq "$(printf '%s\n' "$output" | grep -F \
+		"Unknown field 'Network Name' for Wi-Fi Password note")" ""
 }
 
 function test_add_note_with_field
