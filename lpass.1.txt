@@ -171,7 +171,11 @@ the following placeholders:
 A slash can be added between the '%' and the placeholder to indicate that a
 slash should be appended, only if the printed value is expanded to a non-empty
 string.  For example, this command will properly show the full path to
-an account: `lpass ls --format="%/as%/ag%an"`.
+an account: `lpass ls --format="%/as%/ag%an"`. In the same way, an underscore may
+be added between the '%' and the placeholder to indicate that the value should
+be made file-system-safe by replacing forward slashes, tabs, carriage returns,
+and new lines with an underscore. This may be combined with the slash. For 
+example: `lpass show --format="%/_as%/_ag%_an"`.
 
 Modifying
 ~~~~~~~~~
