@@ -140,6 +140,18 @@ void print_csv_field(struct account *account, const char *field_name,
 	print_csv_cell("", is_last);
 }
 
+/* once per undecrypted field of the account, however many columns derive from it */
+static void report_once(const struct account *account, const char *field,
+			const char **reported, size_t *count)
+{
+	for (size_t i = 0; i < *count; i++) {
+		if (!strcmp(reported[i], field))
+			return;
+	}
+	reported[(*count)++] = field;
+	account_report_undecrypted(account, field);
+}
+
 int cmd_export(int argc, char **argv)
 {
 	static struct option long_options[] = {
@@ -189,6 +201,7 @@ int cmd_export(int argc, char **argv)
 	struct session *session = NULL;
 	struct blob *blob = NULL;
 	struct field_selection *field_sel, *tmp;
+	int status = 0;
 
 	init_all(sync, key, &session, &blob);
 
@@ -219,9 +232,18 @@ int cmd_export(int argc, char **argv)
 		if (!strcmp(account->url, "http://group"))
 			continue;
 
+		const char *reported[6];
+		size_t reported_count = 0;
+
 		list_for_each_entry(field_sel, &field_list, list) {
-			print_csv_field(account, field_sel->name,
-					field_sel == last_entry);
+			/* the cell stays empty, it does not hold the value */
+			const char *undecrypted = account_field_undecrypted(account, field_sel->name);
+
+			print_csv_field(account, field_sel->name, field_sel == last_entry);
+			if (undecrypted) {
+				report_once(account, undecrypted, reported, &reported_count);
+				status = 1;
+			}
 		}
 		lastpass_log_access(sync, session, key, account);
 	}
@@ -232,5 +254,5 @@ int cmd_export(int argc, char **argv)
 
 	session_free(session);
 	blob_free(blob);
-	return 0;
+	return status;
 }

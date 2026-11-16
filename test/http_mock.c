@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include "../util.h"
 #include "../blob.h"
+#include "../config.h"
 
 #define TEST_USER "user@example.com"
 #define TEST_PASS "123456"
@@ -83,51 +84,51 @@ static void init_test_data()
 	key = test_data.key;
 	account = new_account();
 	account->id = xstrdup("0001");
-	account_set_name(account, "test-account", key);
-	account_set_group(account, "test-group", key);
-	account_set_username(account, "xyz@example.com", key);
-	account_set_password(account, "test-account-password", key);
+	account_set_name(account, "test-account", key, feature_flag);
+	account_set_group(account, "test-group", key, feature_flag);
+	account_set_username(account, "xyz@example.com", key, feature_flag);
+	account_set_password(account, "test-account-password", key, feature_flag);
 	account_set_url(account, "https://test-url.example.com/", key, feature_flag);
-	account_set_note(account, "", key);
+	account_set_note(account, "", key, feature_flag);
 	list_add_tail(&account->list, &test_data.blob.account_head);
 
 	account = new_account();
 	account->id = xstrdup("0002");
-	account_set_name(account, "test-note", key);
-	account_set_group(account, "test-group", key);
-	account_set_username(account, xstrdup(""), key);
-	account_set_password(account, xstrdup(""), key);
+	account_set_name(account, "test-note", key, feature_flag);
+	account_set_group(account, "test-group", key, feature_flag);
+	account_set_username(account, xstrdup(""), key, feature_flag);
+	account_set_password(account, xstrdup(""), key, feature_flag);
 	account_set_url(account, "http://sn", key, feature_flag);
 	account_set_note(account,
 		"NoteType: Server\n"
 		"Hostname: foo.example.com\n"
 		"Username: test-note-user\n"
-		"Password: test-note-password", key);
+		"Password: test-note-password", key, feature_flag);
 	list_add_tail(&account->list, &test_data.blob.account_head);
 
 	account = new_account();
 	account->id = xstrdup("0003");
-	account_set_name(account, "test-reprompt-account", key);
-	account_set_group(account, "test-group", key);
-	account_set_username(account, "xyz@example.com", key);
-	account_set_password(account, "test-account-password", key);
+	account_set_name(account, "test-reprompt-account", key, feature_flag);
+	account_set_group(account, "test-group", key, feature_flag);
+	account_set_username(account, "xyz@example.com", key, feature_flag);
+	account_set_password(account, "test-account-password", key, feature_flag);
 	account_set_url(account, "https://test-url.example.com/", key, feature_flag);
-	account_set_note(account, "", key);
+	account_set_note(account, "", key, feature_flag);
 	account->pwprotect = true;
 	list_add_tail(&account->list, &test_data.blob.account_head);
 
 	account = new_account();
 	account->id = xstrdup("0004");
-	account_set_name(account, "test-reprompt-note", key);
-	account_set_group(account, "test-group", key);
-	account_set_username(account, xstrdup(""), key);
-	account_set_password(account, xstrdup(""), key);
+	account_set_name(account, "test-reprompt-note", key, feature_flag);
+	account_set_group(account, "test-group", key, feature_flag);
+	account_set_username(account, xstrdup(""), key, feature_flag);
+	account_set_password(account, xstrdup(""), key, feature_flag);
 	account_set_url(account, "http://sn", key, feature_flag);
 	account_set_note(account,
 		"NoteType: Server\n"
 		"Hostname: foo.example.com\n"
 		"Username: test-note-user\n"
-		"Password: test-note-password", key);
+		"Password: test-note-password", key, feature_flag);
 	account->pwprotect = true;
 	list_add_tail(&account->list, &test_data.blob.account_head);
 
@@ -141,6 +142,43 @@ static void init_test_data()
 	account->note_encrypted = xstrdup("#FBQUFBQUFBQUFBQU|AUbZH6dQqa/UnkoJVaPDJfIoY+YElkJ4");
 	account_set_url(account, "https://gcm.example.com/", key, feature_flag);
 	list_add_tail(&account->list, &test_data.blob.account_head);
+
+	if (getenv("LPASS_TEST_GCM_TAMPERED")) {
+		/* the password of account 0005 with a modified byte: its tag cannot authenticate */
+		account = new_account();
+		account->id = xstrdup("0006");
+		account_set_name(account, "test-gcm-tampered", key, feature_flag);
+		account_set_group(account, "test-group", key, feature_flag);
+		account_set_username(account, "tampered@example.com", key, feature_flag);
+		account->password_encrypted = xstrdup("#ExMTExMTExMTExMT|zjI68i+tqKXdCXKKuX9tugbMXeFJNh8fGiPlIHU7DNx8");
+		account_set_note(account, "tampered note", key, feature_flag);
+		account_set_url(account, "https://tampered.example.com/", key, feature_flag);
+		list_add_tail(&account->list, &test_data.blob.account_head);
+	}
+
+	if (getenv("LPASS_TEST_GCM_TAMPERED_FIELDS")) {
+		/* a secure note whose note cannot authenticate: its username, password and url are read from it */
+		account = new_account();
+		account->id = xstrdup("0007");
+		account_set_name(account, "test-tampered-note", key, feature_flag);
+		account_set_group(account, "test-group", key, feature_flag);
+		account_set_username(account, xstrdup(""), key, feature_flag);
+		account_set_password(account, xstrdup(""), key, feature_flag);
+		account_set_url(account, "http://sn", key, feature_flag);
+		account->note_encrypted = xstrdup("#ExMTExMTExMTExMT|zjI68i+tqKXdCXKKuX9tugbMXeFJNh8fGiPlIHU7DNx8");
+		list_add_tail(&account->list, &test_data.blob.account_head);
+
+		/* name, fullname and grouping columns of export all derive from the group */
+		account = new_account();
+		account->id = xstrdup("0008");
+		account_set_name(account, "test-tampered-group", key, feature_flag);
+		account->group_encrypted = xstrdup("#ExMTExMTExMTExMT|zjI68i+tqKXdCXKKuX9tugbMXeFJNh8fGiPlIHU7DNx8");
+		account_set_username(account, "group@example.com", key, feature_flag);
+		account_set_password(account, "group-password", key, feature_flag);
+		account_set_note(account, "group note", key, feature_flag);
+		account_set_url(account, "https://group.example.com/", key, feature_flag);
+		list_add_tail(&account->list, &test_data.blob.account_head);
+	}
 
 	is_initialized = true;
 }
@@ -177,12 +215,39 @@ static char *iterations(char **argv, size_t *len)
 	return response;
 }
 
+/* record the encrypted params of every upload, for the tests to inspect */
+static void record_upload(char **argv)
+{
+	static const char *params[] = { "name", "grouping", "username", "password", "extra" };
+	_cleanup_free_ char *path = config_path("mock-uploads");
+	FILE *fp = fopen(path, "a");
+	size_t i;
+
+	if (!fp)
+		return;
+	for (i = 0; i < sizeof(params) / sizeof(params[0]); i++) {
+		char *value = get_param(argv, (char *)params[i]);
+
+		if (value)
+			fprintf(fp, "%s=%s\n", params[i], value);
+	}
+	fclose(fp);
+}
+
 static char *show_website(char **argv, size_t *len)
 {
-	UNUSED(argv);
+	record_upload(argv);
 	if (len)
 		*len = 0;
 	return xstrdup("");
+}
+
+/* like the real server, send the attribute only while the switch is on */
+static const char *gcm_write_attr(void)
+{
+	const char *on = getenv("LPASS_TEST_GCM_WRITE");
+
+	return on && !strcmp(on, "1") ? " enable_aes_gcm_write=\"1\"" : "";
 }
 
 static char *login(char **argv, size_t *len)
@@ -197,12 +262,12 @@ static char *login(char **argv, size_t *len)
 			"<error message=\"invalid password\"/>"
 			"</response>");
 	} else {
-		response = xstrdup("<response>"
+		xasprintf(&response, "<response>"
 			"<ok "
 			"uid=\"" TEST_UID "\" "
 			"sessionid=\"1234\" "
-			"token=\"abcd\"/>"
-			"</response>");
+			"token=\"abcd\"%s/>"
+			"</response>", gcm_write_attr());
 	}
 	if (len)
 		*len = strlen(response);
@@ -212,13 +277,15 @@ static char *login(char **argv, size_t *len)
 static char *login_check(char **argv, size_t *len)
 {
 	UNUSED(argv);
-	char *response = xstrdup("<response>"
+	char *response;
+
+	xasprintf(&response, "<response>"
 			"<ok "
 			"uid=\"" TEST_UID "\" "
 			"sessionid=\"1234\" "
 			"token=\"abcd\" "
-			"accts_version=\"123\"/>"
-			"</response>");
+			"accts_version=\"123\"%s/>"
+			"</response>", gcm_write_attr());
 	if (len)
 		*len = strlen(response);
 	return response;

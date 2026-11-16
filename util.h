@@ -55,6 +55,9 @@ static inline void freep(void *p) {
 
 void warn(const char *err, ...) _printf_(1, 2);
 void warn_errno(const char *err, ...) _printf_(1, 2);
+void error_msg(const char *err, ...) _printf_(1, 2);
+/* like warn(), for text that may come from the vault: strips control characters */
+void warning_msg(const char *err, ...) _printf_(1, 2);
 _noreturn_ void die(const char *err, ...) _printf_(1, 2);
 _noreturn_ void die_errno(const char *err, ...) _printf_(1, 2);
 _noreturn_ void die_usage(const char *usage);

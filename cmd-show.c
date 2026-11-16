@@ -106,7 +106,8 @@ static char *attachment_filename(struct account *account,
 		return xstrdup("unknown");
 	}
 
-	return cipher_aes_decrypt_base64(attach->filename, key_bin);
+	return cipher_aes_decrypt_base64_report(attach->filename, key_bin,
+						"attachment %s, field filename", attach->id);
 }
 
 static bool attachment_is_binary(unsigned char *data, size_t len)
@@ -150,7 +151,8 @@ static void show_attachment(const struct session *session,
 	if (ret)
 		die("Could not load attachment %s\n", attach->id);
 
-	ptext = cipher_aes_decrypt_base64(result, key_bin);
+	ptext = cipher_aes_decrypt_base64_report(result, key_bin,
+						 "attachment %s, field body", attach->id);
 	if (!ptext)
 		die("Unable to decrypt attachment %s\n", attach->id);
 
@@ -285,6 +287,7 @@ int cmd_show(int argc, char **argv)
 	bool json = false;
 	bool expand_multi = false;
 	bool quiet = false;
+	int status = 0;
 	struct list_head matches, potential_set;
 	enum search_type search = SEARCH_EXACT_MATCH;
 	int fields = ACCOUNT_NAME | ACCOUNT_ID | ACCOUNT_FULLNAME;
@@ -439,11 +442,14 @@ int cmd_show(int argc, char **argv)
 		clipboard_open();
 
 	if (json) {
+		list_for_each_entry(account, &matches, match_list)
+			status |= account_report_undecrypted(account, account_undecrypted_field(account));
 		json_format_account_list(&matches);
 		goto done;
 	}
 
 	list_for_each_entry(account, &matches, match_list) {
+		const char *undecrypted = NULL;
 
 		found = account;
 		lastpass_log_access(sync, session, key, found);
@@ -463,24 +469,38 @@ int cmd_show(int argc, char **argv)
 			if (!has_field)
 				die("Could not find specified field '%s'.", field);
 			value = pretty_field_value(found_field);
-		} else if (choice == USERNAME)
+			if (found_field->value_undecrypted)
+				undecrypted = found_field->name;
+		} else if (choice == USERNAME) {
 			value = xstrdup(found->username);
-		else if (choice == PASSWORD)
+			undecrypted = account_field_undecrypted(account, "username");
+		} else if (choice == PASSWORD) {
 			value = xstrdup(found->password);
-		else if (choice == URL)
+			undecrypted = account_field_undecrypted(account, "password");
+		} else if (choice == URL) {
 			value = xstrdup(found->url);
-		else if (choice == ID)
+			undecrypted = account_field_undecrypted(account, "url");
+		} else if (choice == ID)
 			value = xstrdup(found->id);
-		else if (choice == NAME)
+		else if (choice == NAME) {
 			value = xstrdup(found->name);
-		else if (choice == NOTES)
+			undecrypted = account_field_undecrypted(account, "name");
+		} else if (choice == NOTES) {
 			value = xstrdup(found->note);
-		else if (choice == ATTACH) {
+			undecrypted = account_field_undecrypted(account, "note");
+		} else if (choice == ATTACH) {
 			struct attach *attach = find_attachment(found, attach_id);
 			if (!attach)
 				die("Could not find specified attachment '%s'.", attach_id);
 			show_attachment(session, found, attach, quiet);
-		}
+		} else
+			undecrypted = account_undecrypted_field(account);
+
+		/* a secure note's username, password and url are read from its note */
+		if (!undecrypted && account->note_undecrypted && account_is_secure_note(account) &&
+		    (choice == USERNAME || choice == PASSWORD || choice == URL))
+			undecrypted = "note";
+		status |= account_report_undecrypted(account, undecrypted);
 
 		if (choice == ALL) {
 			print_header(title_format, found);
@@ -522,5 +542,5 @@ int cmd_show(int argc, char **argv)
 done:
 	session_free(session);
 	blob_free(blob);
-	return 0;
+	return status;
 }

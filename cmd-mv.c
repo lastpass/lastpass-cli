@@ -92,11 +92,12 @@ int cmd_mv(int argc, char **argv)
 	if (!account) {
 		die("Unable to find account %s", name);
 	}
+	account_require_decrypted(account);
 
 	xasprintf(&new_fullname, "%s/%s", folder, account->name);
 	old_share = account->share;
 
-	account_set_fullname(account, new_fullname, key);
+	account_set_fullname(account, new_fullname, key, &session->feature_flag);
 	account_assign_share(blob, account, key, &session->feature_flag);
 	if (account->share && account->share->readonly) {
 		die("You do not have access to move %s into %s",

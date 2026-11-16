@@ -139,7 +139,8 @@ int lastpass_share_user_add(const struct session *session,
 	list_for_each_entry_safe(share_user, tmp, &user_list, list) {
 
 		/* encrypt sharename with sharekey */
-		enc_share_name = encrypt_and_base64(share->name, share->key);
+		enc_share_name = encrypt_and_base64(share->name, share->key,
+						    cipher_write_mode(&session->feature_flag));
 
 		/* encrypt sharekey with user's pubkey */
 		bytes_to_hex(share->key, &hex_share_key, sizeof(share->key));
@@ -302,7 +303,8 @@ int lastpass_share_create(const struct session *session, const char *sharename)
 
 	bytes_to_hex(enc_share_key, &hex_enc_share_key, enc_share_key_len);
 
-	enc_share_name = encrypt_and_base64(sf_fullname, key);
+	enc_share_name = encrypt_and_base64(sf_fullname, key,
+					    cipher_write_mode(&session->feature_flag));
 
 	reply = http_post_lastpass("share.php", session, &len,
 				   "token", session->token,

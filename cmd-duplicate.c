@@ -85,15 +85,16 @@ int cmd_duplicate(int argc, char **argv)
 	found = find_unique_account(blob, name);
 	if (!found)
 		die("Could not find specified account '%s'.", name);
+	account_require_decrypted(found);
 
 	new = new_account();
 	new->share = found->share;
 	new->id = xstrdup("0");
-	account_set_name(new, xstrdup(found->name), key);
-	account_set_group(new, xstrdup(found->group), key);
-	account_set_username(new, xstrdup(found->username), key);
-	account_set_password(new, xstrdup(found->password), key);
-	account_set_note(new, xstrdup(found->note), key);
+	account_set_name(new, xstrdup(found->name), key, &session->feature_flag);
+	account_set_group(new, xstrdup(found->group), key, &session->feature_flag);
+	account_set_username(new, xstrdup(found->username), key, &session->feature_flag);
+	account_set_password(new, xstrdup(found->password), key, &session->feature_flag);
+	account_set_note(new, xstrdup(found->note), key, &session->feature_flag);
 	new->fullname = xstrdup(found->fullname);
 	account_set_url(new, xstrdup(found->url), key, &session->feature_flag);
 	new->pwprotect = found->pwprotect;
@@ -102,7 +103,7 @@ int cmd_duplicate(int argc, char **argv)
 		copy_field = new0(struct field, 1);
 		copy_field->type = xstrdup(field->type);
 		copy_field->name = xstrdup(field->name);
-		field_set_value(found, copy_field, xstrdup(field->value), key);
+		field_set_value(found, copy_field, xstrdup(field->value), key, &session->feature_flag);
 		copy_field->checked = field->checked;
 		list_add_tail(&copy_field->list, &new->field_head);
 	}

@@ -51,6 +51,8 @@ struct field {
 	char *name;
 	char *value, *value_encrypted;
 	bool checked;
+	/* no mode decrypted value_encrypted: value is empty, the stored ciphertext is kept as is */
+	bool value_undecrypted;
 
 	struct list_head list;
 };
@@ -64,6 +66,9 @@ struct account {
 	char *username, *username_encrypted;
 	char *password, *password_encrypted;
 	char *note, *note_encrypted;
+	/* as field.value_undecrypted: the value is empty, not known to be empty */
+	bool name_undecrypted, group_undecrypted, url_undecrypted;
+	bool username_undecrypted, password_undecrypted, note_undecrypted;
 	char *last_touch, *last_modified_gmt;
 	bool pwprotect;
 	bool fav;
@@ -161,19 +166,32 @@ struct app *account_to_app(const struct account *account);
 struct app *new_app();
 struct account *new_account();
 void account_free(struct account *account);
-void account_set_username(struct account *account, char *username, unsigned const char key[KDF_HASH_LEN]);
-void account_set_password(struct account *account, char *password, unsigned const char key[KDF_HASH_LEN]);
-void account_set_group(struct account *account, char *group, unsigned const char key[KDF_HASH_LEN]);
-void account_set_name(struct account *account, char *name, unsigned const char key[KDF_HASH_LEN]);
-void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN]);
+void account_set_username(struct account *account, char *username, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
+void account_set_password(struct account *account, char *password, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
+void account_set_group(struct account *account, char *group, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
+void account_set_name(struct account *account, char *name, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
+void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
-void account_set_note(struct account *account, char *note, unsigned const char key[KDF_HASH_LEN]);
+void account_set_note(struct account *account, char *note, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 void account_set_appname(struct account *account, char *appname, unsigned const char key[KDF_HASH_LEN]);
 void account_assign_share(struct blob *blob, struct account *account, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
+/* name of the first field that could not be decrypted, NULL if all were */
+const char *account_undecrypted_field(const struct account *account);
+/*
+ * Stored field behind an account field as named by 'export' ("extra" is the
+ * note, "fullname" and "grouping" derive from name and group) or 'show', if it
+ * could not be decrypted, else NULL.
+ */
+const char *account_field_undecrypted(const struct account *account, const char *name);
+/* prints the error for a field returned by the two functions above, true if there was one */
+bool account_report_undecrypted(const struct account *account, const char *field);
+/* exits instead of rewriting an account from values that are known to be missing */
+void account_refuse_rewrite(const struct account *account, const char *field);
+void account_require_decrypted(const struct account *account);
 bool account_is_group(struct account *account);
 bool account_is_secure_note(const struct account *account);
-void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN]);
+void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag);
 struct account *notes_expand(struct account *acc);
 struct account *notes_collapse(struct account *acc);
 void share_free(struct share *share);

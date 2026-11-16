@@ -147,7 +147,7 @@ static void assign_account_value(struct account *account,
 	} \
 	} while (0)
 
-#define assign_if_ff(title, field, feature_flag) do { \
+#define assign_if_ff(title, field) do { \
 	if (!strcmp(label, title)) { \
 		account_set_##field(account, xstrdup(trim(value)), key, feature_flag); \
 		return; \
@@ -159,13 +159,13 @@ static void assign_account_value(struct account *account,
 	 * in the first line.
 	 */
 	if (lineno == 1) {
-		assign_if("Name", fullname);
+		assign_if_ff("Name", fullname);
 	}
-	assign_if_ff("URL", url, feature_flag);
-	assign_if("Username", username);
-	assign_if("Password", password);
+	assign_if_ff("URL", url);
+	assign_if_ff("Username", username);
+	assign_if_ff("Password", password);
+	assign_if_ff("Notes", note);
 	assign_if("Application", appname);
-	assign_if("Notes", note);
 
 	if (!strcmp(label, "Reprompt")) {
 		account->pwprotect = !strcmp(trim(value), "Yes");
@@ -176,7 +176,7 @@ static void assign_account_value(struct account *account,
 	list_for_each_entry(editable_field, &account->field_head, list) {
 		if (!strcmp(label, editable_field->name)) {
 			field_set_value(account, editable_field,
-					xstrdup(trim(value)), key);
+					xstrdup(trim(value)), key, feature_flag);
 			return;
 		}
 	}
@@ -185,10 +185,11 @@ static void assign_account_value(struct account *account,
 	editable_field = new0(struct field, 1);
 	editable_field->name = xstrdup(label);
 	editable_field->type = xstrdup("password");
-	field_set_value(account, editable_field, xstrdup(trim(value)), key);
+	field_set_value(account, editable_field, xstrdup(trim(value)), key, feature_flag);
 	list_add_tail(&editable_field->list, &account->field_head);
 
 #undef assign_if
+#undef assign_if_ff
 }
 
 static
@@ -355,7 +356,8 @@ static void read_account_file(FILE *input, struct account *account,
 static
 struct field *add_default_field(struct account *account,
 			        const char *field_name,
-			        unsigned char key[KDF_HASH_LEN])
+			        unsigned char key[KDF_HASH_LEN],
+			        const struct feature_flag *feature_flag)
 {
 	struct field *editable_field = NULL;
 	bool found = false;
@@ -372,7 +374,7 @@ struct field *add_default_field(struct account *account,
 	editable_field = new0(struct field, 1);
 	editable_field->type = xstrdup("text");
 	editable_field->name = xstrdup(field_name);
-	field_set_value(account, editable_field, xstrdup(""), key);
+	field_set_value(account, editable_field, xstrdup(""), key, feature_flag);
 
 	list_add_tail(&editable_field->list, &account->field_head);
 	return editable_field;
@@ -380,7 +382,8 @@ struct field *add_default_field(struct account *account,
 
 static void add_default_fields(struct account *account,
 			       enum note_type note_type,
-			       unsigned char key[KDF_HASH_LEN])
+			       unsigned char key[KDF_HASH_LEN],
+			       const struct feature_flag *feature_flag)
 {
 	int i;
 	struct note_template *tmpl;
@@ -403,12 +406,13 @@ static void add_default_fields(struct account *account,
 		if (!strcmp(tmpl->fields[i], "Password"))
 			continue;
 
-		add_default_field(account, tmpl->fields[i], key);
+		add_default_field(account, tmpl->fields[i], key, feature_flag);
 	}
 }
 
 static int write_account_file(FILE *fp, struct account *account,
-			      unsigned char key[KDF_HASH_LEN])
+			      unsigned char key[KDF_HASH_LEN],
+			      const struct feature_flag *feature_flag)
 {
 	struct field *editable_field = NULL;
 	enum note_type note_type;
@@ -427,7 +431,7 @@ static int write_account_file(FILE *fp, struct account *account,
 
 		write_field("Application", app->appname);
 	} else if (note_type != NOTE_TYPE_NONE) {
-		add_default_fields(account, note_type, key);
+		add_default_fields(account, note_type, key, feature_flag);
 	} else {
 		write_field("URL", account->url);
 		write_field("Username", account->username);
@@ -447,6 +451,19 @@ static int write_account_file(FILE *fp, struct account *account,
 
 	return 0;
 #undef write_field
+}
+
+/*
+ * The editor shows an undecryptable field as empty, and saving it back must
+ * not replace the stored value: an empty url becomes "http://", and an empty
+ * name drops a group that did decrypt.
+ */
+static void require_editable(const struct account *account, enum edit_choice choice)
+{
+	if ((choice == EDIT_ANY || choice == EDIT_URL) && account->url_undecrypted)
+		account_refuse_rewrite(account, "url");
+	if ((choice == EDIT_ANY || choice == EDIT_NAME) && account->name_undecrypted)
+		account_refuse_rewrite(account, "name");
 }
 
 int edit_account(struct session *session,
@@ -471,6 +488,15 @@ int edit_account(struct session *session,
 
 	struct share *old_share = editable->share;
 
+	/*
+	 * Saving a secure note rewrites its note and name from the expanded
+	 * copy, which is empty when the note itself did not decrypt.
+	 */
+	if (account_is_secure_note(editable))
+		account_require_decrypted(editable);
+	else
+		require_editable(editable, choice);
+
 	notes_expansion = notes_expand(editable);
 	if (notes_expansion) {
 		notes_collapsed = editable;
@@ -493,7 +519,7 @@ int edit_account(struct session *session,
 		value = editable->fullname;
 		break;
 	case EDIT_FIELD:
-		editable_field = add_default_field(editable, field, key);
+		editable_field = add_default_field(editable, field, key, &session->feature_flag);
 		value = editable_field->value;
 		break;
 	case EDIT_NOTES:
@@ -528,7 +554,7 @@ int edit_account(struct session *session,
 			die_unlink_errno("fdopen", tmppath, tmpdir);
 
 		if (choice == EDIT_ANY) {
-			if (write_account_file(tmpfile, editable, key))
+			if (write_account_file(tmpfile, editable, key, &session->feature_flag))
 				die_unlink_errno("fprintf", tmppath, tmpdir);
 		} else {
 			if (fprintf(tmpfile, "%s\n", value) < 0)
@@ -571,29 +597,29 @@ int edit_account(struct session *session,
 	}
 
 	if (choice == EDIT_USERNAME)
-		account_set_username(editable, value, key);
+		account_set_username(editable, value, key, &session->feature_flag);
 	else if (choice == EDIT_PASSWORD)
-		account_set_password(editable, value, key);
+		account_set_password(editable, value, key, &session->feature_flag);
 	else if (choice == EDIT_URL)
 		account_set_url(editable, value, key, &session->feature_flag);
 	else if (choice == EDIT_NAME)
-		account_set_fullname(editable, value, key);
+		account_set_fullname(editable, value, key, &session->feature_flag);
 	else if (choice == EDIT_NOTES)
-		account_set_note(editable, value, key);
+		account_set_note(editable, value, key, &session->feature_flag);
 	else if (choice == EDIT_FIELD) {
 		if (!value || !strlen(value)) {
 			list_del(&editable_field->list);
 			field_free(editable_field);
 		} else
-			field_set_value(editable, editable_field, value, key);
+			field_set_value(editable, editable_field, value, key, &session->feature_flag);
 	}
 
 	if (notes_expansion && notes_collapsed) {
 		editable = notes_collapsed;
 		notes_collapsed = notes_collapse(notes_expansion);
 		account_free(notes_expansion);
-		account_set_note(editable, xstrdup(notes_collapsed->note), key);
-		account_set_fullname(editable, xstrdup(notes_collapsed->fullname), key);
+		account_set_note(editable, xstrdup(notes_collapsed->note), key, &session->feature_flag);
+		account_set_fullname(editable, xstrdup(notes_collapsed->fullname), key, &session->feature_flag);
 		editable->pwprotect = notes_collapsed->pwprotect;
 		account_free(notes_collapsed);
 	}
@@ -640,10 +666,10 @@ int edit_new_account(struct session *session,
 	account->id = xstrdup("0");
 	account->attachkey = xstrdup("");
 	account->attachkey_encrypted = xstrdup("");
-	account_set_password(account, xstrdup(""), key);
-	account_set_fullname(account, xstrdup(name), key);
-	account_set_username(account, xstrdup(""), key);
-	account_set_note(account, xstrdup(""), key);
+	account_set_password(account, xstrdup(""), key, &session->feature_flag);
+	account_set_fullname(account, xstrdup(name), key, &session->feature_flag);
+	account_set_username(account, xstrdup(""), key, &session->feature_flag);
+	account_set_note(account, xstrdup(""), key, &session->feature_flag);
 	if (choice == EDIT_NOTES || note_type != NOTE_TYPE_NONE) {
 		account_set_url(account, xstrdup("http://sn"), key, &session->feature_flag);
 	} else {
@@ -656,7 +682,7 @@ int edit_new_account(struct session *session,
 		char *note_type_str = NULL;
 		xasprintf(&note_type_str, "NoteType:%s\n",
 			  notes_get_name(note_type));
-		account_set_note(account, note_type_str, key);
+		account_set_note(account, note_type_str, key, &session->feature_flag);
 	}
 
 	return edit_account(session, blob, sync, account, choice, field,

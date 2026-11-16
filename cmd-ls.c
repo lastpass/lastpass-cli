@@ -317,8 +317,8 @@ int cmd_ls(int argc, char **argv)
 		xasprintf(&tmpname, "%s/", share->name);
 		account->share = share;
 		account->id = share->id;
-		account_set_name(account, xstrdup(""), key);
-		account_set_fullname(account, tmpname, key);
+		account_set_name(account, xstrdup(""), key, &session->feature_flag);
+		account_set_fullname(account, tmpname, key, &session->feature_flag);
 		account_set_url(account, "http://group", key, &session->feature_flag);
 		account_array[i++] = account;
 	}

@@ -107,6 +107,8 @@ unsigned long long xml_login_check(const char *buf, struct session *session)
 		}
 	}
 	if (child) {
+		/* the server omits the attribute when the switch is off */
+		session->feature_flag.aes_gcm_write_enabled = false;
 		for (xmlAttrPtr attr = child->properties; attr; attr = attr->next) {
 			if (!xmlStrcmp(attr->name, BAD_CAST "uid")) {
 				free(session->uid);

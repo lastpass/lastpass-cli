@@ -7,6 +7,7 @@
 struct feature_flag {
 	bool url_encryption_enabled;
 	bool url_logging_enabled;
+	bool aes_gcm_write_enabled;
 };
 
 void feature_flag_load_xml_attr(struct feature_flag *feature_flag, xmlDoc *doc, xmlAttrPtr attr);

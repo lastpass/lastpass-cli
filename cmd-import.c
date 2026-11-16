@@ -196,11 +196,11 @@ static struct account *new_import_account(unsigned char key[KDF_HASH_LEN], const
 	struct account *account = new_account();
 
 	account_set_url(account, xstrdup(""), key, feature_flag);
-	account_set_username(account, xstrdup(""), key);
-	account_set_password(account, xstrdup(""), key);
-	account_set_note(account, xstrdup(""), key);
-	account_set_name(account, xstrdup(""), key);
-	account_set_group(account, xstrdup(""), key);
+	account_set_username(account, xstrdup(""), key, feature_flag);
+	account_set_password(account, xstrdup(""), key, feature_flag);
+	account_set_note(account, xstrdup(""), key, feature_flag);
+	account_set_name(account, xstrdup(""), key, feature_flag);
+	account_set_group(account, xstrdup(""), key, feature_flag);
 
 	return account;
 }
@@ -236,14 +236,6 @@ static int csv_parse_accounts(FILE *fp, struct list_head *account_list,
 	} while (0)
 
 #define set_field(x, fieldname) \
-	do { \
-		if (i == x ## _index) { \
-			account_set_ ## fieldname (account, field->value, key); \
-			set = true; \
-		} \
-	} while (0)
-
-#define set_field_ff(x, fieldname, feature_flag) \
 	do { \
 		if (i == x ## _index) { \
 			account_set_ ## fieldname (account, field->value, key, feature_flag); \
@@ -286,7 +278,7 @@ static int csv_parse_accounts(FILE *fp, struct list_head *account_list,
 		i = 0;
 		list_for_each_entry(field, &record->field_head, list) {
 			bool set = false;
-			set_field_ff(url, url, feature_flag);
+			set_field(url, url);
 			set_field(username, username);
 			set_field(password, password);
 			set_field(name, name);
