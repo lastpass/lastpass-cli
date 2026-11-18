@@ -504,6 +504,7 @@ static size_t aes256_gcm_encrypt(const char *plaintext,
 error:
 	EVP_CIPHER_CTX_free(ctx);
 	free(ciphertext);
+	ciphertext = NULL;
 	die("Failed to encrypt data.");
 }
 
