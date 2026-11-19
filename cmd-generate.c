@@ -114,14 +114,20 @@ int cmd_generate(int argc, char **argv)
 	if (found) {
 		if (found->share && found->share->readonly)
 			die("%s is a readonly shared entry from %s. It cannot be edited.", found->fullname, found->share->name);
+		/*
+		 * Saving a secure note rewrites its note from the expanded copy,
+		 * which is empty when the note itself did not decrypt.
+		 */
+		if (account_is_secure_note(found))
+			account_require_decrypted(found);
 		notes_expansion = notes_expand(found);
 		if (notes_expansion) {
 			notes_collapsed = found;
 			found = notes_expansion;
 		}
-		account_set_password(found, xstrdup(password), key);
+		account_set_password(found, xstrdup(password), key, &session->feature_flag);
 		if (username)
-			account_set_username(found, username, key);
+			account_set_username(found, username, key, &session->feature_flag);
 		if (url) {
 			account_set_url(found, xstrdup(url), key, &session->feature_flag);
 		}
@@ -129,16 +135,16 @@ int cmd_generate(int argc, char **argv)
 			found = notes_collapsed;
 			notes_collapsed = notes_collapse(notes_expansion);
 			account_free(notes_expansion);
-			account_set_note(found, xstrdup(notes_collapsed->note), key);
+			account_set_note(found, xstrdup(notes_collapsed->note), key, &session->feature_flag);
 			account_free(notes_collapsed);
 		}
 	} else {
 		new = new_account();
 		new->id = xstrdup("0");
-		account_set_password(new, xstrdup(password), key);
-		account_set_fullname(new, xstrdup(name), key);
-		account_set_username(new, username ? username : xstrdup(""), key);
-		account_set_note(new, xstrdup(""), key);
+		account_set_password(new, xstrdup(password), key, &session->feature_flag);
+		account_set_fullname(new, xstrdup(name), key, &session->feature_flag);
+		account_set_username(new, username ? username : xstrdup(""), key, &session->feature_flag);
+		account_set_note(new, xstrdup(""), key, &session->feature_flag);
 		account_set_url(new, url ? url : xstrdup(""), key, &session->feature_flag);
 		account_assign_share(blob, new, key, &session->feature_flag);
 

@@ -252,6 +252,205 @@ function test_edit_gcm
 	assert_str_eq "$(lpass show --sync=no --notes test-gcm-account)" "gcm note"
 }
 
+function check_uploaded_prefix
+{
+	local marker=$1
+	local field
+	for field in name username password; do
+		grep -q "^$field=$marker" $LPASS_HOME/mock-uploads
+		assertz $? "$field not uploaded with prefix $marker" || return 1
+	done
+}
+
+# the upload queue runner does chdir("/"), so LPASS_HOME must be absolute here;
+# keep it short too: the agent socket path has to fit in sockaddr_un.sun_path
+function use_absolute_home
+{
+	export LPASS_HOME="$(mktemp -d "${TMPDIR:-/tmp}/lpass-test.XXXXXX")"
+	trap 'lpass logout --force >/dev/null 2>&1; rm -rf "$LPASS_HOME"' EXIT
+}
+
+function add_and_upload
+{
+	local name="test-add-gcm-write"
+	local password="999999999"
+
+	rm -rf $LPASS_HOME/mock-uploads $LPASS_HOME/upload-queue
+	cat<<__EOM__ | lpass add --sync=no --non-interactive $name
+Name: $name
+URL: https://example.com
+Username: user27
+Password: $password
+__EOM__
+	assertz $? || return 1
+	assert_str_eq "$(lpass show --sync=no --password $name)" "$password" || return 1
+	lpass sync >/dev/null 2>&1
+	assertz $? || return 1
+}
+
+function test_add_account_gcm_write
+{
+	(
+		use_absolute_home
+		LPASS_TEST_GCM_WRITE=1 login || exit 1
+		add_and_upload || exit 1
+		check_uploaded_prefix '#'
+	)
+}
+
+function test_add_account_gcm_write_off
+{
+	(
+		use_absolute_home
+		login || exit 1
+		add_and_upload || exit 1
+		check_uploaded_prefix '!'
+	)
+}
+
+function test_show_gcm_tampered
+{
+	LPASS_TEST_GCM_TAMPERED=1 login || return 1
+	local err out status found
+	err="$(mktemp)"
+	out="$(lpass show --sync=no --username test-gcm-tampered 2>$err)"
+	status=$?
+	grep -q "AES-GCM authentication failed: account 0006, field password" $err
+	found=$?
+	rm -f $err
+	assertz $status || return 1
+	assert_str_eq "$out" "tampered@example.com" || return 1
+	assertz $found "missing GCM authentication error"
+}
+
+function test_show_gcm_tampered_sync_once
+{
+	LPASS_TEST_GCM_TAMPERED=1 login || return 1
+	local err count status
+	err="$(mktemp)"
+	LPASS_TEST_GCM_TAMPERED=1 lpass ls --sync=now >/dev/null 2>$err
+	status=$?
+	count=$(grep -c "AES-GCM authentication failed: account 0006, field password" $err)
+	rm -f $err
+	assertz $status || return 1
+	assert_str_eq "$count" "1" "tag failure reported once after sync"
+}
+
+# runs lpass, sets $out, $err and $status
+function lpass_capture
+{
+	local errfile="$(mktemp)"
+	out="$(lpass "$@" 2>$errfile)"
+	status=$?
+	err="$(cat $errfile)"
+	rm -f $errfile
+}
+
+function test_show_gcm_tampered_password_fails
+{
+	LPASS_TEST_GCM_TAMPERED=1 login || return 1
+	local out err status
+	lpass_capture show --sync=no --password test-gcm-tampered
+	assert $status "requested password is missing, exit status must say so" || return 1
+	assert_str_eq "$out" "" || return 1
+	echo "$err" | grep -q "Account 0006: field password could not be decrypted"
+	assertz $? "missing undecrypted field error"
+}
+
+function test_show_gcm_tampered_all_fails
+{
+	LPASS_TEST_GCM_TAMPERED=1 login || return 1
+	local out err status
+	lpass_capture show --sync=no test-gcm-tampered
+	assert $status || return 1
+	echo "$out" | grep -q "tampered@example.com"
+	assertz $? "readable fields are still printed"
+}
+
+function test_show_gcm_tampered_json_fails
+{
+	LPASS_TEST_GCM_TAMPERED=1 login || return 1
+	local out err status
+	lpass_capture show --sync=no --json test-gcm-tampered
+	assert $status
+}
+
+function test_export_gcm_tampered_fails
+{
+	LPASS_TEST_GCM_TAMPERED=1 login || return 1
+	local out err status
+	lpass_capture export --sync=no
+	assert $status "export wrote an empty password cell" || return 1
+	echo "$err" | grep -q "Account 0006: field password could not be decrypted"
+	assertz $? || return 1
+	lpass_capture export --sync=no --fields=name,username,url,extra,id
+	assertz $status "columns that decrypted must not fail the export"
+}
+
+function test_duplicate_gcm_tampered_refused
+{
+	LPASS_TEST_GCM_TAMPERED=1 login || return 1
+	local out err status
+	lpass_capture duplicate --sync=no test-gcm-tampered
+	assert $status || return 1
+	echo "$err" | grep -q "Refusing to rewrite account 0006: field password could not be decrypted"
+	assertz $? || return 1
+	assert_eq $(lpass ls --sync=no | grep -c test-gcm-tampered) 1 "nothing was duplicated"
+}
+
+function test_mv_gcm_tampered_refused
+{
+	LPASS_TEST_GCM_TAMPERED=1 login || return 1
+	local out err status
+	lpass_capture mv --sync=no test-gcm-tampered other-group
+	assert $status || return 1
+	echo "$err" | grep -q "Refusing to rewrite account 0006: field password could not be decrypted"
+	assertz $? || return 1
+	assert_eq $(lpass ls --sync=no | grep -c "test-group/test-gcm-tampered") 1 "account was not moved"
+}
+
+function test_show_tampered_note_fails
+{
+	LPASS_TEST_GCM_TAMPERED_FIELDS=1 login || return 1
+	local out err status field
+	for field in username password url; do
+		lpass_capture show --sync=no --$field test-tampered-note
+		assert $status "$field is read from the note, exit status must say so" || return 1
+		echo "$err" | grep -q "Account 0007: field note could not be decrypted"
+		assertz $? "missing note error for $field" || return 1
+	done
+}
+
+function test_edit_tampered_note_refused
+{
+	LPASS_TEST_GCM_TAMPERED_FIELDS=1 login || return 1
+	local out err status
+	lpass_capture edit --sync=no --non-interactive --notes test-tampered-note <<< "replacement"
+	assert $status || return 1
+	echo "$err" | grep -q "Refusing to rewrite account 0007: field note could not be decrypted"
+	assertz $? || return 1
+}
+
+function test_generate_tampered_note_refused
+{
+	LPASS_TEST_GCM_TAMPERED_FIELDS=1 login || return 1
+	local out err status
+	lpass_capture generate --sync=no test-tampered-note 12
+	assert $status || return 1
+	assert_str_eq "$out" "" "no password was generated for the note" || return 1
+	echo "$err" | grep -q "Refusing to rewrite account 0007: field note could not be decrypted"
+	assertz $? || return 1
+}
+
+function test_export_tampered_group_reported_once
+{
+	LPASS_TEST_GCM_TAMPERED_FIELDS=1 login || return 1
+	local out err status
+	lpass_capture export --sync=no --fields=name,group,fullname,grouping
+	assert $status "export must still exit 1" || return 1
+	assert_eq $(echo "$err" | grep -c "Account 0008: field group could not be decrypted") 1 "one report per undecrypted field"
+}
+
 function test_show_json
 {
 	login || return 1

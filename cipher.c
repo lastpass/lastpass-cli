@@ -296,9 +296,9 @@ error:
 
 static char *aes256_decrypt(const unsigned char *ciphertext, size_t len,
 			    const unsigned char key[KDF_HASH_LEN],
-			    bool allow_ecb, enum cipher_aes_mode *mode)
+			    const struct aes_layout *layout, bool allow_ecb,
+			    enum cipher_aes_mode *mode, bool *gcm_auth_failed)
 {
-	const struct aes_layout *layout = layout_fitting(ciphertext, len);
 	enum cipher_aes_mode found = layout ? layout->mode : CIPHER_AES_ECB;
 	bool auth_failed = false;
 	char *plaintext = NULL;
@@ -314,9 +314,12 @@ static char *aes256_decrypt(const unsigned char *ciphertext, size_t len,
 		if (plaintext)
 			found = CIPHER_AES_ECB;
 	}
-	if (!plaintext && auth_failed)
+	/* also when the ECB fallback decrypts: the tag still did not match */
+	if (auth_failed)
 		lpass_log(LOG_WARNING, "AES-GCM authentication failed\n");
 
+	if (gcm_auth_failed)
+		*gcm_auth_failed = auth_failed;
 	if (mode)
 		*mode = found;
 	return plaintext;
@@ -327,19 +330,62 @@ static char *aes256_decrypt(const unsigned char *ciphertext, size_t len,
  * with '#' or '!', so try each structurally possible mode in turn.
  *
  * A '#' item failing the GCM tag is retried as ECB when len % 16 == 0, like
- * web and mobile do (accepted risk, no way to disambiguate). Such a failure
- * decrypts to garbage ~1/256 of the time, without the auth failure warning.
+ * web and mobile do (accepted risk, no way to disambiguate). If ECB decrypts
+ * it (legacy value, or garbage for ~1/256 of tampered items) the value is
+ * accepted: gcm_auth_failed is still set, aes256_decrypt logs the mismatch
+ * (LOG_WARNING) and the _report helpers print a one-line stderr warning.
  */
 char *cipher_aes_decrypt_mode(const unsigned char *ciphertext, size_t len,
 			      const unsigned char key[KDF_HASH_LEN],
-			      enum cipher_aes_mode *mode)
+			      enum cipher_aes_mode *mode, bool *gcm_auth_failed)
 {
-	return aes256_decrypt(ciphertext, len, key, true, mode);
+	return aes256_decrypt(ciphertext, len, key, layout_fitting(ciphertext, len),
+			      true, mode, gcm_auth_failed);
+}
+
+/*
+ * Reports a value no mode decrypted: a failed GCM tag, or any other failure
+ * (bad padding, wrong length, malformed base64). Empty input is not a failure.
+ * A value the ECB fallback decrypted after a failed tag is kept, with a warning.
+ */
+static _printf_(4, 0) void report_decrypt_failure(bool auth_failed, const char *plaintext,
+						  bool input_empty, const char *context, va_list params)
+{
+	char message[1024];
+
+	if (input_empty || (plaintext && !auth_failed))
+		return;
+	vsnprintf(message, sizeof(message), context, params);
+	if (plaintext)
+		warning_msg("AES-GCM tag mismatch, read as legacy AES-ECB: %s", message);
+	else
+		error_msg("%s: %s", auth_failed ? "AES-GCM authentication failed" : "AES decryption failed", message);
+}
+
+char *cipher_aes_decrypt_mode_report(const unsigned char *ciphertext, size_t len,
+				     const unsigned char key[KDF_HASH_LEN],
+				     enum cipher_aes_mode *mode, const char *context, ...)
+{
+	bool auth_failed;
+	char *plaintext = cipher_aes_decrypt_mode(ciphertext, len, key, mode, &auth_failed);
+	va_list params;
+
+	va_start(params, context);
+	report_decrypt_failure(auth_failed, plaintext, !len, context, params);
+	va_end(params);
+	return plaintext;
 }
 
 char *cipher_aes_decrypt(const unsigned char *ciphertext, size_t len, const unsigned char key[KDF_HASH_LEN])
 {
-	return cipher_aes_decrypt_mode(ciphertext, len, key, NULL);
+	return cipher_aes_decrypt_mode(ciphertext, len, key, NULL, NULL);
+}
+
+enum cipher_aes_mode cipher_write_mode(const struct feature_flag *feature_flag)
+{
+	if (feature_flag && feature_flag->aes_gcm_write_enabled)
+		return CIPHER_AES_GCM;
+	return CIPHER_AES_CBC;
 }
 
 static
@@ -384,9 +430,9 @@ error:
 
 }
 
-size_t cipher_aes_encrypt(const char *plaintext,
-			  const unsigned char key[KDF_HASH_LEN],
-			  unsigned char **out)
+static size_t aes256_cbc_encrypt(const char *plaintext,
+				 const unsigned char key[KDF_HASH_LEN],
+				 unsigned char **out)
 {
 	unsigned char *ciphertext;
 	unsigned char *tmp;
@@ -394,7 +440,7 @@ size_t cipher_aes_encrypt(const char *plaintext,
 	int in_len;
 	size_t len;
 
-	if (!RAND_bytes(iv, AES_BLOCK_SIZE))
+	if (RAND_bytes(iv, AES_BLOCK_SIZE) != 1)
 		die("Could not generate random bytes for CBC IV.");
 
 	in_len = strlen(plaintext);
@@ -412,6 +458,69 @@ size_t cipher_aes_encrypt(const char *plaintext,
 
 	*out = ciphertext;
 	return len;
+}
+
+/* '#' + 96-bit random IV + ciphertext + 128-bit tag, no AAD */
+static size_t aes256_gcm_encrypt(const char *plaintext,
+				 const unsigned char key[KDF_HASH_LEN],
+				 unsigned char **out)
+{
+	size_t in_len = strlen(plaintext);
+	unsigned char *ciphertext = xcalloc(AES_GCM_MIN_LEN + in_len, 1);
+	unsigned char *iv = ciphertext + 1;
+	unsigned char *data = iv + AES_GCM_IV_LEN;
+	EVP_CIPHER_CTX *ctx;
+	size_t len;
+	int out_len;
+
+	ciphertext[0] = CIPHER_MARKER_GCM;
+	if (RAND_bytes(iv, AES_GCM_IV_LEN) != 1)
+		die("Could not generate random bytes for GCM IV.");
+
+	ctx = EVP_CIPHER_CTX_new();
+	if (!ctx)
+		goto error;
+	if (!EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), NULL, NULL, NULL))
+		goto error;
+	if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, AES_GCM_IV_LEN, NULL) <= 0)
+		goto error;
+	if (!EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv))
+		goto error;
+	if (!EVP_EncryptUpdate(ctx, data, &out_len, (const unsigned char *)plaintext, in_len))
+		goto error;
+	len = out_len;
+	if (!EVP_EncryptFinal_ex(ctx, data + len, &out_len))
+		goto error;
+	len += out_len;
+	if (len != in_len)
+		goto error;
+	if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, AES_GCM_TAG_LEN, data + len) <= 0)
+		goto error;
+
+	EVP_CIPHER_CTX_free(ctx);
+	*out = ciphertext;
+	return AES_GCM_MIN_LEN + len;
+
+error:
+	EVP_CIPHER_CTX_free(ctx);
+	free(ciphertext);
+	ciphertext = NULL;
+	die("Failed to encrypt data.");
+}
+
+size_t cipher_aes_encrypt(const char *plaintext,
+			  const unsigned char key[KDF_HASH_LEN],
+			  enum cipher_aes_mode mode,
+			  unsigned char **out)
+{
+	switch (mode) {
+	case CIPHER_AES_GCM:
+		return aes256_gcm_encrypt(plaintext, key, out);
+	case CIPHER_AES_CBC:
+		return aes256_cbc_encrypt(plaintext, key, out);
+	default:
+		die("Refusing to write legacy AES-ECB data.");
+	}
 }
 
 static char *base64(const unsigned char *bytes, size_t len)
@@ -551,35 +660,56 @@ size_t cipher_unbase64(const char *ciphertext, unsigned char **b64data)
 	layout = layout_of_marker(ciphertext[0]);
 	if (layout)
 		return unbase64_with_iv(ciphertext, layout, b64data);
-	return unbase64(ciphertext, b64data);
+	return unbase64_noexit(ciphertext, b64data);
 }
 
-char *cipher_aes_decrypt_base64(const char *ciphertext, const unsigned char key[KDF_HASH_LEN])
+char *cipher_aes_decrypt_base64_ex(const char *ciphertext, const unsigned char key[KDF_HASH_LEN],
+				   bool *gcm_auth_failed)
 {
 	_cleanup_free_ unsigned char *unbase64_ciphertext = NULL;
 	size_t len;
 
+	if (gcm_auth_failed)
+		*gcm_auth_failed = false;
 	len = cipher_unbase64(ciphertext, &unbase64_ciphertext);
 	if (!len)
 		return NULL;
 
-	/* a marker in text form fixes the mode, so never retry as ECB */
-	return aes256_decrypt(unbase64_ciphertext, len, key,
-			      !cipher_is_marker(ciphertext[0]), NULL);
+	/*
+	 * Text form: a marker fixes the mode (never retry as ECB), no marker
+	 * means ECB. Raw bytes must not be sniffed: ECB data may start with '#'.
+	 */
+	if (cipher_is_marker(ciphertext[0]))
+		return aes256_decrypt(unbase64_ciphertext, len, key,
+				      layout_fitting(unbase64_ciphertext, len),
+				      false, NULL, gcm_auth_failed);
+	return aes256_decrypt(unbase64_ciphertext, len, key, NULL, true, NULL, gcm_auth_failed);
 }
 
-char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN])
+char *cipher_aes_decrypt_base64_report(const char *ciphertext, const unsigned char key[KDF_HASH_LEN],
+				       const char *context, ...)
+{
+	bool auth_failed;
+	char *plaintext = cipher_aes_decrypt_base64_ex(ciphertext, key, &auth_failed);
+	va_list params;
+
+	va_start(params, context);
+	report_decrypt_failure(auth_failed, plaintext, !*ciphertext, context, params);
+	va_end(params);
+	return plaintext;
+}
+
+char *encrypt_and_base64(const char *str, unsigned const char key[KDF_HASH_LEN],
+			 enum cipher_aes_mode mode)
 {
 	unsigned char *intermediate = NULL;
-	char *base64 = NULL;
+	char *base64;
 	size_t len;
 
-	base64 = xstrdup(str);
-	if (!*base64)
-		return base64;
+	if (!*str)
+		return xstrdup("");
 
-	len = cipher_aes_encrypt(base64, key, &intermediate);
-	free(base64);
+	len = cipher_aes_encrypt(str, key, mode, &intermediate);
 	base64 = cipher_base64(intermediate, len);
 	free(intermediate);
 	return base64;
@@ -618,8 +748,7 @@ bool cipher_decrypt_private_key(const char *key_hex,
 
 	if (cipher_is_marker(key_hex[0])) {
 		/* v2 (CBC) / v3 (GCM) format */
-		decrypted_key = cipher_aes_decrypt_base64(
-			key_hex, key);
+		decrypted_key = cipher_aes_decrypt_base64_report(key_hex, key, "private key");
 	} else {
 		if (len % 2 != 0)
 			die("Key hex in wrong format.");
@@ -667,7 +796,8 @@ bool cipher_decrypt_private_key(const char *key_hex,
  * Encrypt RSA sharing key.  Encrypted key is returned as a base64 string.
  */
 char *cipher_encrypt_private_key(struct private_key *private_key,
-				 unsigned const char key[KDF_HASH_LEN])
+				 unsigned const char key[KDF_HASH_LEN],
+				 enum cipher_aes_mode mode)
 {
 	unsigned char *key_ptext;
 	unsigned char *ctext = NULL;
@@ -690,11 +820,12 @@ char *cipher_encrypt_private_key(struct private_key *private_key,
 	memcpy(key_ptext + strlen(LP_PKEY_PREFIX) + hex_len,
 	       LP_PKEY_SUFFIX, strlen(LP_PKEY_SUFFIX));
 	
-	ctext_len = cipher_aes_encrypt(key_ptext, key, &ctext);
+	ctext_len = cipher_aes_encrypt((char *)key_ptext, key, mode, &ctext);
 
 	encrypted_base64 = cipher_base64(ctext, ctext_len);
 
 	free(ctext);
+	secure_clear(key_ptext, len + 1);
 	free(key_ptext);
 
 	return encrypted_base64;

@@ -88,7 +88,53 @@ void warn_errno(const char *err, ...)
 	terminal_fprintf(stderr, TERMINAL_FG_YELLOW TERMINAL_BOLD "WARNING" TERMINAL_RESET ": " TERMINAL_FG_YELLOW "%s" TERMINAL_RESET ": %s\n", error_message, message);
 }
 
-_noreturn_ void die(const char *err, ...)
+/*
+ * Byte length of the control character a terminal might act on at p, else 0:
+ * C0 and DEL, C1 (U+0080-U+009F) in UTF-8, bidi marks and line separators.
+ */
+static size_t control_char_len(const unsigned char *p)
+{
+	if (p[0] < 0x20 || p[0] == 0x7f)
+		return 1;
+	if (p[0] == 0xc2 && p[1] >= 0x80 && p[1] <= 0x9f)
+		return 2;
+	/* U+061C */
+	if (p[0] == 0xd8 && p[1] == 0x9c)
+		return 2;
+	/* U+200E, U+200F, U+2028-U+202E */
+	if (p[0] == 0xe2 && p[1] == 0x80 &&
+	    (p[2] == 0x8e || p[2] == 0x8f || (p[2] >= 0xa8 && p[2] <= 0xae)))
+		return 3;
+	/* U+2066-U+2069 */
+	if (p[0] == 0xe2 && p[1] == 0x81 && p[2] >= 0xa6 && p[2] <= 0xa9)
+		return 3;
+	return 0;
+}
+
+/* vault data ends up in messages: no escape sequences, no forged lines */
+static void strip_control_chars(char *message)
+{
+	char *p;
+	size_t len;
+
+	for (p = message; *p; p += len ? len : 1) {
+		len = control_char_len((unsigned char *) p);
+		memset(p, '?', len);
+	}
+}
+
+static _printf_(1, 0) void print_error(const char *err, va_list params, bool sanitize)
+{
+	char message[4096];
+
+	vsnprintf(message, sizeof(message), err, params);
+	if (sanitize)
+		strip_control_chars(message);
+
+	terminal_fprintf(stderr, TERMINAL_FG_RED TERMINAL_BOLD "Error" TERMINAL_RESET ": %s\n", message);
+}
+
+void warning_msg(const char *err, ...)
 {
 	char message[4096];
 	va_list params;
@@ -96,8 +142,27 @@ _noreturn_ void die(const char *err, ...)
 	va_start(params, err);
 	vsnprintf(message, sizeof(message), err, params);
 	va_end(params);
+	strip_control_chars(message);
 
-	terminal_fprintf(stderr, TERMINAL_FG_RED TERMINAL_BOLD "Error" TERMINAL_RESET ": %s\n", message);
+	terminal_fprintf(stderr, TERMINAL_FG_YELLOW TERMINAL_BOLD "Warning" TERMINAL_RESET ": %s\n", message);
+}
+
+void error_msg(const char *err, ...)
+{
+	va_list params;
+
+	va_start(params, err);
+	print_error(err, params, true);
+	va_end(params);
+}
+
+_noreturn_ void die(const char *err, ...)
+{
+	va_list params;
+
+	va_start(params, err);
+	print_error(err, params, false);
+	va_end(params);
 	exit(1);
 }
 _noreturn_ void die_errno(const char *err, ...)

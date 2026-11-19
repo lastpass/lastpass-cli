@@ -289,7 +289,7 @@ static char *read_plain_string(struct chunk *chunk)
 }
 
 static char *read_crypt_string(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN], char **stored_base64,
-			       unsigned int *undecryptable)
+			       unsigned int *undecryptable, const char *account_id, const char *label, bool *undecrypted)
 {
 	struct item item;
 	enum cipher_aes_mode mode;
@@ -298,15 +298,19 @@ static char *read_crypt_string(struct chunk *chunk, const unsigned char key[KDF_
 	if (!read_item(chunk, &item))
 		return NULL;
 
-	ptext = cipher_aes_decrypt_mode(item.data, item.len, key, &mode);
+	ptext = cipher_aes_decrypt_mode_report(item.data, item.len, key, &mode,
+					       "account %s, field %s", account_id, label);
 	/* mode is the one that decrypted, so ECB values starting with '#' keep plain base64 */
 	if (stored_base64)
 		*stored_base64 = cipher_base64_mode(item.data, item.len, mode);
 
 	if (!ptext) {
 		/* don't fail whole blob if this item cannot be decrypted */
-		if (item.len)
+		if (item.len) {
 			(*undecryptable)++;
+			if (undecrypted)
+				*undecrypted = true;
+		}
 		return xstrdup("");
 	}
 
@@ -355,12 +359,15 @@ static bool check_next_entry_encrypted(struct chunk *chunk) {
 		goto error; \
 	parsed->var = __entry_val__; \
 	} while (0)
-#define entry_crypt_at(base, var) do { \
-	char *__entry_val__ = read_crypt_string(chunk, key, &base->var##_encrypted, undecryptable); \
+#define entry_crypt_flag(base, var, account_id, label, undecrypted) do { \
+	char *__entry_val__ = read_crypt_string(chunk, key, &base->var##_encrypted, undecryptable, account_id, label, undecrypted); \
 	if (!__entry_val__) \
 		goto error; \
 	base->var = __entry_val__; \
 	} while (0)
+#define entry_crypt_ctx(base, var, account_id, label) \
+	entry_crypt_flag(base, var, account_id, label, &base->var##_undecrypted)
+#define entry_crypt_at(base, var) entry_crypt_ctx(base, var, parsed->id, #var)
 #define entry_crypt(var) entry_crypt_at(parsed, var)
 #define skip(placeholder) do { \
 	struct item skip_item; \
@@ -419,8 +426,9 @@ static struct account *account_parse(struct chunk *chunk, const unsigned char ke
 		parsed->group[0] = '\0';
 
 	if ((strlen(parsed->attachkey_encrypted) && strcmp(parsed->attachkey_encrypted, "skipped") != 0)) {
-		parsed->attachkey = cipher_aes_decrypt_base64(
-			parsed->attachkey_encrypted, key);
+		parsed->attachkey = cipher_aes_decrypt_base64_report(
+			parsed->attachkey_encrypted, key,
+			"account %s, field attachkey", parsed->id);
 	}
 	if (!parsed->attachkey)
 		parsed->attachkey = xstrdup("");
@@ -440,14 +448,14 @@ error:
 }
 
 static struct field *field_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN],
-				 unsigned int *undecryptable)
+				 unsigned int *undecryptable, const char *account_id)
 {
 	struct field *parsed = new0(struct field, 1);
 
 	entry_plain(name);
 	entry_plain(type);
 	if (!strcmp(parsed->type, "email") || !strcmp(parsed->type, "tel") || !strcmp(parsed->type, "text") || !strcmp(parsed->type, "password") || !strcmp(parsed->type, "textarea"))
-		entry_crypt(value);
+		entry_crypt_ctx(parsed, value, account_id, parsed->name);
 	else
 		entry_plain(value);
 	entry_boolean(checked);
@@ -460,12 +468,12 @@ error:
 }
 
 static struct field *app_field_parse(struct chunk *chunk, const unsigned char key[KDF_HASH_LEN],
-				     unsigned int *undecryptable)
+				     unsigned int *undecryptable, const char *account_id)
 {
 	struct field *parsed = new0(struct field, 1);
 
 	entry_plain(name);
-	entry_crypt(value);
+	entry_crypt_ctx(parsed, value, account_id, parsed->name);
 	entry_plain(type);
 
 	return parsed;
@@ -512,7 +520,11 @@ static struct share *share_parse(struct chunk *chunk, const struct private_key *
 	memcpy(parsed->key, key, KDF_HASH_LEN);
 
 	base64_name = read_plain_string(chunk);
-	parsed->name = cipher_aes_decrypt_base64(base64_name, parsed->key);
+	if (!base64_name)
+		goto error;
+	parsed->name = cipher_aes_decrypt_base64_report(
+		base64_name, parsed->key,
+		"shared folder %s, field name", parsed->id);
 	if (!parsed->name)
 		goto error;
 
@@ -533,7 +545,7 @@ static struct app *app_parse(struct chunk *chunk, const unsigned char key[KDF_HA
 
 	entry_plain(id);
 	entry_hex_at(app, appname);
-	entry_crypt_at(app, extra);
+	entry_crypt_flag(app, extra, parsed->id, "extra", NULL);
 	entry_crypt(name);
 	entry_crypt(group);
 	entry_plain(last_touch);
@@ -602,7 +614,30 @@ error:
 #undef entry_boolean
 #undef entry_crypt
 #undef entry_crypt_at
+#undef entry_crypt_ctx
+#undef entry_crypt_flag
 #undef skip
+
+/* chunks that belong to the share opened by the last SHAR */
+static bool is_share_item(const char *name)
+{
+	return !strcmp(name, "ACCT") || !strcmp(name, "ACFL") || !strcmp(name, "ACOF") ||
+	       !strcmp(name, "AACT") || !strcmp(name, "AACF");
+}
+
+static void report_share_skipped(struct chunk *chunk)
+{
+	_cleanup_free_ char *id = read_plain_string(chunk);
+
+	error_msg("Shared folder %s could not be loaded, skipping its items.", id ? id : "(unknown)");
+}
+
+static unsigned long long read_version(const struct chunk *chunk)
+{
+	_cleanup_free_ char *versionstr = xstrndup((char *) chunk->data, chunk->len);
+
+	return strtoull(versionstr, NULL, 10);
+}
 
 struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned char key[KDF_HASH_LEN], const struct private_key *private_key)
 {
@@ -614,7 +649,8 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 	struct app *app = NULL;
 	struct attach *attach;
 	struct blob *parsed;
-	_cleanup_free_ char *versionstr = NULL;
+	bool have_version = false;
+	bool skip_share = false;
 	unsigned int undecryptable = 0;
 
 	parsed = new0(struct blob, 1);
@@ -623,9 +659,13 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 	INIT_LIST_HEAD(&parsed->share_head);
 
 	while (read_chunk(&blob_pos, &chunk)) {
+		/* items of a share that failed to load: the user key must not decrypt them as personal ones */
+		if (skip_share && is_share_item(chunk.name))
+			continue;
+
 		if (!strcmp(chunk.name, "LPAV")) {
-			versionstr = xstrndup((char *) chunk.data, chunk.len);
-			parsed->version = strtoull(versionstr, NULL, 10);
+			parsed->version = read_version(&chunk);
+			have_version = true;
 		} else if (!strcmp(chunk.name, "ACCT")) {
 			account = account_parse(&chunk, last_share ? last_share->key : key, &undecryptable);
 			if (!account)
@@ -645,7 +685,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 			if (!account)
 				goto error;
 
-			field = field_parse(&chunk, last_share ? last_share->key : key, &undecryptable);
+			field = field_parse(&chunk, last_share ? last_share->key : key, &undecryptable, account->id);
 			if (!field)
 				goto error;
 
@@ -653,10 +693,15 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 		} else if (!strcmp(chunk.name, "LOCL")) {
 			parsed->local_version = true;
 		} else if (!strcmp(chunk.name, "SHAR")) {
+			struct chunk id_chunk = chunk;
+
 			share = share_parse(&chunk, private_key);
 			last_share = share;
+			skip_share = !share;
 			if (share)
 				list_add_tail(&share->list, &parsed->share_head);
+			else
+				report_share_skipped(&id_chunk);
 		} else if (!strcmp(chunk.name, "AACT")) {
 			app = app_parse(&chunk, last_share ? last_share->key : key, &undecryptable);
 			if (app)
@@ -664,7 +709,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 		} else if (!strcmp(chunk.name, "AACF")) {
 			if (!app)
 				goto error;
-			field = app_field_parse(&chunk, last_share ? last_share->key : key, &undecryptable);
+			field = app_field_parse(&chunk, last_share ? last_share->key : key, &undecryptable, app->account.id);
 			if (!field)
 				goto error;
 			list_add_tail(&field->list, &app->account.field_head);
@@ -689,7 +734,7 @@ struct blob *blob_parse(const unsigned char *blob, size_t len, const unsigned ch
 		}
 	}
 
-	if (!versionstr)
+	if (!have_version)
 		goto error;
 	if (undecryptable)
 		lpass_log(LOG_WARNING, "%u encrypted field(s) could not be decrypted.\n", undecryptable);
@@ -936,26 +981,38 @@ static struct blob *local_blob(const unsigned char key[KDF_HASH_LEN], const stru
 	return blob_parse(blob, len, key, private_key);
 }
 
+static unsigned long long blob_peek_version(const unsigned char *blob, size_t len)
+{
+	struct blob_pos blob_pos = { .data = blob, .len = len };
+	struct chunk chunk;
+
+	while (read_chunk(&blob_pos, &chunk)) {
+		if (!strcmp(chunk.name, "LPAV"))
+			return read_version(&chunk);
+	}
+	return 0;
+}
+
+/* a stale local copy is never parsed, so its decrypt failures are not reported twice */
 static struct blob *blob_get_latest(struct session *session, const unsigned char key[KDF_HASH_LEN])
 {
+	_cleanup_free_ unsigned char *raw = NULL;
 	struct blob *local;
 	unsigned long long remote_version;
+	size_t len = config_read_encrypted_buffer("blob", &raw, key);
 
-	local = local_blob(key, &session->private_key);
-	if (!local)
+	if (!raw)
 		return lastpass_get_blob(session, key);
 
 	remote_version = lastpass_get_blob_version(session, key);
-
-	if (remote_version == 0) {
-		blob_free(local);
+	if (remote_version == 0)
 		return NULL;
-	}
-
-	if (remote_version > local->version) {
-		blob_free(local);
+	if (remote_version > blob_peek_version(raw, len))
 		return lastpass_get_blob(session, key);
-	}
+
+	local = blob_parse(raw, len, key, &session->private_key);
+	if (!local)
+		return lastpass_get_blob(session, key);
 
 	config_touch("blob");
 	return local;
@@ -1006,37 +1063,38 @@ void blob_save(const struct blob *blob, const unsigned char key[KDF_HASH_LEN], c
 	free(obj->field); \
 	obj->field = field; \
 } while (0)
-#define set_encrypted_field(obj, field) do { \
+#define set_encrypted_field(obj, field, mode) do { \
 	if (!obj->field || !field || strcmp(obj->field, field)) { \
 		set_field(obj, field); \
+		obj->field##_undecrypted = false; \
 		free(obj->field##_encrypted); \
-		obj->field##_encrypted = encrypt_and_base64(field, account->share ? account->share->key : key); \
+		obj->field##_encrypted = encrypt_and_base64(field, account->share ? account->share->key : key, mode); \
 	} \
 } while (0)
-#define reencrypt_field(obj, field) do { \
+#define reencrypt_field(obj, field, mode) do { \
 	free(obj->field##_encrypted); \
-	obj->field##_encrypted = encrypt_and_base64(obj->field, account->share ? account->share->key : key); \
+	obj->field##_encrypted = encrypt_and_base64(obj->field, account->share ? account->share->key : key, mode); \
 } while (0)
 
-void account_set_username(struct account *account, char *username, unsigned const char key[KDF_HASH_LEN])
+void account_set_username(struct account *account, char *username, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
-	set_encrypted_field(account, username);
+	set_encrypted_field(account, username, cipher_write_mode(feature_flag));
 }
-void account_set_password(struct account *account, char *password, unsigned const char key[KDF_HASH_LEN])
+void account_set_password(struct account *account, char *password, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
-	set_encrypted_field(account, password);
+	set_encrypted_field(account, password, cipher_write_mode(feature_flag));
 }
-void account_set_group(struct account *account, char *group, unsigned const char key[KDF_HASH_LEN])
+void account_set_group(struct account *account, char *group, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
-	set_encrypted_field(account, group);
+	set_encrypted_field(account, group, cipher_write_mode(feature_flag));
 }
-void account_set_name(struct account *account, char *name, unsigned const char key[KDF_HASH_LEN])
+void account_set_name(struct account *account, char *name, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
-	set_encrypted_field(account, name);
+	set_encrypted_field(account, name, cipher_write_mode(feature_flag));
 }
-void account_set_note(struct account *account, char *note, unsigned const char key[KDF_HASH_LEN])
+void account_set_note(struct account *account, char *note, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
-	set_encrypted_field(account, note);
+	set_encrypted_field(account, note, cipher_write_mode(feature_flag));
 }
 void account_set_url(struct account *account, char *url, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
@@ -1051,10 +1109,14 @@ void account_set_url(struct account *account, char *url, unsigned const char key
 	}
 
 	if (feature_flag && feature_flag->url_encryption_enabled) {
-		set_encrypted_field(account, url);
+		set_encrypted_field(account, url, cipher_write_mode(feature_flag));
 	} else {
 		UNUSED(key);
 		set_field(account, url);
+		account->url_undecrypted = false;
+		/* like a new account: no ciphertext of the old url to write back later */
+		free(account->url_encrypted);
+		account->url_encrypted = NULL;
 	}
 }
 void account_set_appname(struct account *account, char *appname, unsigned const char key[KDF_HASH_LEN])
@@ -1067,10 +1129,10 @@ void account_set_appname(struct account *account, char *appname, unsigned const 
 	app = account_to_app(account);
 	set_field(app, appname);
 }
-void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN])
+void field_set_value(struct account *account, struct field *field, char *value, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
 	if (!strcmp(field->type, "email") || !strcmp(field->type, "tel") || !strcmp(field->type, "text") || !strcmp(field->type, "password") || !strcmp(field->type, "textarea"))
-		set_encrypted_field(field, value);
+		set_encrypted_field(field, value, cipher_write_mode(feature_flag));
 	else
 		set_field(field, value);
 }
@@ -1080,21 +1142,77 @@ static bool is_shared_folder_name(const char *fullname)
 	return !strncmp(fullname, "Shared-", 7) && strchr(fullname, '/');
 }
 
+#define ENCRYPTED_ACCOUNT_FIELDS(X) \
+	X(name) X(group) X(url) X(username) X(password) X(note)
+
+const char *account_undecrypted_field(const struct account *account)
+{
+	const struct field *field;
+
+#define X(field) if (account->field##_undecrypted) return #field;
+	ENCRYPTED_ACCOUNT_FIELDS(X)
+#undef X
+	list_for_each_entry(field, &account->field_head, list) {
+		if (field->value_undecrypted)
+			return field->name;
+	}
+	return NULL;
+}
+
+const char *account_field_undecrypted(const struct account *account, const char *name)
+{
+	if (!strcmp(name, "fullname"))
+		return account_field_undecrypted(account, account->name_undecrypted ? "name" : "group");
+	if (!strcmp(name, "grouping"))
+		name = "group";
+	if (!strcmp(name, "extra"))
+		name = "note";
+
+#define X(field) if (!strcmp(name, #field)) return account->field##_undecrypted ? #field : NULL;
+	ENCRYPTED_ACCOUNT_FIELDS(X)
+#undef X
+	return NULL;
+}
+
+bool account_report_undecrypted(const struct account *account, const char *field)
+{
+	if (!field)
+		return false;
+	error_msg("Account %s: field %s could not be decrypted.", account->id, field);
+	return true;
+}
+
+void account_refuse_rewrite(const struct account *account, const char *field)
+{
+	error_msg("Refusing to rewrite account %s: field %s could not be decrypted.", account->id, field);
+	exit(1);
+}
+
+void account_require_decrypted(const struct account *account)
+{
+	const char *name = account_undecrypted_field(account);
+
+	if (name)
+		account_refuse_rewrite(account, name);
+}
+
 void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
+	enum cipher_aes_mode mode = cipher_write_mode(feature_flag);
 	struct field *field;
 
-	reencrypt_field(account, name);
-	reencrypt_field(account, group);
+	account_require_decrypted(account);
+	reencrypt_field(account, name, mode);
+	reencrypt_field(account, group, mode);
 	if (feature_flag && feature_flag->url_encryption_enabled) {
-		reencrypt_field(account, url);
+		reencrypt_field(account, url, mode);
 	}
-	reencrypt_field(account, username);
-	reencrypt_field(account, password);
-	reencrypt_field(account, note);
+	reencrypt_field(account, username, mode);
+	reencrypt_field(account, password, mode);
+	reencrypt_field(account, note, mode);
 
 	list_for_each_entry(field, &account->field_head, list) {
-		reencrypt_field(field, value);
+		reencrypt_field(field, value, mode);
 	}
 }
 
@@ -1104,19 +1222,20 @@ void account_reencrypt(struct account *account, const unsigned char key[KDF_HASH
  */
 static void account_set_group_name(struct account *account,
 				   const char *groupname,
-				   unsigned const char key[KDF_HASH_LEN])
+				   unsigned const char key[KDF_HASH_LEN],
+				   const struct feature_flag *feature_flag)
 {
 	char *slash = strrchr(groupname, '/');
 	if (!slash) {
-		account_set_name(account, xstrdup(groupname), key);
-		account_set_group(account, xstrdup(""), key);
+		account_set_name(account, xstrdup(groupname), key, feature_flag);
+		account_set_group(account, xstrdup(""), key, feature_flag);
 	} else {
-		account_set_name(account, xstrdup(slash + 1), key);
-		account_set_group(account, xstrndup(groupname, slash - groupname), key);
+		account_set_name(account, xstrdup(slash + 1), key, feature_flag);
+		account_set_group(account, xstrndup(groupname, slash - groupname), key, feature_flag);
 	}
 }
 
-void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN])
+void account_set_fullname(struct account *account, char *fullname, unsigned const char key[KDF_HASH_LEN], const struct feature_flag *feature_flag)
 {
 	char *groupname = fullname;
 
@@ -1126,7 +1245,7 @@ void account_set_fullname(struct account *account, char *fullname, unsigned cons
 		if (tmp)
 			groupname = tmp + 1;
 	}
-	account_set_group_name(account, groupname, key);
+	account_set_group_name(account, groupname, key, feature_flag);
 	free(account->fullname);
 	account->fullname = fullname;
 }
@@ -1182,7 +1301,7 @@ void account_assign_share(struct blob *blob, struct account *account,
 
 	/* update group name to not include new share, if needed */
 	if (share)
-		account_set_group_name(account, slash + 1, key);
+		account_set_group_name(account, slash + 1, key, feature_flag);
 
 reencrypt:
 	if (old_share != account->share)

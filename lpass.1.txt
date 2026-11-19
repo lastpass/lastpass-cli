@@ -173,6 +173,11 @@ slash should be appended, only if the printed value is expanded to a non-empty
 string.  For example, this command will properly show the full path to
 an account: `lpass ls --format="%/as%/ag%an"`.
 
+If a field requested from 'show' cannot be decrypted, an error is printed to
+standard error and 'show' exits with status 1 (see 'Encryption'). The username,
+password and URL of a secure note are read from its note, so they cannot be
+shown either when the note cannot be decrypted.
+
 Modifying
 ~~~~~~~~~
 The 'edit' subcommand will edit the selected field. If '--non-interactive' is not
@@ -189,6 +194,13 @@ generated password.
 The 'rm' command will remove the specified entry, and the 'duplicate' command
 will create a duplicate entry of the one specified, but with a different 'ID'.
 
+The 'duplicate' and 'mv' subcommands, and 'edit' and 'generate' on a secure
+note, refuse to modify an account with a field that cannot be decrypted
+(exit status 1) instead of overwriting that field with an empty value. 'edit'
+also refuses on other accounts when the URL cannot be decrypted and it edits the
+URL (or all fields), or the name cannot be decrypted and it edits the name (or
+all fields): the editor would show them empty.
+
 Backup
 ~~~~~~
 The 'export' subcommand will dump all account information including
@@ -198,6 +210,10 @@ following fields:
 
   id, url, username, password, extra, name, fav, id, grouping, group,
   fullname, last_touch, last_modified_gmt, attachpresent
+
+For each account field that cannot be decrypted, 'export' prints one error to
+standard error (not one per column built from it), leaves those CSV cells empty
+and exits with status 1.
 
 The 'import' subcommand does the reverse: accounts from an unencrypted
 CSV file are uploaded to the server.
@@ -220,6 +236,47 @@ share for a specific user.  Running with no arguments will display the
 current access levels for a user.  The '--add', '--rm', and '--clear' options
 may be used to add to, remove from, or reset the list.  Passing '--allow' or
 '--deny' will make the list a whitelist or blacklist, respectively.
+
+Encryption
+~~~~~~~~~~
+New and edited items are encrypted with AES-256-CBC. If the server enables
+AES-256-GCM writes for the account, they are encrypted with AES-256-GCM instead.
+Only items that are changed switch format, so a vault may hold both. Changing
+the master password with 'passwd', or moving an account to another shared
+folder, re-encrypts all of the affected items in the current format. Items in
+either format, and legacy AES-256-ECB items, can always be read.
+
+An item that cannot be decrypted is reported on standard error. If its GCM
+authentication tag does not match:
+
+[verse]
+Error: AES-GCM authentication failed: account <id>, field <name>
+
+For any other failure, such as bad padding or a wrong length:
+
+[verse]
+Error: AES decryption failed: account <id>, field <name>
+
+Its stored value is kept as is, and is never replaced by an empty value. The
+error is printed each time the vault is read, until the item is saved again.
+Commands that only read, such as 'ls', still exit with status 0.
+
+An item whose GCM authentication tag does not match, but that decrypts as a
+legacy AES-256-ECB item, is kept with a warning:
+
+[verse]
+Warning: AES-GCM tag mismatch, read as legacy AES-ECB: account <id>, field <name>
+
+Legacy items can start like GCM ones, so the two cannot be told apart. The
+warning is printed each time the vault is read, until the item is saved again.
+
+A shared folder whose key or name cannot be decrypted is reported, and its
+items are left out.
+
+When changing the master password, 'passwd' reports items that cannot be
+decrypted in the same way. It fails if more than a tenth of the required items
+cannot be decrypted, and re-encrypts any other item that cannot be decrypted as
+a single space.
 
 Clipboard
 ~~~~~~~~~

@@ -40,35 +40,54 @@
 
 #define SESSION_FF_URL_ENCRYPTION "session_ff_url_encryption"
 #define SESSION_FF_URL_LOGGING "session_ff_url_logging"
+#define SESSION_FF_AES_GCM_WRITE "session_ff_aes_gcm_write"
+
+static bool xml_attr_is_enabled(xmlDoc *doc, xmlAttrPtr attr)
+{
+	xmlChar *value = xmlNodeListGetString(doc, attr->children, 1);
+	bool enabled = value && !xmlStrcmp(value, BAD_CAST "1");
+
+	xmlFree(value);
+	return enabled;
+}
+
+static void config_read_flag(const char *name, unsigned const char key[KDF_HASH_LEN], bool *flag)
+{
+	char *value = config_read_encrypted_string(name, key);
+
+	if (value)
+		*flag = !strcmp(value, "1");
+	free(value);
+}
 
 void feature_flag_load_xml_attr(struct feature_flag *feature_flag, xmlDoc *doc, xmlAttrPtr attr) {
     if (!xmlStrcmp(attr->name, BAD_CAST "url_encryption")) {
-        feature_flag->url_encryption_enabled = !strcmp((char *)xmlNodeListGetString(doc, attr->children, 1), "1");
+		feature_flag->url_encryption_enabled = xml_attr_is_enabled(doc, attr);
     }
 
     if (!xmlStrcmp(attr->name, BAD_CAST "url_logging")) {
-        feature_flag->url_logging_enabled = !strcmp((char *)xmlNodeListGetString(doc, attr->children, 1), "1");
+		feature_flag->url_logging_enabled = xml_attr_is_enabled(doc, attr);
     }
+
+	if (!xmlStrcmp(attr->name, BAD_CAST "enable_aes_gcm_write")) {
+		feature_flag->aes_gcm_write_enabled = xml_attr_is_enabled(doc, attr);
+	}
 }
 
 void feature_flag_save(const struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]) {
     config_write_encrypted_string(SESSION_FF_URL_ENCRYPTION, feature_flag->url_encryption_enabled ? "1" : "0", key);
     config_write_encrypted_string(SESSION_FF_URL_LOGGING, feature_flag->url_logging_enabled ? "1" : "0", key);
+	config_write_encrypted_string(SESSION_FF_AES_GCM_WRITE, feature_flag->aes_gcm_write_enabled ? "1" : "0", key);
 }
 
 void feature_flag_load(struct feature_flag *feature_flag, unsigned const char key[KDF_HASH_LEN]) {
-    char *ff_url_encryption = config_read_encrypted_string(SESSION_FF_URL_ENCRYPTION, key);
-    if (ff_url_encryption != NULL) {
-        feature_flag->url_encryption_enabled = !strcmp(ff_url_encryption, "1");
-    }
-
-    char *ff_url_logging = config_read_encrypted_string(SESSION_FF_URL_LOGGING, key);
-    if (ff_url_logging != NULL) {
-        feature_flag->url_logging_enabled = !strcmp(ff_url_logging, "1");
-    }
+	config_read_flag(SESSION_FF_URL_ENCRYPTION, key, &feature_flag->url_encryption_enabled);
+	config_read_flag(SESSION_FF_URL_LOGGING, key, &feature_flag->url_logging_enabled);
+	config_read_flag(SESSION_FF_AES_GCM_WRITE, key, &feature_flag->aes_gcm_write_enabled);
 }
 
 void feature_flag_cleanup() {
     config_unlink(SESSION_FF_URL_ENCRYPTION);
     config_unlink(SESSION_FF_URL_LOGGING);
+	config_unlink(SESSION_FF_AES_GCM_WRITE);
 }

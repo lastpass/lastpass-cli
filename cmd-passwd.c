@@ -74,6 +74,7 @@ static void reencrypt(struct session *session,
 	struct pwchange_field *field;
 	struct pwchange_su_key *su_key;
 	struct private_key tmp;
+	enum cipher_aes_mode mode = cipher_write_mode(&session->feature_flag);
 	unsigned int n_fields = 0;
 	unsigned int i = 0;
 	unsigned int n_required = 0;
@@ -100,7 +101,7 @@ static void reencrypt(struct session *session,
 	}
 
 	info->new_privkey_encrypted =
-		cipher_encrypt_private_key(&tmp, new_key);
+		cipher_encrypt_private_key(&tmp, new_key, mode);
 
 	secure_clear(tmp.key, tmp.len);
 	free(tmp.key);
@@ -111,13 +112,15 @@ static void reencrypt(struct session *session,
 		if (!field->optional)
 			n_required++;
 
-		char *ptext = cipher_aes_decrypt_base64(field->old_ctext, key);
+		/* i counts the private key first, then one per field */
+		char *ptext = cipher_aes_decrypt_base64_report(field->old_ctext, key,
+							       "password change item %u", i - 1);
 		if (!ptext) {
 			if (!field->optional)
 				errors++;
 			ptext = " ";
 		}
-		field->new_ctext = encrypt_and_base64(ptext, new_key);
+		field->new_ctext = encrypt_and_base64(ptext, new_key, mode);
 	}
 
 	/*
@@ -234,7 +237,8 @@ int cmd_passwd(int argc, char **argv)
 
 	terminal_printf(TERMINAL_FG_CYAN "Uploading...\n" TERMINAL_RESET);
 
-	_cleanup_free_ char *enc_username = encrypt_and_base64(username, new_key);
+	/* key-integrity check value: stays CBC whatever the GCM write switch says */
+	_cleanup_free_ char *enc_username = encrypt_and_base64(username, new_key, CIPHER_AES_CBC);
 	ret = lastpass_pwchange_complete(session, username, enc_username,
 					 hex, new_hex, iterations, &info);
 
