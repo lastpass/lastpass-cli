@@ -12,6 +12,7 @@ Command line interface to [LastPass.com](https://lastpass.com/).
 * [LibreSSL](http://www.libressl.org/) or [OpenSSL](https://www.openssl.org/)
 * [libcurl](http://curl.haxx.se/)
 * [libxml2](http://xmlsoft.org/)
+* [CMake](https://cmake.org/) 3.10 or newer and pkg-config (build-time only)
 * [pinentry](https://www.gnupg.org/related_software/pinentry/index.en.html) (optional)
 * [AsciiDoc](http://www.methods.co.nz/asciidoc/) (build-time documentation generation only)
 * [xclip](http://sourceforge.net/projects/xclip/), [xsel](http://www.vergenet.net/~conrad/software/xsel/), [pbcopy](https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/pbcopy.1.html), or [putclip from cygutils-extra](https://cygwin.com/cgi-bin2/package-grep.cgi?grep=cygutils-extra) for clipboard support (optional)
@@ -45,7 +46,7 @@ sudo dnf install lastpass-cli
 sudo yum install lastpass-cli
 ```
 
-* For older versions: Install the needed build dependencies, and then follow instructions in
+* To build from source: Install the needed build dependencies, and then follow instructions in
   the 'Building' section.
 
 ```
@@ -56,57 +57,16 @@ sudo yum install openssl libcurl libxml2 pinentry xclip openssl-devel libxml2-de
 #### Debian/Ubuntu
 
 * Install the needed build dependencies, and then follow instructions in
-  the 'Building' section.
-
-* For Ubuntu 16.04 (xenial)
+  the 'Building' section. Requires CMake 3.10 or newer (Debian 10+, Ubuntu 18.04+).
 
 ```
 apt-get --no-install-recommends -yqq install \
   bash-completion \
   build-essential \
   cmake \
-  libcurl3  \
-  libcurl3-openssl-dev  \
-  libssl1.0.0 \
+  libcurl4-openssl-dev \
   libssl-dev \
-  libxml2 \
-  libxml2-dev  \
-  pkg-config \
-  ca-certificates \
-  xclip
-```
-
-* For Debian (stable/oldstable) and other Ubuntus < 18.04
-
-```
-apt-get --no-install-recommends -yqq install \
-  bash-completion \
-  build-essential \
-  cmake \
-  libcurl3  \
-  libcurl3-openssl-dev  \
-  libssl1.0 \
-  libssl1.0-dev \
-  libxml2 \
-  libxml2-dev  \
-  pkg-config \
-  ca-certificates \
-  xclip
-```
-
-* For Debian (testing/experimental) and Ubuntu >= 18.04
-
-```
-apt-get --no-install-recommends -yqq install \
-  bash-completion \
-  build-essential \
-  cmake \
-  libcurl4  \
-  libcurl4-openssl-dev  \
-  libssl-dev  \
-  libxml2 \
-  libxml2-dev  \
-  libssl1.1 \
+  libxml2-dev \
   pkg-config \
   ca-certificates \
   xclip

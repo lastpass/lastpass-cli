@@ -1,36 +1,9 @@
-if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.1)
-  set(CMAKE_LEGACY_CYGWIN_WIN32 0) # Remove when CMake > 2.8.4 is required
-  cmake_minimum_required(VERSION 2.8)
-else()
-  cmake_minimum_required(VERSION 3.1)
-endif()
+cmake_minimum_required(VERSION 3.10...4.2)
 
-project(lpass)
+project(lpass C)
 include(GNUInstallDirs)
 find_package(PkgConfig REQUIRED)
-
-if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.4)
-  # pkg_get_variable is not available until CMake >= 3.4.0
-  # Debian oldstable still packages CMake 3.0.2
-  function(pkg_get_variable _output_name _pkg _name)
-    execute_process(COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=${_name} ${_pkg}
-                    OUTPUT_VARIABLE _pkg_result
-                    OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-    set("${_output_name}" "${_pkg_result}" CACHE STRING "pkg-config variable ${_name} of ${_pkg}")
-  endfunction()
-
-  pkg_get_variable(BASH_COMPLETION_PREFIX bash-completion prefix)
-  if(BASH_COMPLETION_PREFIX)
-    set(BASH_COMPLETION_FOUND TRUE)
-  endif()
-
-else()
-
-  include(FindPkgConfig)
-  pkg_search_module(BASH_COMPLETION bash-completion)
-
-endif()
+pkg_search_module(BASH_COMPLETION bash-completion)
 
 if(APPLE)
   find_program(BREW_INSTALLED BREW)
@@ -42,15 +15,15 @@ if(APPLE)
                       OUTPUT_VARIABLE _output_variable_cellar
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-      if(_result_var_cellar AND NOT STATUS EQUAL 0)
+      if(NOT _result_var_cellar STREQUAL "0")
         message(STATUS "Unable to obtain homebrew cellar location for package ${_package_name}. Error: ${_result_var_cellar}")
       else()
         execute_process(COMMAND find "${_output_variable_cellar}/" -type d -name pkgconfig
-                        COMMAND tr -d '\n'
-                        COMMAND tr -s '/'
+                        COMMAND tr -s "/"
                         RESULT_VARIABLE _brew_pkgconfig_c
                         OUTPUT_VARIABLE _brew_pkgconfig_cellar
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
+        string(REPLACE "\n" ":" _brew_pkgconfig_cellar "${_brew_pkgconfig_cellar}")
       endif()
 
       execute_process(COMMAND brew --prefix ${_package_name}
@@ -58,15 +31,15 @@ if(APPLE)
                       OUTPUT_VARIABLE _output_variable_prefix
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
       
-      if(_result_var_prefix AND NOT STATUS EQUAL 0)
-        message(STATUS "Unable to obtain homebrew prefix location for package ${_package_name}. Error: ${_result_var_cellar}")
+      if(NOT _result_var_prefix STREQUAL "0")
+        message(STATUS "Unable to obtain homebrew prefix location for package ${_package_name}. Error: ${_result_var_prefix}")
       else()
         execute_process(COMMAND find "${_output_variable_prefix}/" -type d -name pkgconfig
-                        COMMAND tr -d '\n'
-                        COMMAND tr -s '/'
+                        COMMAND tr -s "/"
                         RESULT_VARIABLE _brew_pkgconfig_p
                         OUTPUT_VARIABLE _brew_pkgconfig_prefix
                         OUTPUT_STRIP_TRAILING_WHITESPACE)
+        string(REPLACE "\n" ":" _brew_pkgconfig_prefix "${_brew_pkgconfig_prefix}")
       endif()
 
       set("${_output_variable}" "${_brew_pkgconfig_cellar}:${_brew_pkgconfig_prefix}" CACHE STRING "pkg-config homebrew locations for ${_package_name}")
@@ -77,7 +50,7 @@ if(APPLE)
     get_brew_packageconfig_path("curl" BREW_CURL)
     get_brew_packageconfig_path("openssl" BREW_OPENSSL)
 
-    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl:${BREW_CURL}:${BREW_OPENSSL}")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl:${BREW_CURL}:${BREW_OPENSSL}")
     message(STATUS "PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
   else()
     set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl")

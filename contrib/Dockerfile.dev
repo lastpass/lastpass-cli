@@ -7,17 +7,13 @@ WORKDIR /tmp/build
 
 RUN apt-get update \
 	&& apt-get --no-install-recommends -y install \
-		# Build dependencies
+		# Build dependencies, they pull in the matching run time libraries
 		build-essential \
 		cmake \
-		libcurl4-openssl-dev  \
-		libssl-dev  \
-		libxml2-dev  \
+		libcurl4-openssl-dev \
+		libssl-dev \
+		libxml2-dev \
 		pkg-config \
-		# Run time dependencies
-		libssl1.1 \
-		libcurl4  \
-		libxml2 \
 		# Optionals handy for testing within the container
 		bash-completion \
 		ca-certificates \
