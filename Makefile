@@ -1,4 +1,8 @@
+ifeq ($(shell uname -s),Darwin)
+PREFIX ?= /usr/local
+else
 PREFIX ?= /usr
+endif
 MANDIR ?= $(PREFIX)/share/man
 BUILDDIR=build
 CMAKEMAKE=$(BUILDDIR)/Makefile

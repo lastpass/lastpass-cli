@@ -83,7 +83,7 @@ sudo emerge lastpass-cli
 Install the packages listed in the Dependencies section of this document,
 and then follow instructions in the 'Building' section.
 
-### Installing on OS X
+### Installing on macOS
 
 #### With [Homebrew](http://brew.sh/) (easiest)
 * Install Homebrew, if necessary.
@@ -120,8 +120,22 @@ sudo port install lastpass-cli-doc
 ```
 
 #### Manually
-Install the packages listed in the Dependencies section of this document,
-and then follow instructions in the 'Building' section.
+macOS ships libcurl and libxml2 but no OpenSSL headers. Install the build
+dependencies with Homebrew, then follow the 'Building' and 'Installing'
+sections:
+
+```
+brew install cmake pkgconf openssl
+```
+
+On macOS, `make install` defaults to `PREFIX=/usr/local` (`/usr` is read-only
+under System Integrity Protection).
+
+If CMake still can't find OpenSSL:
+
+```
+export OPENSSL_ROOT_DIR="$(brew --prefix openssl)"
+```
 
 ### Installing on FreeBSD
 * Install the binary package:
@@ -173,6 +187,11 @@ Otherwise, from the build directory:
 Install `asciidoc` and `xsltproc` if they are not already installed.
 
     $ sudo apt-get install asciidoc xsltproc
+
+On macOS:
+
+    $ brew install asciidoc docbook-xsl
+    $ export XML_CATALOG_FILES="$(brew --prefix)/etc/xml/catalog"
 
 The `install-doc` target builds and installs the documentation.
 
