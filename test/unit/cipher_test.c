@@ -576,24 +576,32 @@ static void setup_home(void)
 	setenv("LPASS_HOME", home, 1);
 }
 
-static void teardown_home(void)
+static void drain_upload_queue(void)
 {
 	_cleanup_free_ char *queue = config_path("upload-queue");
 	struct dirent *entry;
 	DIR *dir = opendir(queue);
 
-	if (dir) {
-		while ((entry = readdir(dir))) {
-			_cleanup_free_ char *name = NULL;
+	if (!dir)
+		return;
+	while ((entry = readdir(dir))) {
+		_cleanup_free_ char *name = NULL;
 
-			if (entry->d_name[0] == '.')
-				continue;
-			xasprintf(&name, "upload-queue/%s", entry->d_name);
-			config_unlink(name);
-		}
-		closedir(dir);
+		if (entry->d_name[0] == '.')
+			continue;
+		xasprintf(&name, "upload-queue/%s", entry->d_name);
+		config_unlink(name);
 	}
+	closedir(dir);
+}
+
+static void teardown_home(void)
+{
+	_cleanup_free_ char *queue = config_path("upload-queue");
+
+	drain_upload_queue();
 	rmdir(queue);
+	config_unlink("blob");
 	config_unlink("lpass.log");
 	rmdir(home);
 	free(home);
@@ -648,6 +656,7 @@ static void check_upload_param(const char *entry, const char *name, const char *
 
 static void upload(struct session *session, struct account *account, struct blob *blob, char **entry)
 {
+	drain_upload_queue();
 	lastpass_update_account(BLOB_SYNC_NO, key, session, account, blob);
 	*entry = read_upload_entry();
 	CHECK(*entry != NULL);

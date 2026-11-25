@@ -1,2 +1,5 @@
 /build/
 /test/.lpass
+.*
+**/.env*
+*.md

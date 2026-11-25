@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-`lpass` — LastPass command line client. Standalone C99 project (GPLv2+ with OpenSSL exception), flat source layout, no subdirectories for code. Deps: OpenSSL/LibreSSL, libcurl, libxml2, CMake ≥3.1, pkg-config. Docs build needs `asciidoc`/`a2x`.
+`lpass` — LastPass command line client. Standalone C99 project (GPLv2+ with OpenSSL exception), flat source layout, no subdirectories for code. Deps: OpenSSL/LibreSSL, libcurl, libxml2, CMake ≥3.10, pkg-config. Docs build needs `asciidoc`/`a2x`.
 
 ## Build & test
 
@@ -29,7 +29,7 @@ build/lpass-unit-test                         # C unit tests (ctest name: test_u
 - `lpass-unit-test` (`EXCLUDE_FROM_ALL`) = all `*.c` except `lpass.c` + `test/unit/*.c`, own `main`, no `TEST_BUILD`/mock. Used for crypto/blob-level tests (`test/unit/cipher_test.c`).
 - Mock account `0005` (`test-gcm-account`) holds AES-GCM fields; `ls`/`export` expectations in `test/tests` include it — update both when adding mock accounts.
 - Test state lives in `test/.lpass` (`LPASS_HOME`), gitignored.
-- Source files are collected with `file(GLOB)` at configure time — re-run cmake (`make clean && make`) after adding/removing `.c` files. `make clean` deletes `./build`, and CMake ≥4 rejects `cmake_minimum_required(3.1)`: reconfigure with `mkdir -p build && cd build && cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=/usr ..`.
+- Source files are collected with `file(GLOB)` at configure time — re-run cmake (`make clean && make`) after adding/removing `.c` files. `make clean` deletes `./build`.
 - No linter. Warnings are the check: `-std=gnu99 -pedantic -Wall -Wextra`.
 - `contrib/Dockerfile.dev` builds, tests, and installs in a Debian container if the host lacks the toolchain.
 
