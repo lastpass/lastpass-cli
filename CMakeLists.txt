@@ -6,7 +6,7 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(BASH_COMPLETION bash-completion)
 
 if(APPLE)
-  find_program(BREW_INSTALLED BREW)
+  find_program(BREW_INSTALLED brew)
 
   if(BREW_INSTALLED)  
     function(get_brew_packageconfig_path _package_name _output_variable)
@@ -50,10 +50,10 @@ if(APPLE)
     get_brew_packageconfig_path("curl" BREW_CURL)
     get_brew_packageconfig_path("openssl" BREW_OPENSSL)
 
-    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl:${BREW_CURL}:${BREW_OPENSSL}")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl/lib/pkgconfig:${BREW_CURL}:${BREW_OPENSSL}")
     message(STATUS "PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
   else()
-    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl")
+    set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/curl/lib/pkgconfig:/usr/local/opt/openssl/lib/pkgconfig")
   endif()
 
 endif()
