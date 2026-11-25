@@ -7,8 +7,8 @@ License:        GPLv2
 URL:            https://github.com/LastPass/lastpass-cli
 Source0:        lastpass-cli-0.4.0.tgz
 
-BuildRequires:  openssl-devel,libxml2-devel,libcurl-devel,asciidoc
-Requires:       openssl,libcurl,libxml2,pinentry,xclip
+BuildRequires:  openssl-devel,libxml2-devel,libcurl-devel,libfido2-devel,asciidoc
+Requires:       openssl,libcurl,libxml2,libfido2,pinentry,xclip
 
 %description
 A command line interface to LastPass.com. Made open source and available on

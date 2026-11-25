@@ -15,6 +15,7 @@ RUN apt-get update \
 		build-essential \
 		cmake \
 		libcurl4-openssl-dev \
+		libfido2-dev \
 		libssl-dev \
 		libxml2-dev \
 		pkg-config \

@@ -42,6 +42,8 @@
 #include "upload-queue.h"
 #include "version.h"
 #include "terminal.h"
+#include "fido2.h"
+#include <ctype.h>
 #include <sys/utsname.h>
 #include <string.h>
 
@@ -100,6 +102,14 @@ static inline void append_post(char **args, const char *name, const char *val)
 		++last;
 	*last = (char *)name;
 	*(last + 1) = (char *)val;
+}
+
+static bool is_xml_login_response(const char *reply)
+{
+	while (*reply && isspace((unsigned char)*reply))
+		++reply;
+	return !strncmp(reply, "<response", sizeof("<response") - 1) ||
+		!strncmp(reply, "<?xml", sizeof("<?xml") - 1);
 }
 
 static char *calculate_trust_id(bool force)
@@ -170,6 +180,9 @@ static bool ordinary_login(const char *login_server, const unsigned char key[KDF
 	*reply = http_post_lastpass_v(login_server, "login.php", NULL, NULL, args);
 	if (!*reply)
 		return error_post(message, session);
+	if (!is_xml_login_response(*reply))
+		return error_other(message, session,
+				   "LastPass returned a non-XML response during login.");
 
 	*session = xml_ok_session(*reply, key);
 	if (*session) {
@@ -269,6 +282,54 @@ out:
 	return ret;
 }
 
+static bool fido2_login(const char *login_server, const unsigned char key[KDF_HASH_LEN],
+			char **args, char **message, char **reply,
+			const char *assertion_options, struct session **session)
+{
+	_cleanup_free_ char *credential = NULL;
+	_cleanup_free_ char *auth_token = NULL;
+	_cleanup_free_ char *cause = NULL;
+	_cleanup_free_ char *fido_error = NULL;
+	_cleanup_free_ char *origin = NULL;
+
+	auth_token = xml_error_cause(*reply, "fido2AuthToken");
+	if (!auth_token)
+		return error_other(message, session, "Could not parse FIDO2 authentication token.");
+
+	xasprintf(&origin, "https://%s", login_server);
+	credential = fido2_login_credential(assertion_options, origin, &fido_error);
+	if (!credential)
+		return error_other(message, session, fido_error ? fido_error :
+				   "FIDO2 authentication failed.");
+
+	append_post(args, "provider", "lastpassauth");
+	append_post(args, "otp", "");
+	append_post(args, "outofbandrequest", "1");
+	append_post(args, "outofbandretry", "0");
+	append_post(args, "outofbandretryid", auth_token);
+	append_post(args, "voicecall", "0");
+	append_post(args, "fido2credential", credential);
+
+	free(*reply);
+	*reply = http_post_lastpass_v(login_server, "login.php", NULL, NULL, args);
+	if (!*reply)
+		return error_post(message, session);
+	if (!is_xml_login_response(*reply))
+		return error_other(message, session,
+				   "LastPass returned a non-XML response during FIDO2 authentication.");
+
+	*session = xml_ok_session(*reply, key);
+	if (*session) {
+		(*session)->server = xstrdup(login_server);
+		return true;
+	}
+
+	cause = xml_error_cause(*reply, "cause");
+	if (cause && !strcmp(cause, "fido2failed"))
+		return error_other(message, session, "FIDO2 authentication failed; please try again.");
+	return error_message(message, session, *reply);
+}
+
 static bool otp_login(const char *login_server, const unsigned char key[KDF_HASH_LEN], char **args, char **message, char **reply, const char *otp_name, const char *cause, const char *username, struct session **session)
 {
 	struct multifactor_type *replied_multifactor = NULL;
@@ -320,6 +381,8 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 	_cleanup_free_ char *trusted_id = NULL;
 	_cleanup_free_ char *trusted_label = NULL;
 	_cleanup_free_ char *cause = NULL;
+	_cleanup_free_ char *assertion_options = NULL;
+	_cleanup_free_ char *primary = NULL;
 	_cleanup_free_ char *reply = NULL;
 	_cleanup_free_ char *otp_name = NULL;
 	_cleanup_free_ char *login_server = NULL;
@@ -327,7 +390,8 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 
 	iters = xultostr(iterations);
 	user_lower = xstrlower(username);
-	trusted_id = calculate_trust_id(trust);
+	/* A device identifier is required by the current web MFA request flow. */
+	trusted_id = calculate_trust_id(true);
 
 	memset(args, 0, sizeof(args));
 	append_post(args, "xml", "2");
@@ -346,6 +410,18 @@ struct session *lastpass_login(const char *username, const char hash[KDF_HEX_LEN
 	if (trust) {
 		trusted_label = calculate_trust_label();
 		append_post(args, "trustlabel", trusted_label);
+	}
+
+	if (cause && !strcmp(cause, "outofbandrequired")) {
+		assertion_options = xml_error_cause(reply, "assertionOptions");
+		primary = xml_error_cause(reply, "primary");
+		if (assertion_options && primary && !strcmp(primary, "fido2")) {
+			if (fido2_login(login_server, key, args, error_message, &reply,
+					assertion_options, &session) && session && trust)
+				http_post_lastpass("trust.php", session, NULL, "token", session->token,
+						  "uuid", trusted_id, "trustlabel", trusted_label, NULL);
+			return session;
+		}
 	}
 
 	if (cause && !strcmp(cause, "outofbandrequired") &&

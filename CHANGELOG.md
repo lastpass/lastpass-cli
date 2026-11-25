@@ -6,6 +6,7 @@
 * Fixed `add --note-type` always creating a Secure Note instead of the specified note type.
 
 # Version 1.6.1
+* Add FIDO2 security-key support for multifactor login
 * Fixed a bug that prevented groups from being added to shared folders whenever any of the users did not have a public key
 
 # Version 1.6.0
