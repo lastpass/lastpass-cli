@@ -10,7 +10,7 @@ if(APPLE)
 
   if(BREW_INSTALLED)  
     function(get_brew_packageconfig_path _package_name _output_variable)
-      execute_process(COMMAND brew --cellar ${_package_name}
+      execute_process(COMMAND ${BREW_INSTALLED} --cellar ${_package_name}
                       RESULT_VARIABLE _result_var_cellar
                       OUTPUT_VARIABLE _output_variable_cellar
                       OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -26,7 +26,7 @@ if(APPLE)
         string(REPLACE "\n" ":" _brew_pkgconfig_cellar "${_brew_pkgconfig_cellar}")
       endif()
 
-      execute_process(COMMAND brew --prefix ${_package_name}
+      execute_process(COMMAND ${BREW_INSTALLED} --prefix ${_package_name}
                       RESULT_VARIABLE _result_var_prefix
                       OUTPUT_VARIABLE _output_variable_prefix
                       OUTPUT_STRIP_TRAILING_WHITESPACE)

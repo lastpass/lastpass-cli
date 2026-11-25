@@ -125,7 +125,7 @@ dependencies with Homebrew, then follow the 'Building' and 'Installing'
 sections:
 
 ```
-brew install cmake pkgconf openssl@3
+brew install cmake pkgconf openssl
 ```
 
 On macOS, `make install` defaults to `PREFIX=/usr/local` (`/usr` is read-only
@@ -134,7 +134,7 @@ under System Integrity Protection).
 If CMake still can't find OpenSSL:
 
 ```
-export OPENSSL_ROOT_DIR="$(brew --prefix openssl@3)"
+export OPENSSL_ROOT_DIR="$(brew --prefix openssl)"
 ```
 
 ### Installing on FreeBSD
